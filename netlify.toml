@@ -1,5 +1,5 @@
 [build]
-  command = "npm run build && cp public/manifest.json dist/manifest.json && cp public/sw.js dist/sw.js && cp public/icon-192.png dist/icon-192.png && cp public/icon-512.png dist/icon-512.png"
+  command = "npm run build && cp public/* dist/ 2>/dev/null || true"
   publish = "dist"
 
 [build.environment]
