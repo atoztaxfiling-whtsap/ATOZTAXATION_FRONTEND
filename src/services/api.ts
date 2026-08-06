@@ -1,0 +1,69 @@
+const API_BASE = import.meta.env.VITE_API_URL;
+
+export function getToken(): string { return localStorage.getItem("console_token") || ""; }
+export function setToken(t: string) { localStorage.setItem("console_token", t); }
+export function clearToken() { localStorage.removeItem("console_token"); }
+export function hasToken(): boolean { return !!getToken(); }
+
+async function api(path: string, opt: RequestInit = {}): Promise<any> {
+  const headers: Record<string, string> = { "X-Console-Token": getToken(), ...(opt.headers as Record<string, string> || {}) };
+  if (opt.body instanceof FormData) delete headers["Content-Type"];
+  const res = await fetch(`${API_BASE}${path}`, { ...opt, headers });
+  if (res.status === 403) { clearToken(); throw new Error("UNAUTHORIZED"); }
+  if (!res.ok) { const t = await res.text().catch(() => ""); throw new Error(t || `Server error: ${res.status}`); }
+  return res.json();
+}
+
+export interface Client { name: string; mobile: string; business: string; service: string; sheet: string; }
+export interface DailySummary { totalMessages: number; totalClients: number; docsReceived: number; returnsSent: number; responseRate: number; }
+
+export async function fetchDailySummary(): Promise<DailySummary> {
+  try { return await api("/api/summary"); }
+  catch (e) { if ((e as Error).message === "UNAUTHORIZED") throw e; return { totalMessages: 0, totalClients: 0, docsReceived: 0, returnsSent: 0, responseRate: 0 }; }
+}
+
+export async function fetchClients(): Promise<Client[]> {
+  try { return await api("/api/clients"); } catch (e) { if ((e as Error).message === "UNAUTHORIZED") throw e; return []; }
+}
+
+export async function fetchChatThreads() {
+  try { const j = await api("/chat/api/threads"); return j?.data || []; }
+  catch (e) { if ((e as Error).message === "UNAUTHORIZED") throw e; return []; }
+}
+
+export async function fetchChatThread(mobile: string) {
+  try { const j = await api(`/chat/api/thread?mobile=${encodeURIComponent(mobile)}`); return j?.data || []; }
+  catch (e) { if ((e as Error).message === "UNAUTHORIZED") throw e; return []; }
+}
+
+export async function sendChatMessage(mobile: string, message: string): Promise<boolean> {
+  const j = await api("/chat/api/send", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ mobile, message }) });
+  return j?.success === true;
+}
+
+export async function uploadFile(file: File): Promise<string> {
+  const fd = new FormData(); fd.append("file", file);
+  const j = await api("/chat/api/upload", { method: "POST", body: fd });
+  if (!j?.success || !j?.url) throw new Error("Upload failed");
+  return j.url;
+}
+
+export async function sendChatDocument(mobile: string, file: File, caption?: string): Promise<boolean> {
+  const url = await uploadFile(file);
+  const j = await api("/chat/api/send_media", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ mobile, media_url: url, caption: caption || "" }) });
+  return j?.success === true;
+}
+
+export async function forwardMessage(toMobile: string, text: string, mediaUrl?: string): Promise<boolean> {
+  const body: any = { to_mobile: toMobile, text };
+  if (mediaUrl) body.media_url = mediaUrl;
+  const j = await api("/chat/api/forward", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+  return j?.success === true;
+}
+
+export async function startReturns(type: "monthly" | "quarterly") {
+  try { await api(`/returns/start/${type}`); return true; } catch (e) { if ((e as Error).message === "UNAUTHORIZED") throw e; return false; }
+}
+export async function stopReturns(type: "monthly" | "quarterly") {
+  try { await api(`/returns/stop/${type}`); return true; } catch (e) { if ((e as Error).message === "UNAUTHORIZED") throw e; return false; }
+}
