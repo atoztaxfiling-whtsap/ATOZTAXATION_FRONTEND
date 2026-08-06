@@ -1,0 +1,6 @@
+[build]
+  command = "npm run build && cp public/manifest.json dist/manifest.json && cp public/sw.js dist/sw.js && cp public/icon-192.png dist/icon-192.png && cp public/icon-512.png dist/icon-512.png"
+  publish = "dist"
+
+[build.environment]
+  VITE_API_URL = "https://judwa-whatsapp-1.onrender.com"
