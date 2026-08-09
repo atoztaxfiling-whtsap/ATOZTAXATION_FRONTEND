@@ -22,7 +22,7 @@ export default function App() {
   if (!auth) return <TokenLogin onSuccess={() => setAuth(true)} />;
 
   return (
-    <div className="h-screen w-full bg-[#f5f7fb] overflow-hidden flex">
+    <div className="h-screen w-full bg-[#FBFBF9] overflow-hidden flex">
       {!isMobile && (
         <div className="w-56 bg-white border-r flex flex-col">
           <div className="p-4 font-bold border-b text-green-700 text-lg">ATOZ Taxation</div>
