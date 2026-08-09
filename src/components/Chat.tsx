@@ -6,6 +6,7 @@ import type { Thread, FlatMessage, BackendMessage } from './chatTypes';
 
 function authErr(e: unknown) { if (e instanceof Error && e.message === "UNAUTHORIZED") window.dispatchEvent(new Event("auth-failed")); }
 function badge(n: number) { try { if ('setAppBadge' in navigator) { if (n > 0) (navigator as any).setAppBadge(n); else (navigator as any).clearAppBadge(); } } catch {} }
+function clearNotifs(mobile: string) { try { navigator.serviceWorker?.ready.then(reg => reg.getNotifications({ tag: mobile }).then(ns => ns.forEach(n => n.close()))).catch(() => {}); } catch {} }
 
 function flatten(msgs: BackendMessage[], rm: React.MutableRefObject<Record<string, string>>): FlatMessage[] {
   return msgs.map((m, i) => ({ id: `${i}-${m.from}`, text: m.text || '', sender: (m.from === 'user' ? 'me' : 'other') as 'me' | 'other', timestamp: m.time || '', status: m.from === 'user' ? 'read' as const : undefined, replyToId: rm.current[`${i}-${m.from}`] }));
@@ -37,14 +38,14 @@ export default function Chat() {
   }, []);
 
   useEffect(() => {
-    const h = (e: MessageEvent) => { if (e.data?.type === 'OPEN_CHAT' && e.data?.mobile) { setSel(e.data.mobile); setUnread(p => ({ ...p, [e.data.mobile]: 0 })); } };
+    const h = (e: MessageEvent) => { if (e.data?.type === 'OPEN_CHAT' && e.data?.mobile) { setSel(e.data.mobile); setUnread(p => ({ ...p, [e.data.mobile]: 0 })); clearNotifs(e.data.mobile); } };
     navigator.serviceWorker?.addEventListener('message', h);
     return () => navigator.serviceWorker?.removeEventListener('message', h);
   }, []);
 
   const notify = useCallback((t: Thread, body: string) => {
     if (!notifRef.current) return;
-    try { const n = new Notification(t.name || t.mobile, { body, icon: '/icon-192.png', tag: t.mobile, vibrate: [200, 100, 200] }); n.onclick = () => { window.focus(); setSel(t.mobile); setUnread(p => ({ ...p, [t.mobile]: 0 })); n.close(); }; } catch {}
+    try { const n = new Notification(t.name || t.mobile, { body, icon: '/icon-192.png', tag: t.mobile, vibrate: [200, 100, 200] }); n.onclick = () => { window.focus(); setSel(t.mobile); setUnread(p => ({ ...p, [t.mobile]: 0 })); clearNotifs(t.mobile); n.close(); }; } catch {}
   }, []);
 
   const loadThreads = useCallback(async () => {
@@ -69,6 +70,7 @@ export default function Chat() {
   }, []);
 
   useEffect(() => { if (!sel) return; loadThread(sel, true); const iv = setInterval(() => loadThread(sel), 3000); return () => clearInterval(iv); }, [sel, loadThread]);
+  useEffect(() => { if (sel) clearNotifs(sel); }, [sel, msgs]);
 
   const handleSend = useCallback(async (text: string, reply?: FlatMessage) => {
     if (!sel) return;
@@ -83,7 +85,7 @@ export default function Chat() {
 
   return (
     <div className="h-full w-full flex overflow-hidden" style={{ background: '#f0f2f5' }}>
-      <ChatSidebar threads={threads} selectedMobile={sel} onSelectThread={m => { setSel(m); setUnread(p => ({ ...p, [m]: 0 })); }} isMobile={mobile} unreadCounts={unread} />
+      <ChatSidebar threads={threads} selectedMobile={sel} onSelectThread={m => { setSel(m); setUnread(p => ({ ...p, [m]: 0 })); clearNotifs(m); }} isMobile={mobile} unreadCounts={unread} />
       <ChatWindow selectedMobile={sel} threads={threads} messages={msgs} messagesLoading={loading} isMobile={mobile} onBack={() => setSel(null)} onSendMessage={handleSend} onSendDocument={handleDoc} />
     </div>
   );
