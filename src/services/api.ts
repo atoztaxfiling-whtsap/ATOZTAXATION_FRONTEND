@@ -67,3 +67,19 @@ export async function startReturns(type: "monthly" | "quarterly") {
 export async function stopReturns(type: "monthly" | "quarterly") {
   try { await api(`/returns/stop/${type}`); return true; } catch (e) { if ((e as Error).message === "UNAUTHORIZED") throw e; return false; }
 }
+
+export interface Contact {
+  mobile: string; name: string; business: string; service: string; fee: string;
+  workflow: { status: string; docs_received: string; docs_pending: string; notes: string };
+  payment: { status: string; due: string };
+}
+
+export async function fetchContact(mobile: string): Promise<Contact | null> {
+  try { return await api(`/api/contact/${encodeURIComponent(mobile)}`); }
+  catch (e) { if ((e as Error).message === "UNAUTHORIZED") throw e; return null; }
+}
+
+export async function saveContactName(mobile: string, name: string): Promise<boolean> {
+  const j = await api(`/api/contact/${encodeURIComponent(mobile)}/name`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name }) });
+  return j?.ok === true;
+}
