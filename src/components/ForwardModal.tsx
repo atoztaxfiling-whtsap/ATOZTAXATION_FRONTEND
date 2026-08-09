@@ -20,7 +20,11 @@ export default function ForwardModal({ message, threads, onClose }: Props) {
   const handleForward = async (mobile: string) => {
     setSending(mobile); setError('');
     try {
-      const ok = await forwardMessage(mobile, message.text);
+      const t = message.text.trim();
+      const isMedia = /^https?:\/\/\S+$/i.test(t) && !t.includes(' ');
+      const ok = isMedia
+        ? await forwardMessage(mobile, '', t)
+        : await forwardMessage(mobile, message.text);
       if (ok) { setDone(p => [...p, mobile]); }
       else setError('Forward fail hua');
     } catch (e) {
