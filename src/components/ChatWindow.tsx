@@ -1,33 +1,36 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Search, MoreVertical, Phone, Video, ArrowLeft, ChevronDown } from 'lucide-react';
+import { Search, MoreVertical, Phone, Video, ArrowLeft, ChevronDown, X } from 'lucide-react';
 import type { Thread, FlatMessage } from './chatTypes';
 import { getAvatarColor, getInitials } from './chatTypes';
 import MessageBubble from './MessageBubble';
 import ChatInput from './ChatInput';
 import ForwardModal from './ForwardModal';
+import ContactPanel from './ContactPanel';
 
-interface Props { selectedMobile: string | null; threads: Thread[]; messages: FlatMessage[]; messagesLoading: boolean; isMobile: boolean; onBack: () => void; onSendMessage: (t: string, r?: FlatMessage) => Promise<void>; onSendDocument: (f: File) => Promise<void>; }
+interface Props { selectedMobile: string | null; threads: Thread[]; messages: FlatMessage[]; messagesLoading: boolean; isMobile: boolean; onBack: () => void; onSendMessage: (t: string, r?: FlatMessage) => Promise<void>; onSendDocument: (f: File) => Promise<void>; onContactChanged?: () => void; }
 
-const WALLPAPER = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80'%3E%3Crect width='80' height='80' fill='%23efeae2'/%3E%3Cpath d='M0 40 L40 0 L80 40 L40 80 Z' stroke='%23d6cfc6' stroke-width='0.4' fill='none' opacity='0.5'/%3E%3C/svg%3E")`;
+const WALLPAPER = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80'%3E%3Crect width='80' height='80' fill='%23F2F5F1'/%3E%3Cpath d='M0 40 L40 0 L80 40 L40 80 Z' stroke='%23d6cfc6' stroke-width='0.4' fill='none' opacity='0.5'/%3E%3C/svg%3E")`;
 
 function dateSep(ts: string): string { try { const d = new Date(ts); if (isNaN(d.getTime())) return ts; const n = new Date(), t = new Date(n.getFullYear(), n.getMonth(), n.getDate()), y = new Date(t.getTime() - 86400000), m = new Date(d.getFullYear(), d.getMonth(), d.getDate()); if (m.getTime() === t.getTime()) return 'TODAY'; if (m.getTime() === y.getTime()) return 'YESTERDAY'; return d.toLocaleDateString([], { month: 'long', day: 'numeric', year: 'numeric' }); } catch { return ts; } }
 function sameDay(a: string, b: string): boolean { try { return new Date(a).toDateString() === new Date(b).toDateString(); } catch { return false; } }
 
-export default function ChatWindow({ selectedMobile, threads, messages, messagesLoading, isMobile, onBack, onSendMessage, onSendDocument }: Props) {
+export default function ChatWindow({ selectedMobile, threads, messages, messagesLoading, isMobile, onBack, onSendMessage, onSendDocument, onContactChanged }: Props) {
   const [replyTo, setReplyTo] = useState<FlatMessage | null>(null);
   const [sending, setSending] = useState(false);
   const [showScroll, setShowScroll] = useState(false);
   const [sendErr, setSendErr] = useState<string | null>(null);
   const [fwdMsg, setFwdMsg] = useState<FlatMessage | null>(null);
+  const [showInfo, setShowInfo] = useState(false);
+  const [srch, setSrch] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const endRef = useRef<HTMLDivElement>(null);
   const prevCount = useRef(0);
-  const thread = threads.find(t => t.mobile === selectedMobile);
+  const thread: Thread | undefined = threads.find(t => t.mobile === selectedMobile) || (selectedMobile ? { mobile: selectedMobile } : undefined);
 
   const scrollBottom = useCallback((smooth = true) => { endRef.current?.scrollIntoView({ behavior: smooth ? 'smooth' : 'instant' }); }, []);
 
   useEffect(() => { if (messages.length > prevCount.current) { const el = scrollRef.current; const near = el ? el.scrollHeight - el.scrollTop - el.clientHeight < 200 : true; if (near || messages.length - prevCount.current === messages.length) scrollBottom(messages.length - prevCount.current < 5); } prevCount.current = messages.length; }, [messages, scrollBottom]);
-  useEffect(() => { setReplyTo(null); setShowScroll(false); setSendErr(null); prevCount.current = 0; }, [selectedMobile]);
+  useEffect(() => { setReplyTo(null); setShowScroll(false); setSendErr(null); setShowInfo(false); setSrch(null); prevCount.current = 0; }, [selectedMobile]);
   useEffect(() => { if (!sendErr) return; const t = setTimeout(() => setSendErr(null), 4000); return () => clearTimeout(t); }, [sendErr]);
 
   const handleSend = async (text: string, reply?: FlatMessage) => { setSending(true); setSendErr(null); try { await onSendMessage(text, reply); scrollBottom(); } catch { setSendErr('Message bhejne me error. Retry karo.'); } finally { setSending(false); } };
@@ -38,43 +41,57 @@ export default function ChatWindow({ selectedMobile, threads, messages, messages
   if (!selectedMobile || !thread) {
     if (isMobile) return null;
     return (
-      <div className="flex-1 flex items-center justify-center flex-col gap-4 select-none" style={{ background: '#f0f2f5' }}>
-        <div className="w-24 h-24 rounded-full flex items-center justify-center" style={{ background: '#d9fdd3' }}><span className="text-5xl">💬</span></div>
-        <h2 className="text-2xl font-light" style={{ color: '#111b21' }}>ATOZ Taxation</h2>
-        <p className="text-sm text-center max-w-xs" style={{ color: '#667781' }}>WhatsApp Business Console<br />Select a chat to start messaging</p>
+      <div className="flex-1 flex items-center justify-center flex-col gap-4 select-none" style={{ background: '#F2F5F1' }}>
+        <div className="w-24 h-24 rounded-full flex items-center justify-center" style={{ background: '#E7F2EC' }}><span className="text-5xl">💬</span></div>
+        <h2 className="serif text-2xl" style={{ color: '#15191E' }}>ATOZ Taxation</h2>
+        <p className="text-sm text-center max-w-xs" style={{ color: '#5A6168' }}>Console — select a chat to start messaging</p>
       </div>
     );
   }
 
   const label = thread.name || thread.mobile, ini = getInitials(label), col = getAvatarColor(label);
+  const q = (srch || '').trim().toLowerCase();
+  const shown = q ? messages.filter(m => (m.text || '').toLowerCase().includes(q)) : messages;
 
-  return (
+  const chatCol = (
     <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-      <div className="flex items-center gap-3 px-4 py-3 flex-shrink-0 shadow-sm" style={{ background: '#00a884' }}>
+      <div className="flex items-center gap-3 px-4 py-3 flex-shrink-0 shadow-sm" style={{ background: '#127A56' }}>
         {isMobile && <button onClick={onBack} className="p-1.5 rounded-full hover:bg-white/20 transition"><ArrowLeft size={20} className="text-white" /></button>}
-        <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold text-sm flex-shrink-0" style={{ background: col }}>{ini}</div>
-        <div className="flex-1 min-w-0"><h2 className="text-white font-semibold text-sm truncate">{label}</h2><p className="text-xs" style={{ color: 'rgba(255,255,255,0.8)' }}>{thread.mobile}</p></div>
+        <div onClick={() => setShowInfo(v => !v)} className="w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold text-sm flex-shrink-0 cursor-pointer" style={{ background: col }}>{ini}</div>
+        <div onClick={() => setShowInfo(v => !v)} className="flex-1 min-w-0 cursor-pointer"><h2 className="serif text-white font-semibold text-base truncate">{label}</h2><p className="text-xs" style={{ color: 'rgba(255,255,255,0.8)' }}>{thread.mobile}</p></div>
         <div className="flex items-center gap-1">
           <button onClick={handleCall} className="p-2 rounded-full hover:bg-white/20 transition" title="Call"><Phone size={20} className="text-white" /></button>
           <button className="p-2 rounded-full hover:bg-white/20 transition opacity-40 cursor-not-allowed" title="Video (not available)"><Video size={20} className="text-white" /></button>
-          <button className="p-2 rounded-full hover:bg-white/20 transition"><Search size={20} className="text-white" /></button>
+          <button onClick={() => setSrch(s => (s === null ? '' : null))} className="p-2 rounded-full hover:bg-white/20 transition" title="Search in chat"><Search size={20} className="text-white" /></button>
           <button className="p-2 rounded-full hover:bg-white/20 transition"><MoreVertical size={20} className="text-white" /></button>
         </div>
       </div>
+
+      {srch !== null && (
+        <div className="flex items-center gap-2 px-4 py-2" style={{ background: '#FBFBF9', borderBottom: '1px solid #E6E7E2' }}>
+          <div className="flex-1 flex items-center gap-2 px-3 py-2 rounded-lg" style={{ background: '#fff', border: '1px solid #E6E7E2' }}>
+            <Search size={15} style={{ color: '#5A6168' }} />
+            <input autoFocus value={srch} onChange={e => setSrch(e.target.value)} placeholder="Search in this chat…" className="flex-1 bg-transparent text-sm outline-none" style={{ color: '#15191E' }} />
+          </div>
+          {q && <span className="text-xs whitespace-nowrap" style={{ color: '#5A6168' }}>{shown.length} match</span>}
+          <button onClick={() => setSrch(null)} className="p-1 rounded hover:bg-gray-100"><X size={17} style={{ color: '#5A6168' }} /></button>
+        </div>
+      )}
 
       {sendErr && <div className="px-4 py-2 text-sm font-medium text-center" style={{ background: '#fef2f2', color: '#dc2626', borderBottom: '1px solid #fecaca' }}>{sendErr}</div>}
 
       <div className="flex-1 relative overflow-hidden">
         <div ref={scrollRef} onScroll={() => { const el = scrollRef.current; if (el) setShowScroll(el.scrollHeight - el.scrollTop - el.clientHeight > 120); }}
-          className="h-full overflow-y-auto py-4" style={{ backgroundColor: '#efeae2', backgroundImage: WALLPAPER, backgroundSize: '80px 80px' }}>
-          {messagesLoading && messages.length === 0 && <div className="flex items-center justify-center py-8"><div className="px-4 py-2 rounded-full text-sm shadow-sm" style={{ background: '#fff', color: '#667781' }}>Loading messages…</div></div>}
+          className="h-full overflow-y-auto py-4" style={{ backgroundColor: '#F2F5F1', backgroundImage: WALLPAPER, backgroundSize: '80px 80px' }}>
+          {messagesLoading && messages.length === 0 && <div className="flex items-center justify-center py-8"><div className="px-4 py-2 rounded-full text-sm shadow-sm" style={{ background: '#fff', color: '#5A6168' }}>Loading messages…</div></div>}
+          {q && shown.length === 0 && <div className="flex items-center justify-center py-8"><div className="px-4 py-2 rounded-full text-sm shadow-sm" style={{ background: '#fff', color: '#5A6168' }}>Koi match nahi mila</div></div>}
           <div className="pb-2">
-            {messages.map((msg, idx) => {
-              const prev = idx > 0 ? messages[idx - 1] : null;
+            {shown.map((msg, idx) => {
+              const prev = idx > 0 ? shown[idx - 1] : null;
               const showDate = !prev || !sameDay(prev.timestamp, msg.timestamp);
               return (
                 <React.Fragment key={msg.id}>
-                  {showDate && <div className="flex items-center justify-center my-3 px-4"><span className="px-3 py-1 rounded-full text-xs shadow-sm" style={{ background: '#e1f2fb', color: '#54656f' }}>{dateSep(msg.timestamp)}</span></div>}
+                  {showDate && <div className="flex items-center justify-center my-3 px-4"><span className="px-3 py-1 rounded-full text-xs shadow-sm" style={{ background: '#EEF1EA', color: '#5A6168' }}>{dateSep(msg.timestamp)}</span></div>}
                   <MessageBubble message={msg} onReply={setReplyTo} onForward={setFwdMsg} allMessages={messages} />
                 </React.Fragment>
               );
@@ -82,12 +99,21 @@ export default function ChatWindow({ selectedMobile, threads, messages, messages
           </div>
           <div ref={endRef} />
         </div>
-        {showScroll && <button onClick={() => scrollBottom()} className="absolute bottom-4 right-4 w-10 h-10 rounded-full shadow-lg flex items-center justify-center z-10" style={{ background: '#fff' }}><ChevronDown size={20} style={{ color: '#667781' }} /></button>}
+        {showScroll && <button onClick={() => scrollBottom()} className="absolute bottom-4 right-4 w-10 h-10 rounded-full shadow-lg flex items-center justify-center z-10" style={{ background: '#fff' }}><ChevronDown size={20} style={{ color: '#5A6168' }} /></button>}
       </div>
 
       <ChatInput onSendMessage={handleSend} onSendDocument={handleDoc} replyTo={replyTo} onCancelReply={() => setReplyTo(null)} disabled={sending} />
 
       {fwdMsg && <ForwardModal message={fwdMsg} threads={threads} onClose={() => setFwdMsg(null)} />}
+    </div>
+  );
+
+  return (
+    <div className="flex-1 flex min-w-0 overflow-hidden">
+      {!(isMobile && showInfo) && chatCol}
+      {showInfo && selectedMobile && (
+        <ContactPanel mobile={selectedMobile} isMobile={isMobile} onClose={() => setShowInfo(false)} onNameSaved={() => onContactChanged && onContactChanged()} />
+      )}
     </div>
   );
 }
