@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { fetchChatThreads, fetchChatThread, sendChatMessage, sendChatDocument } from '../services/api';
 import ChatSidebar from './ChatSidebar';
 import ChatWindow from './ChatWindow';
+import NewChatModal from './NewChatModal';
 import type { Thread, FlatMessage, BackendMessage } from './chatTypes';
 
 function authErr(e: unknown) { if (e instanceof Error && e.message === "UNAUTHORIZED") window.dispatchEvent(new Event("auth-failed")); }
@@ -19,6 +20,7 @@ export default function Chat() {
   const [loading, setLoading] = useState(false);
   const [mobile, setMobile] = useState(false);
   const [unread, setUnread] = useState<Record<string, number>>({});
+  const [showNewChat, setShowNewChat] = useState(false);
   const selRef = useRef<string | null>(null);
   const prevRef = useRef<Record<string, string>>({});
   const notifRef = useRef(false);
@@ -84,9 +86,10 @@ export default function Chat() {
   }, [sel, loadThread]);
 
   return (
-    <div className="h-full w-full flex overflow-hidden" style={{ background: '#f0f2f5' }}>
-      <ChatSidebar threads={threads} selectedMobile={sel} onSelectThread={m => { setSel(m); setUnread(p => ({ ...p, [m]: 0 })); clearNotifs(m); }} isMobile={mobile} unreadCounts={unread} />
-      <ChatWindow selectedMobile={sel} threads={threads} messages={msgs} messagesLoading={loading} isMobile={mobile} onBack={() => setSel(null)} onSendMessage={handleSend} onSendDocument={handleDoc} />
+    <div className="h-full w-full flex overflow-hidden" style={{ background: '#F2F5F1' }}>
+      <ChatSidebar threads={threads} selectedMobile={sel} onSelectThread={m => { setSel(m); setUnread(p => ({ ...p, [m]: 0 })); clearNotifs(m); }} isMobile={mobile} unreadCounts={unread} onNewChat={() => setShowNewChat(true)} />
+      <ChatWindow selectedMobile={sel} threads={threads} messages={msgs} messagesLoading={loading} isMobile={mobile} onBack={() => setSel(null)} onSendMessage={handleSend} onSendDocument={handleDoc} onContactChanged={loadThreads} />
+      {showNewChat && <NewChatModal onClose={() => setShowNewChat(false)} onPick={m => { setSel(m); setUnread(p => ({ ...p, [m]: 0 })); clearNotifs(m); setShowNewChat(false); }} />}
     </div>
   );
 }
