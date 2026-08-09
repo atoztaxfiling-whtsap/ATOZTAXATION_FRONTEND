@@ -37,20 +37,20 @@ export default function ForwardModal({ message, threads, onClose }: Props) {
       <div className="w-full max-w-md bg-white rounded-t-2xl sm:rounded-2xl max-h-[80vh] flex flex-col" onClick={e => e.stopPropagation()}>
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b">
-          <h3 className="font-semibold text-base" style={{ color: '#111b21' }}>Forward message</h3>
-          <button onClick={onClose} className="p-1.5 rounded-full hover:bg-gray-100"><X size={18} style={{ color: '#667781' }} /></button>
+          <h3 className="font-semibold text-base" style={{ color: '#15191E' }}>Forward message</h3>
+          <button onClick={onClose} className="p-1.5 rounded-full hover:bg-gray-100"><X size={18} style={{ color: '#5A6168' }} /></button>
         </div>
 
         {/* Message preview */}
-        <div className="px-4 py-2" style={{ background: '#f0f2f5' }}>
-          <p className="text-xs truncate" style={{ color: '#667781' }}>{message.text.length > 100 ? message.text.slice(0, 100) + '…' : message.text}</p>
+        <div className="px-4 py-2" style={{ background: '#F2F5F1' }}>
+          <p className="text-xs truncate" style={{ color: '#5A6168' }}>{message.text.length > 100 ? message.text.slice(0, 100) + '…' : message.text}</p>
         </div>
 
         {/* Search */}
         <div className="px-3 py-2">
-          <div className="flex items-center gap-2 px-3 py-2 rounded-lg" style={{ background: '#f0f2f5' }}>
-            <Search size={14} style={{ color: '#54656f' }} />
-            <input type="text" placeholder="Search contact..." value={q} onChange={e => setQ(e.target.value)} className="flex-1 bg-transparent text-sm focus:outline-none" style={{ color: '#111b21' }} />
+          <div className="flex items-center gap-2 px-3 py-2 rounded-lg" style={{ background: '#F2F5F1' }}>
+            <Search size={14} style={{ color: '#5A6168' }} />
+            <input type="text" placeholder="Search contact..." value={q} onChange={e => setQ(e.target.value)} className="flex-1 bg-transparent text-sm focus:outline-none" style={{ color: '#15191E' }} />
           </div>
         </div>
 
@@ -61,18 +61,18 @@ export default function ForwardModal({ message, threads, onClose }: Props) {
           {filtered.map(t => {
             const label = t.name || t.mobile, isDone = done.includes(t.mobile);
             return (
-              <div key={t.mobile} className="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 transition" style={{ borderBottom: '1px solid #f0f2f5' }}>
+              <div key={t.mobile} className="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 transition" style={{ borderBottom: '1px solid #F2F5F1' }}>
                 <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold text-sm flex-shrink-0" style={{ background: getAvatarColor(label) }}>{getInitials(label)}</div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate" style={{ color: '#111b21' }}>{label}</p>
-                  <p className="text-xs" style={{ color: '#667781' }}>{t.mobile}</p>
+                  <p className="text-sm font-medium truncate" style={{ color: '#15191E' }}>{label}</p>
+                  <p className="text-xs" style={{ color: '#5A6168' }}>{t.mobile}</p>
                 </div>
                 {isDone ? (
-                  <span className="text-xs font-medium px-3 py-1 rounded-full" style={{ background: '#d9fdd3', color: '#00a884' }}>Sent!</span>
+                  <span className="text-xs font-medium px-3 py-1 rounded-full" style={{ background: '#E7F2EC', color: '#127A56' }}>Sent!</span>
                 ) : (
                   <button onClick={() => handleForward(t.mobile)} disabled={!!sending}
                     className="p-2 rounded-full transition hover:bg-green-50 disabled:opacity-50" title="Forward">
-                    {sending === t.mobile ? <div className="w-4 h-4 border-2 border-green-600 border-t-transparent rounded-full animate-spin" /> : <Send size={16} style={{ color: '#00a884' }} />}
+                    {sending === t.mobile ? <div className="w-4 h-4 border-2 border-green-600 border-t-transparent rounded-full animate-spin" /> : <Send size={16} style={{ color: '#127A56' }} />}
                   </button>
                 )}
               </div>
