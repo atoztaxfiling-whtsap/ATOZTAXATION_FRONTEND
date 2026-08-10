@@ -38,7 +38,7 @@ export default function Dashboard() {
     { label: "Response Rate", value: `${s.responseRate}%`, icon: CheckCircle, color: "emerald" },
   ];
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-6 space-y-6 h-full overflow-y-auto">
       <div><h2 className="text-2xl font-bold text-slate-900">Dashboard</h2><p className="text-slate-600 mt-1">ATOZ Taxation — WhatsApp Console</p></div>
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {stats.map((st, i) => { const I = st.icon; return (<div key={i} className="bg-white rounded-xl p-5 border border-slate-200"><I className="w-6 h-6 text-green-600 mb-3" /><h3 className="text-2xl font-bold text-slate-900">{st.value}</h3><p className="text-sm text-slate-600 mt-1">{st.label}</p></div>); })}
