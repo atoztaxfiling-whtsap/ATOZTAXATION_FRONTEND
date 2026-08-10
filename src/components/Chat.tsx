@@ -10,7 +10,7 @@ function badge(n: number) { try { if ('setAppBadge' in navigator) { if (n > 0) (
 function clearNotifs(mobile: string) { try { navigator.serviceWorker?.ready.then(reg => reg.getNotifications({ tag: mobile }).then(ns => ns.forEach(n => n.close()))).catch(() => {}); } catch {} }
 
 function flatten(msgs: BackendMessage[], rm: React.MutableRefObject<Record<string, string>>): FlatMessage[] {
-  return msgs.map((m, i) => ({ id: `${i}-${m.from}`, text: m.text || '', sender: (m.from === 'user' ? 'me' : 'other') as 'me' | 'other', timestamp: m.time || '', status: m.from === 'user' ? 'read' as const : undefined, replyToId: rm.current[`${i}-${m.from}`] }));
+  return msgs.map((m, i) => ({ id: `${i}-${m.from}`, text: m.text || '', sender: (m.from === 'user' ? 'me' : 'other') as 'me' | 'other', timestamp: m.time || '', status: m.from === 'user' ? 'read' as const : undefined, replyToId: rm.current[`${i}-${m.from}`], isBot: m.from === 'bot' }));
 }
 
 export default function Chat() {
@@ -47,7 +47,7 @@ export default function Chat() {
 
   const notify = useCallback((t: Thread, body: string) => {
     if (!notifRef.current) return;
-    try { const n = new Notification(t.name || t.mobile, { body, icon: '/icon-192.png', tag: t.mobile, vibrate: [200, 100, 200] }); n.onclick = () => { window.focus(); setSel(t.mobile); setUnread(p => ({ ...p, [t.mobile]: 0 })); clearNotifs(t.mobile); n.close(); }; } catch {}
+    try { const n = new Notification(t.name || t.mobile, { body, icon: '/icon-192.png', tag: t.mobile, vibrate: [200, 100, 200] } as NotificationOptions); n.onclick = () => { window.focus(); setSel(t.mobile); setUnread(p => ({ ...p, [t.mobile]: 0 })); clearNotifs(t.mobile); n.close(); }; } catch {}
   }, []);
 
   const loadThreads = useCallback(async () => {
