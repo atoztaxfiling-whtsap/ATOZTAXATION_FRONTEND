@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { Reply, Check, CheckCheck, Download, Eye, X, Play, Share2 } from 'lucide-react';
+import { Reply, Check, CheckCheck, Download, Eye, X, Play, Share2, Flag } from 'lucide-react';
 import type { FlatMessage } from './chatTypes';
 
-interface Props { message: FlatMessage; onReply: (m: FlatMessage) => void; onForward: (m: FlatMessage) => void; allMessages: FlatMessage[]; }
+interface Props { message: FlatMessage; onReply: (m: FlatMessage) => void; onForward: (m: FlatMessage) => void; onFlag?: (m: FlatMessage) => void; allMessages: FlatMessage[]; }
 
 function fmtTime(ts: string): string { try { const d = new Date(ts); return isNaN(d.getTime()) ? ts : d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); } catch { return ts; } }
 
@@ -43,7 +43,7 @@ function Viewer({ src, onClose }: { src: string; onClose: () => void }) {
   );
 }
 
-export default function MessageBubble({ message, onReply, onForward, allMessages }: Props) {
+export default function MessageBubble({ message, onReply, onForward, onFlag, allMessages }: Props) {
   const [hov, setHov] = useState(false);
   const [fullImg, setFullImg] = useState<string | null>(null);
   const [showPdf, setShowPdf] = useState(false);
@@ -74,6 +74,9 @@ export default function MessageBubble({ message, onReply, onForward, allMessages
           <div className="transition-opacity flex-shrink-0 self-center flex gap-0.5" style={{ opacity: hov ? 1 : 0 }}>
             <button onClick={() => onReply(message)} className="p-1 rounded-full hover:bg-gray-200 transition" title="Reply"><Reply size={13} style={{ color: '#5A6168' }} /></button>
             <button onClick={() => onForward(message)} className="p-1 rounded-full hover:bg-gray-200 transition" title="Forward"><Share2 size={13} style={{ color: '#5A6168' }} /></button>
+            {message.isBot && onFlag && (
+              <button onClick={() => onFlag(message)} className="p-1 rounded-full hover:bg-red-100 transition" title="Bot ne galat bola"><Flag size={13} style={{ color: '#c53030' }} /></button>
+            )}
           </div>
           <div className="relative px-3 py-2 shadow-sm" style={{ background: isSent ? '#E7F2EC' : '#fff', borderRadius: isSent ? '12px 12px 0 12px' : '0 12px 12px 12px', minWidth: '72px', maxWidth: '100%' }}>
             {replyMsg && (<div className="mb-2 px-2 py-1.5 rounded-lg border-l-4" style={{ background: isSent ? 'rgba(0,0,0,0.05)' : '#F2F5F1', borderLeftColor: '#127A56' }}><p className="text-xs font-semibold mb-0.5" style={{ color: '#127A56' }}>{replyMsg.sender === 'me' ? 'You' : 'Contact'}</p><p className="text-xs truncate" style={{ color: '#5A6168' }}>{replyMsg.text.length > 60 ? replyMsg.text.slice(0, 60) + '…' : replyMsg.text}</p></div>)}
