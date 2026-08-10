@@ -9,7 +9,7 @@ export default function ReturnsCampaigns() {
   const start = async (t: CT) => { setLoading(p => ({ ...p, [t]: true })); try { const ok = await startReturns(t); setStatus(ok ? `Started ${cap(t)}` : `Failed ${t}`); } catch { setStatus(`Failed ${t}`); } finally { setLoading(p => ({ ...p, [t]: false })); } };
   const stop = async (t: CT) => { setLoading(p => ({ ...p, [t]: true })); try { const ok = await stopReturns(t); setStatus(ok ? `Stopped ${cap(t)}` : `Failed ${t}`); } catch { setStatus(`Failed ${t}`); } finally { setLoading(p => ({ ...p, [t]: false })); } };
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-6 space-y-6 h-full overflow-y-auto">
       <h2 className="text-2xl font-bold">Returns Campaigns</h2>
       {status && <div className={`px-4 py-3 rounded text-sm font-medium ${status.startsWith('Started') || status.startsWith('Stopped') ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'}`}>{status}</div>}
       <div className="space-y-3">
