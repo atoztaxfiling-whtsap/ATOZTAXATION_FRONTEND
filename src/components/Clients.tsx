@@ -7,7 +7,7 @@ export default function Clients() {
   useEffect(() => { setLoading(true); fetchClients().then(setClients).catch(() => {}).finally(() => setLoading(false)); }, []);
   const filtered = clients.filter(c => { const m = (c.name?.toLowerCase().includes(search.toLowerCase()) || c.mobile.includes(search) || c.business?.toLowerCase().includes(search.toLowerCase())); return m && (filter === "all" || c.sheet === filter); });
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-6 space-y-6 h-full overflow-y-auto">
       <div className="flex items-center justify-between"><div><h2 className="text-2xl font-bold">Clients</h2><p className="text-slate-600 mt-1">ATOZ Taxation client database</p></div><div className="flex items-center gap-2 px-4 py-2 bg-green-50 rounded-lg"><User className="w-5 h-5 text-green-600" /><span className="text-sm font-medium text-green-600">{clients.length} Total</span></div></div>
       <div className="bg-white rounded-xl p-4 border"><div className="flex flex-col sm:flex-row gap-4"><div className="flex-1 relative"><Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" /><input type="text" placeholder="Search clients..." value={search} onChange={e => setSearch(e.target.value)} className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500" /></div><select value={filter} onChange={e => setFilter(e.target.value)} className="px-4 py-2 border rounded-lg"><option value="all">All Services</option><option value="GST">GST</option><option value="IT">IT</option></select></div></div>
       {loading ? <div className="flex justify-center py-20"><div className="animate-spin rounded-full h-10 w-10 border-b-2 border-green-600" /></div> :
