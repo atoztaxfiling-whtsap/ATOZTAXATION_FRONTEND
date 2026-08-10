@@ -10,7 +10,15 @@ async function api(path: string, opt: RequestInit = {}): Promise<any> {
   if (opt.body instanceof FormData) delete headers["Content-Type"];
   const res = await fetch(`${API_BASE}${path}`, { ...opt, headers });
   if (res.status === 403) { clearToken(); throw new Error("UNAUTHORIZED"); }
-  if (!res.ok) { const t = await res.text().catch(() => ""); throw new Error(t || `Server error: ${res.status}`); }
+  if (!res.ok) {
+    const t = await res.text().catch(() => "");
+    let msg = t || `Server error: ${res.status}`;
+    let windowClosed = false;
+    try { const j = JSON.parse(t); if (j?.error) msg = j.error; if (j?.window_closed) windowClosed = true; } catch { /* plain text */ }
+    const err = new Error(msg) as Error & { windowClosed?: boolean };
+    err.windowClosed = windowClosed;
+    throw err;
+  }
   return res.json();
 }
 
@@ -82,4 +90,55 @@ export async function fetchContact(mobile: string): Promise<Contact | null> {
 export async function saveContactName(mobile: string, name: string): Promise<boolean> {
   const j = await api(`/api/contact/${encodeURIComponent(mobile)}/name`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name }) });
   return j?.ok === true;
+}
+
+/* ---- Human takeover: bot ko is chat me chup karana / wapas chalu karna ---- */
+export interface BotPause { paused: boolean; until: string; }
+
+export async function fetchBotPause(mobile: string): Promise<BotPause> {
+  try { return await api(`/api/bot-pause/${encodeURIComponent(mobile)}`); }
+  catch (e) { if ((e as Error).message === "UNAUTHORIZED") throw e; return { paused: false, until: "" }; }
+}
+
+export async function setBotPause(mobile: string, paused: boolean): Promise<BotPause> {
+  return await api(`/api/bot-pause/${encodeURIComponent(mobile)}`, {
+    method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ paused }),
+  });
+}
+
+/* ---- Approved templates (jab 24hr window band ho) ---- */
+export interface Template { name: string; sid: string; preview: string; }
+
+export async function fetchTemplates(): Promise<Template[]> {
+  try { const j = await api("/chat/api/templates"); return j?.data || []; }
+  catch (e) { if ((e as Error).message === "UNAUTHORIZED") throw e; return []; }
+}
+
+export async function sendTemplate(mobile: string, contentSid: string, preview: string): Promise<boolean> {
+  const j = await api("/chat/api/send_template", {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ mobile, content_sid: contentSid, preview }),
+  });
+  return j?.success === true;
+}
+
+/* ---- Bot ki galti flag karo ---- */
+export async function flagBotReply(mobile: string, text: string, note = ""): Promise<boolean> {
+  const j = await api("/api/flag", {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ mobile, text, note }),
+  });
+  return j?.ok === true;
+}
+
+/* ---- Push notification diagnostics ---- */
+export interface PushStatus { vapid_key_set: boolean; saved_subscriptions: number; }
+
+export async function fetchPushStatus(): Promise<PushStatus | null> {
+  try { return await api("/api/push-status"); }
+  catch (e) { if ((e as Error).message === "UNAUTHORIZED") throw e; return null; }
+}
+
+export async function sendPushTest(): Promise<any> {
+  return await api("/api/push-test", { method: "POST" });
 }
