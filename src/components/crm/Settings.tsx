@@ -1,28 +1,88 @@
 /* Staff + Services — dono ek hi screen pe, tabs me */
 import { useState } from "react";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, Download } from "lucide-react";
 import { useCrm } from "../../services/crmStore";
 import {
   createStaff, updateStaff, deleteStaff, restoreStaff,
   createService, updateService, deleteService, restoreService,
+  runBackup, backupBase, type BackupInfo,
 } from "../../services/crmApi";
 import { money, type Staff, type Service } from "../../services/crmLogic";
 import { Avatar, Panel, PageHead, Btn, Modal, Field, Row2, TextInput, SelectInput } from "./ui";
 
 export default function Settings() {
-  const [tab, setTab] = useState<"staff" | "services">("staff");
+  const [tab, setTab] = useState<"staff" | "services" | "backup">("staff");
   return (
     <div className="h-full overflow-y-auto bg-[#F6F5F1] p-5 md:p-7">
-      <PageHead title="Setup" sub="Team aur services — yahan se badlo, deploy ki zaroorat nahi" />
+      <PageHead title="Setup" sub="Team, services aur backup" />
       <div className="flex gap-1.5 mb-4">
-        {(["staff", "services"] as const).map(k => (
+        {(["staff", "services", "backup"] as const).map(k => (
           <button key={k} onClick={() => setTab(k)}
             className={`px-3.5 py-1.5 rounded-full text-[12.5px] font-medium border capitalize ${tab === k ? "bg-[#1C1E1B] text-white border-[#1C1E1B]" : "bg-white text-[#6B6F68] border-[#E6E4DD]"}`}>{k}</button>
         ))}
       </div>
-      {tab === "staff" ? <StaffList /> : <ServiceList />}
+      {tab === "staff" ? <StaffList /> : tab === "services" ? <ServiceList /> : <BackupPanel />}
       <div className="h-8" />
     </div>
+  );
+}
+
+function BackupPanel() {
+  const [info, setInfo] = useState<BackupInfo | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+
+  async function run() {
+    setBusy(true); setErr("");
+    try { setInfo(await runBackup()); }
+    catch (e) { setErr((e as Error).message); }
+    finally { setBusy(false); }
+  }
+
+  const kb = (n: number) => `${Math.round(n / 1024)} KB`;
+
+  return (
+    <>
+      <div className="text-[12.5px] text-[#6B6F68] mb-3 leading-relaxed">
+        Har mahine ki <b>1 tareekh subah 7 baje</b> backup apne aap ban jaata hai aur
+        tumhare WhatsApp pe download link aa jaati hai. Yahan se kabhi bhi turant bhi le sakte ho.
+      </div>
+      <Btn variant="primary" onClick={run} disabled={busy}>
+        <Download className="w-3.5 h-3.5" />{busy ? "Ban raha hai..." : "Backup abhi lo"}
+      </Btn>
+
+      {err && <div className="bg-[#FCEBEB] text-[#501313] text-[12.5px] rounded-lg px-3 py-2 mt-3">{err}</div>}
+
+      {info && (
+        <div className="mt-4">
+          <Panel head={<h3 className="text-[13.5px] font-semibold">{info.name} · {info.generated_at}</h3>}>
+            <div className="px-4 py-3 grid grid-cols-2 sm:grid-cols-3 gap-2 text-[12.5px]">
+              {Object.entries(info.counts).map(([k, v]) => (
+                <div key={k} className="flex justify-between gap-2 border-b border-[#E6E4DD] pb-1">
+                  <span className="text-[#6B6F68] capitalize">{k.replace("_", " ")}</span>
+                  <span className="font-mono font-semibold">{v}</span>
+                </div>
+              ))}
+            </div>
+            <div className="px-4 py-3 flex flex-col sm:flex-row gap-2 border-t border-[#E6E4DD]">
+              <a href={backupBase() + info.xlsx_url} target="_blank" rel="noreferrer"
+                className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#1C1E1B] text-white text-[13px] font-medium">
+                <Download className="w-3.5 h-3.5" />Excel ({kb(info.xlsx_size)})
+              </a>
+              <a href={backupBase() + info.json_url} target="_blank" rel="noreferrer"
+                className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-lg bg-white border border-[#E6E4DD] text-[13px] font-medium">
+                <Download className="w-3.5 h-3.5" />Full data / restore file ({kb(info.json_size)})
+              </a>
+            </div>
+            <div className="px-4 pb-3 text-[11.5px] text-[#9BA098] leading-relaxed">
+              Excel padhne ke liye hai — usme passwords nahi hote, isliye wo WhatsApp pe bhejna safe hai.
+              Doosri file me sab kuch hota hai (passwords bhi) — usse database kabhi kharab ho to
+              poora data wapas laya ja sakta hai. Dono link 7 din chalte hain.
+            </div>
+          </Panel>
+        </div>
+      )}
+    </>
   );
 }
 
