@@ -142,3 +142,11 @@ export async function fetchPushStatus(): Promise<PushStatus | null> {
 export async function sendPushTest(): Promise<any> {
   return await api("/api/push-test", { method: "POST" });
 }
+
+/* ---- Bheje gaye messages ka status (tick ke liye) ---- */
+export interface MsgStatus { sid: string; body: string; status: string; error: string; ts: number; }
+
+export async function fetchMsgStatuses(mobile: string): Promise<MsgStatus[]> {
+  try { const j = await api(`/api/statuses?mobile=${encodeURIComponent(mobile)}`); return j?.data || []; }
+  catch (e) { if ((e as Error).message === "UNAUTHORIZED") throw e; return []; }
+}
