@@ -25,6 +25,7 @@ export default function ChatWindow({ selectedMobile, threads, messages, messages
   const [showInfo, setShowInfo] = useState(false);
   const [srch, setSrch] = useState<string | null>(null);
   const [botPaused, setBotPausedState] = useState(false);
+  const [pausedUntil, setPausedUntil] = useState('');
   const [pauseBusy, setPauseBusy] = useState(false);
   const [showTemplates, setShowTemplates] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
@@ -40,10 +41,10 @@ export default function ChatWindow({ selectedMobile, threads, messages, messages
   useEffect(() => {
     if (!selectedMobile) { setBotPausedState(false); return; }
     let live = true;
-    fetchBotPause(selectedMobile).then(p => { if (live) setBotPausedState(!!p.paused); }).catch(() => {});
+    fetchBotPause(selectedMobile).then(p => { if (live) { setBotPausedState(!!p.paused); setPausedUntil(p.until || ''); } }).catch(() => {});
     return () => { live = false; };
   }, [selectedMobile]);
-  useEffect(() => { if (!toast) return; const t = setTimeout(() => setToast(null), 3000); return () => clearTimeout(t); }, [toast]);
+  useEffect(() => { if (!toast) return; const t = setTimeout(() => setToast(null), 5000); return () => clearTimeout(t); }, [toast]);
   useEffect(() => { if (!sendErr) return; const t = setTimeout(() => setSendErr(null), 4000); return () => clearTimeout(t); }, [sendErr]);
 
   const afterStaffSend = () => { setBotPausedState(true); scrollBottom(); };
@@ -71,7 +72,7 @@ export default function ChatWindow({ selectedMobile, threads, messages, messages
   const toggleBot = async () => {
     if (!selectedMobile || pauseBusy) return;
     setPauseBusy(true);
-    try { const r = await setBotPause(selectedMobile, !botPaused); setBotPausedState(!!r.paused); }
+    try { const r = await setBotPause(selectedMobile, !botPaused); setBotPausedState(!!r.paused); setPausedUntil(r.until || ''); }
     catch { setToast('Nahi ho paya, dubara try karo'); }
     finally { setPauseBusy(false); }
   };
@@ -130,7 +131,7 @@ export default function ChatWindow({ selectedMobile, threads, messages, messages
       {botPaused && (
         <div className="flex items-center gap-2 px-4 py-2 text-sm" style={{ background: '#FBF6E7', color: '#8A6D1A', borderBottom: '1px solid #EFE4C4' }}>
           <PowerOff size={15} className="flex-shrink-0" />
-          <span className="flex-1">Bot is chat me chup hai — aap khud handle kar rahe ho.</span>
+          <span className="flex-1">Bot is chat me chup hai, aap khud handle kar rahe ho{pausedUntil ? ` (${pausedUntil.slice(11, 16)} tak)` : ''}.</span>
           <button onClick={toggleBot} disabled={pauseBusy} className="font-semibold underline disabled:opacity-50" style={{ color: '#0C5C40' }}>Bot chalu karo</button>
         </div>
       )}
