@@ -208,3 +208,66 @@ export async function fetchCrmServices(): Promise<CrmService[]> {
   try { const j = await api("/api/crm/services"); return j?.data || []; }
   catch (e) { if ((e as Error).message === "UNAUTHORIZED") throw e; return []; }
 }
+
+/* ---- Filings — is period ka status, har client ka (board view) ---- */
+export interface FilingBoardRow {
+  client_id: string; name: string; mobile: string; assigned_to?: string | null;
+  business_name?: string | null; period_key?: string; status?: string;
+}
+
+export async function fetchFilingsBoard(cycle: "quarterly" | "monthly" | "defaulters"): Promise<FilingBoardRow[]> {
+  try { const j = await api(`/api/crm/filings/board?cycle=${cycle}`); return j?.data || []; }
+  catch (e) { if ((e as Error).message === "UNAUTHORIZED") throw e; return []; }
+}
+
+export async function markFiled(clientId: string, status = "Completed"): Promise<boolean> {
+  const j = await api("/api/crm/filings/mark-filed", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ client_id: clientId, status }) });
+  return !!j.data;
+}
+
+/* ---- Ledger — client ka poora due/paid/balance, period-wise ---- */
+export interface LedgerRow { period_key: string; cycle: string; due: number; paid: number; balance: number; status: string; }
+export interface ClientLedger {
+  rows: LedgerRow[]; total_balance: number; total_paid: number; cycle: string; current_period: string;
+  payments: Array<{ id: string; amount: number; paid_on: string; method?: string | null; reference?: string | null; note?: string | null }>;
+}
+
+export async function fetchClientLedger(clientId: string): Promise<ClientLedger | null> {
+  try { const j = await api(`/api/crm/clients/${clientId}/ledger`); return j?.data || null; }
+  catch (e) { if ((e as Error).message === "UNAUTHORIZED") throw e; return null; }
+}
+
+/* ---- Payments ---- */
+export interface CrmPayment { id: string; client_id: string; amount: number; paid_on: string; method?: string | null; reference?: string | null; note?: string | null; }
+
+export async function createPayment(data: { client_id: string; amount: number; method?: string; reference?: string; note?: string }): Promise<CrmPayment> {
+  const j = await api("/api/crm/payments", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) });
+  return j.data;
+}
+
+export async function deletePayment(id: string): Promise<boolean> {
+  const j = await api(`/api/crm/payments/${id}`, { method: "DELETE" });
+  return !!j.data;
+}
+
+export async function restorePayment(id: string): Promise<boolean> {
+  const j = await api(`/api/crm/payments/${id}/restore`, { method: "POST" });
+  return !!j.data;
+}
+
+export interface PaymentsSummary { collected: number; pending: number; clients_with_balance: number; }
+
+export async function fetchPaymentsSummary(): Promise<PaymentsSummary> {
+  try { const j = await api("/api/crm/payments/summary"); return j?.data || { collected: 0, pending: 0, clients_with_balance: 0 }; }
+  catch (e) { if ((e as Error).message === "UNAUTHORIZED") throw e; return { collected: 0, pending: 0, clients_with_balance: 0 }; }
+}
+
+export interface PaymentBoardRow {
+  client_id: string; name: string; mobile: string; assigned_to?: string | null;
+  business_name?: string | null; total_paid: number; balance: number;
+}
+
+export async function fetchPaymentsBoard(): Promise<PaymentBoardRow[]> {
+  try { const j = await api("/api/crm/payments/board"); return j?.data || []; }
+  catch (e) { if ((e as Error).message === "UNAUTHORIZED") throw e; return []; }
+}
