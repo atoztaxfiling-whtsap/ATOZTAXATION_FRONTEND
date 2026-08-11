@@ -78,3 +78,11 @@ export const restoreService = (id: string) => req(`/services/${id}/restore`, { m
 
 /* ---------- Audit ---------- */
 export const fetchAuditLog = (q = "") => req(`/audit-log${q}`).then(r => r.data || []);
+
+/* ---------- Backup ---------- */
+export interface BackupInfo {
+  name: string; generated_at: string; counts: Record<string, number>;
+  xlsx_size: number; json_size: number; xlsx_url: string; json_url: string;
+}
+export const runBackup = (): Promise<BackupInfo> => req("/backup/run", { method: "POST" }).then(r => r.data);
+export const backupBase = () => API_BASE;
