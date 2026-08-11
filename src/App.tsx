@@ -1,350 +1,72 @@
-const API_BASE = import.meta.env.VITE_API_URL;
-
-export function getToken(): string { return localStorage.getItem("console_token") || ""; }
-export function setToken(t: string) { localStorage.setItem("console_token", t); }
-export function clearToken() { localStorage.removeItem("console_token"); }
-export function hasToken(): boolean { return !!getToken(); }
-
-async function api(path: string, opt: RequestInit = {}): Promise<any> {
-  const headers: Record<string, string> = { "X-Console-Token": getToken(), ...(opt.headers as Record<string, string> || {}) };
-  if (opt.body instanceof FormData) delete headers["Content-Type"];
-  const res = await fetch(`${API_BASE}${path}`, { ...opt, headers });
-  if (res.status === 403) { clearToken(); throw new Error("UNAUTHORIZED"); }
-  if (!res.ok) {
-    const t = await res.text().catch(() => "");
-    let msg = t || `Server error: ${res.status}`;
-    let windowClosed = false;
-    try { const j = JSON.parse(t); if (j?.error) msg = j.error; if (j?.window_closed) windowClosed = true; } catch { /* plain text */ }
-    const err = new Error(msg) as Error & { windowClosed?: boolean };
-    err.windowClosed = windowClosed;
-    throw err;
-  }
-  return res.json();
-}
-
-export interface Client { name: string; mobile: string; business: string; service: string; sheet: string; }
-export interface DailySummary { totalMessages: number; totalClients: number; docsReceived: number; returnsSent: number; responseRate: number; }
-
-export async function fetchDailySummary(): Promise<DailySummary> {
-  try { return await api("/api/summary"); }
-  catch (e) { if ((e as Error).message === "UNAUTHORIZED") throw e; return { totalMessages: 0, totalClients: 0, docsReceived: 0, returnsSent: 0, responseRate: 0 }; }
-}
-
-export async function fetchClients(): Promise<Client[]> {
-  try { return await api("/api/clients"); } catch (e) { if ((e as Error).message === "UNAUTHORIZED") throw e; return []; }
-}
-
-export async function fetchChatThreads() {
-  try { const j = await api("/chat/api/threads"); return j?.data || []; }
-  catch (e) { if ((e as Error).message === "UNAUTHORIZED") throw e; return []; }
-}
-
-export async function fetchChatThread(mobile: string) {
-  try { const j = await api(`/chat/api/thread?mobile=${encodeURIComponent(mobile)}`); return j?.data || []; }
-  catch (e) { if ((e as Error).message === "UNAUTHORIZED") throw e; return []; }
-}
-
-export async function sendChatMessage(mobile: string, message: string): Promise<boolean> {
-  const j = await api("/chat/api/send", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ mobile, message }) });
-  return j?.success === true;
-}
-
-export async function uploadFile(file: File): Promise<string> {
-  const fd = new FormData(); fd.append("file", file);
-  const j = await api("/chat/api/upload", { method: "POST", body: fd });
-  if (!j?.success || !j?.url) throw new Error("Upload failed");
-  return j.url;
-}
-
-export async function sendChatDocument(mobile: string, file: File, caption?: string): Promise<boolean> {
-  const url = await uploadFile(file);
-  const j = await api("/chat/api/send_media", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ mobile, media_url: url, caption: caption || "" }) });
-  return j?.success === true;
-}
-
-export async function forwardMessage(toMobile: string, text: string, mediaUrl?: string): Promise<boolean> {
-  const body: any = { to_mobile: toMobile, text };
-  if (mediaUrl) body.media_url = mediaUrl;
-  const j = await api("/chat/api/forward", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
-  return j?.success === true;
-}
-
-export async function startReturns(type: "monthly" | "quarterly") {
-  try { await api(`/returns/start/${type}`); return true; } catch (e) { if ((e as Error).message === "UNAUTHORIZED") throw e; return false; }
-}
-export async function stopReturns(type: "monthly" | "quarterly") {
-  try { await api(`/returns/stop/${type}`); return true; } catch (e) { if ((e as Error).message === "UNAUTHORIZED") throw e; return false; }
-}
-
-export interface Contact {
-  mobile: string; name: string; business: string; service: string; fee: string;
-  workflow: { status: string; docs_received: string; docs_pending: string; notes: string };
-  payment: { status: string; due: string };
-}
-
-export async function fetchContact(mobile: string): Promise<Contact | null> {
-  try { return await api(`/api/contact/${encodeURIComponent(mobile)}`); }
-  catch (e) { if ((e as Error).message === "UNAUTHORIZED") throw e; return null; }
-}
-
-export async function saveContactName(mobile: string, name: string): Promise<boolean> {
-  const j = await api(`/api/contact/${encodeURIComponent(mobile)}/name`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name }) });
-  return j?.ok === true;
-}
-
-/* ---- Human takeover: bot ko is chat me chup karana / wapas chalu karna ---- */
-export interface BotPause { paused: boolean; until: string; }
-
-export async function fetchBotPause(mobile: string): Promise<BotPause> {
-  try { return await api(`/api/bot-pause/${encodeURIComponent(mobile)}`); }
-  catch (e) { if ((e as Error).message === "UNAUTHORIZED") throw e; return { paused: false, until: "" }; }
-}
-
-export async function setBotPause(mobile: string, paused: boolean): Promise<BotPause> {
-  return await api(`/api/bot-pause/${encodeURIComponent(mobile)}`, {
-    method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ paused }),
-  });
-}
-
-/* ---- Approved templates (jab 24hr window band ho) ---- */
-export interface Template { name: string; sid: string; preview: string; }
-
-export async function fetchTemplates(): Promise<Template[]> {
-  try { const j = await api("/chat/api/templates"); return j?.data || []; }
-  catch (e) { if ((e as Error).message === "UNAUTHORIZED") throw e; return []; }
-}
-
-export async function sendTemplate(mobile: string, contentSid: string, preview: string): Promise<boolean> {
-  const j = await api("/chat/api/send_template", {
-    method: "POST", headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ mobile, content_sid: contentSid, preview }),
-  });
-  return j?.success === true;
-}
-
-/* ---- Bot ki galti flag karo ---- */
-export async function flagBotReply(mobile: string, text: string, note = ""): Promise<boolean> {
-  const j = await api("/api/flag", {
-    method: "POST", headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ mobile, text, note }),
-  });
-  return j?.ok === true;
-}
-
-/* ---- Push notification diagnostics ---- */
-export interface PushStatus { vapid_key_set: boolean; saved_subscriptions: number; }
-
-export async function fetchPushStatus(): Promise<PushStatus | null> {
-  try { return await api("/api/push-status"); }
-  catch (e) { if ((e as Error).message === "UNAUTHORIZED") throw e; return null; }
-}
-
-export async function sendPushTest(): Promise<any> {
-  return await api("/api/push-test", { method: "POST" });
-}
-
-/* ---- Bheje gaye messages ka status (tick ke liye) ---- */
-export interface MsgStatus { sid: string; body: string; status: string; error: string; ts: number; }
-
-export async function fetchMsgStatuses(mobile: string): Promise<MsgStatus[]> {
-  try { const j = await api(`/api/statuses?mobile=${encodeURIComponent(mobile)}`); return j?.data || []; }
-  catch (e) { if ((e as Error).message === "UNAUTHORIZED") throw e; return []; }
-}
-
-/* ================================================================
-   CRM (Supabase-backed) — clients / staff / services add-edit-delete
-   ================================================================ */
-
-export interface CrmClient {
-  id: string;
-  mobile: string;
-  name: string;
-  business_name?: string | null;
-  gstin?: string | null;
-  assigned_to?: string | null;
-  filing_mode?: string;
-  primary_service?: string | null;
-  language?: string;
-  source?: string;
-  notes?: string | null;
-  is_active: boolean;
-  created_at: string;
-}
-
-export interface CrmStaff { id: string; name: string; email?: string | null; phone?: string | null; role: string; is_active: boolean; }
-export interface CrmService { id: string; name: string; default_fee?: number | null; min_fee?: number | null; }
-
-export async function fetchCrmClients(q = ""): Promise<CrmClient[]> {
-  try { const j = await api(`/api/crm/clients${q ? `?q=${encodeURIComponent(q)}` : ""}`); return j?.data || []; }
-  catch (e) { if ((e as Error).message === "UNAUTHORIZED") throw e; return []; }
-}
-
-export async function createCrmClient(data: Partial<CrmClient>): Promise<CrmClient> {
-  const j = await api("/api/crm/clients", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) });
-  return j.data;
-}
-
-export async function updateCrmClient(id: string, data: Partial<CrmClient>): Promise<CrmClient> {
-  const j = await api(`/api/crm/clients/${id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) });
-  return j.data;
-}
-
-export async function deleteCrmClient(id: string): Promise<boolean> {
-  const j = await api(`/api/crm/clients/${id}`, { method: "DELETE" });
-  return !!j.data;
-}
-
-export async function restoreCrmClient(id: string): Promise<boolean> {
-  const j = await api(`/api/crm/clients/${id}/restore`, { method: "POST" });
-  return !!j.data;
-}
-
-export async function fetchCrmStaff(): Promise<CrmStaff[]> {
-  try { const j = await api("/api/crm/staff"); return j?.data || []; }
-  catch (e) { if ((e as Error).message === "UNAUTHORIZED") throw e; return []; }
-}
-
-export async function createCrmStaff(data: { name: string; email?: string; phone?: string; role?: string }): Promise<CrmStaff> {
-  const j = await api("/api/crm/staff", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) });
-  return j.data;
-}
-
-export async function updateCrmStaff(id: string, data: Partial<CrmStaff>): Promise<CrmStaff> {
-  const j = await api(`/api/crm/staff/${id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) });
-  return j.data;
-}
-
-export async function deleteCrmStaff(id: string): Promise<boolean> {
-  const j = await api(`/api/crm/staff/${id}`, { method: "DELETE" });
-  return !!j.data;
-}
-
-export async function restoreCrmStaff(id: string): Promise<boolean> {
-  const j = await api(`/api/crm/staff/${id}/restore`, { method: "POST" });
-  return !!j.data;
-}
-
-export async function fetchCrmServices(): Promise<CrmService[]> {
-  try { const j = await api("/api/crm/services"); return j?.data || []; }
-  catch (e) { if ((e as Error).message === "UNAUTHORIZED") throw e; return []; }
-}
-
-export async function createCrmService(data: { name: string; default_fee?: number; min_fee?: number; note?: string }): Promise<CrmService> {
-  const j = await api("/api/crm/services", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) });
-  return j.data;
-}
-
-export async function updateCrmService(id: string, data: Partial<CrmService> & { note?: string }): Promise<CrmService> {
-  const j = await api(`/api/crm/services/${id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) });
-  return j.data;
-}
-
-export async function deleteCrmService(id: string): Promise<boolean> {
-  const j = await api(`/api/crm/services/${id}`, { method: "DELETE" });
-  return !!j.data;
-}
-
-export async function restoreCrmService(id: string): Promise<boolean> {
-  const j = await api(`/api/crm/services/${id}/restore`, { method: "POST" });
-  return !!j.data;
-}
-
-/* ---- Registrations — naye GST case, complete hote hi client banao ---- */
-export interface CrmRegistration {
-  id: string; mobile?: string | null; name: string; business_name?: string | null; trn?: string | null;
-  status: string; fee_quoted?: number | null; fee_agreed?: number | null; assigned_to?: string | null;
-  comment?: string | null; converted_client_id?: string | null; is_active: boolean;
-}
-
-export async function fetchCrmRegistrations(): Promise<CrmRegistration[]> {
-  try { const j = await api("/api/crm/registrations"); return j?.data || []; }
-  catch (e) { if ((e as Error).message === "UNAUTHORIZED") throw e; return []; }
-}
-
-export async function createCrmRegistration(data: Partial<CrmRegistration>): Promise<CrmRegistration> {
-  const j = await api("/api/crm/registrations", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) });
-  return j.data;
-}
-
-export async function updateCrmRegistration(id: string, data: Partial<CrmRegistration>): Promise<CrmRegistration> {
-  const j = await api(`/api/crm/registrations/${id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) });
-  return j.data;
-}
-
-export async function deleteCrmRegistration(id: string): Promise<boolean> {
-  const j = await api(`/api/crm/registrations/${id}`, { method: "DELETE" });
-  return !!j.data;
-}
-
-export async function restoreCrmRegistration(id: string): Promise<boolean> {
-  const j = await api(`/api/crm/registrations/${id}/restore`, { method: "POST" });
-  return !!j.data;
-}
-
-export async function convertRegistration(id: string, data: { mobile?: string; name?: string; business_name?: string; assigned_to?: string; filing_mode?: string; primary_service?: string }): Promise<CrmClient> {
-  const j = await api(`/api/crm/registrations/${id}/convert`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) });
-  return j.data;
-}
-
-/* ---- Filings — is period ka status, har client ka (board view) ---- */
-export interface FilingBoardRow {
-  client_id: string; name: string; mobile: string; assigned_to?: string | null;
-  business_name?: string | null; period_key?: string; status?: string;
-}
-
-export async function fetchFilingsBoard(cycle: "quarterly" | "monthly" | "defaulters"): Promise<FilingBoardRow[]> {
-  try { const j = await api(`/api/crm/filings/board?cycle=${cycle}`); return j?.data || []; }
-  catch (e) { if ((e as Error).message === "UNAUTHORIZED") throw e; return []; }
-}
-
-export async function markFiled(clientId: string, status = "Completed"): Promise<boolean> {
-  const j = await api("/api/crm/filings/mark-filed", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ client_id: clientId, status }) });
-  return !!j.data;
-}
-
-/* ---- Ledger — client ka poora due/paid/balance, period-wise ---- */
-export interface LedgerRow { period_key: string; cycle: string; due: number; paid: number; balance: number; status: string; }
-export interface ClientLedger {
-  rows: LedgerRow[]; total_balance: number; total_paid: number; cycle: string; current_period: string;
-  payments: Array<{ id: string; amount: number; paid_on: string; method?: string | null; reference?: string | null; note?: string | null }>;
-}
-
-export async function fetchClientLedger(clientId: string): Promise<ClientLedger | null> {
-  try { const j = await api(`/api/crm/clients/${clientId}/ledger`); return j?.data || null; }
-  catch (e) { if ((e as Error).message === "UNAUTHORIZED") throw e; return null; }
-}
-
-/* ---- Payments ---- */
-export interface CrmPayment { id: string; client_id: string; amount: number; paid_on: string; method?: string | null; reference?: string | null; note?: string | null; }
-
-export async function createPayment(data: { client_id: string; amount: number; method?: string; reference?: string; note?: string }): Promise<CrmPayment> {
-  const j = await api("/api/crm/payments", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) });
-  return j.data;
-}
-
-export async function deletePayment(id: string): Promise<boolean> {
-  const j = await api(`/api/crm/payments/${id}`, { method: "DELETE" });
-  return !!j.data;
-}
-
-export async function restorePayment(id: string): Promise<boolean> {
-  const j = await api(`/api/crm/payments/${id}/restore`, { method: "POST" });
-  return !!j.data;
-}
-
-export interface PaymentsSummary { collected: number; pending: number; clients_with_balance: number; }
-
-export async function fetchPaymentsSummary(): Promise<PaymentsSummary> {
-  try { const j = await api("/api/crm/payments/summary"); return j?.data || { collected: 0, pending: 0, clients_with_balance: 0 }; }
-  catch (e) { if ((e as Error).message === "UNAUTHORIZED") throw e; return { collected: 0, pending: 0, clients_with_balance: 0 }; }
-}
-
-export interface PaymentBoardRow {
-  client_id: string; name: string; mobile: string; assigned_to?: string | null;
-  business_name?: string | null; total_paid: number; balance: number;
-}
-
-export async function fetchPaymentsBoard(): Promise<PaymentBoardRow[]> {
-  try { const j = await api("/api/crm/payments/board"); return j?.data || []; }
-  catch (e) { if ((e as Error).message === "UNAUTHORIZED") throw e; return []; }
+import { useState, useEffect } from "react";
+import { LayoutDashboard, MessageCircle, Users, FileText, MoreHorizontal } from "lucide-react";
+import Dashboard from "./components/Dashboard";
+import Chat from "./components/Chat";
+import Clients from "./components/Clients";
+import Filings from "./components/Filings";
+import More from "./components/More";
+import TokenLogin from "./components/TokenLogin";
+import { hasToken, clearToken } from "./services/api";
+import { setupPushNotifications } from "./services/push";
+
+type Tab = "dashboard" | "chat" | "clients" | "filings" | "more";
+
+const NAV: Array<{ key: Tab; label: string; icon: JSX.Element }> = [
+  { key: "chat", label: "Chat", icon: <MessageCircle className="w-5 h-5" /> },
+  { key: "dashboard", label: "Home", icon: <LayoutDashboard className="w-5 h-5" /> },
+  { key: "clients", label: "Clients", icon: <Users className="w-5 h-5" /> },
+  { key: "filings", label: "Filings", icon: <FileText className="w-5 h-5" /> },
+  { key: "more", label: "More", icon: <MoreHorizontal className="w-5 h-5" /> },
+];
+
+export default function App() {
+  const [tab, setTab] = useState<Tab>("chat");
+  const [isMobile, setIsMobile] = useState(false);
+  const [auth, setAuth] = useState(hasToken());
+
+  useEffect(() => { const c = () => setIsMobile(window.innerWidth < 768); c(); window.addEventListener("resize", c); return () => window.removeEventListener("resize", c); }, []);
+  useEffect(() => { const h = () => setAuth(false); window.addEventListener("auth-failed", h); return () => window.removeEventListener("auth-failed", h); }, []);
+  useEffect(() => { if (auth) setupPushNotifications().catch(() => {}); }, [auth]);
+
+  if (!auth) return <TokenLogin onSuccess={() => setAuth(true)} />;
+
+  return (
+    <div className="h-screen w-full bg-[#FBFBF9] overflow-hidden flex">
+      {!isMobile && (
+        <div className="w-56 bg-white border-r flex flex-col">
+          <div className="p-4 font-bold border-b text-green-700 text-lg">ATOZ Taxation</div>
+          {NAV.map(n => (
+            <button key={n.key} onClick={() => setTab(n.key)} className={`p-3 flex items-center gap-3 text-left transition text-base ${tab === n.key ? "bg-green-50 text-green-700 font-semibold" : "hover:bg-slate-100"}`}>
+              {n.icon}{n.label}
+            </button>
+          ))}
+          <div className="mt-auto p-3 border-t">
+            <button onClick={() => { clearToken(); setAuth(false); }} className="w-full text-sm text-red-600 hover:bg-red-50 p-2 rounded transition">Logout</button>
+          </div>
+        </div>
+      )}
+
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <div className="flex-1 overflow-hidden">
+          {tab === "dashboard" && <Dashboard />}
+          {tab === "chat" && <Chat />}
+          {tab === "clients" && <Clients />}
+          {tab === "filings" && <Filings />}
+          {tab === "more" && <More />}
+        </div>
+
+        {isMobile && (
+          <div className="flex border-t border-[#E6E7E2] bg-white flex-shrink-0 pb-[env(safe-area-inset-bottom,4px)]">
+            {NAV.map(n => (
+              <button key={n.key} onClick={() => setTab(n.key)}
+                className={`flex-1 flex flex-col items-center gap-1 py-2.5 transition ${tab === n.key ? "text-green-700" : "text-slate-500"}`}>
+                {n.icon}
+                <span className="text-[11px] font-semibold">{n.label}</span>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }
