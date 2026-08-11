@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Reply, Check, CheckCheck, Download, Eye, X, Play, Share2, Flag } from 'lucide-react';
+import { Reply, Check, CheckCheck, Download, Eye, X, Play, Share2, Flag, AlertCircle } from 'lucide-react';
 import type { FlatMessage } from './chatTypes';
 
 interface Props { message: FlatMessage; onReply: (m: FlatMessage) => void; onForward: (m: FlatMessage) => void; onFlag?: (m: FlatMessage) => void; allMessages: FlatMessage[]; }
@@ -24,8 +24,9 @@ const EC: Record<string, string> = { pdf: '#e53e3e', doc: '#2b579a', docx: '#2b5
 
 async function dl(url: string, name: string) { try { const r = await fetch(url); const b = await r.blob(); const u = URL.createObjectURL(b); const a = document.createElement('a'); a.href = u; a.download = name; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(u); } catch { window.open(url, '_blank'); } }
 
-function Tick({ status }: { status?: 'sent'|'delivered'|'read' }) {
+function Tick({ status }: { status?: 'sent'|'delivered'|'read'|'failed' }) {
   if (!status) return null;
+  if (status === 'failed') return <AlertCircle size={14} style={{ color: '#c53030' }} className="inline ml-0.5 -mb-0.5" />;
   if (status === 'sent') return <Check size={14} style={{ color: '#5A6168' }} className="inline ml-0.5 -mb-0.5" />;
   if (status === 'delivered') return <CheckCheck size={14} style={{ color: '#5A6168' }} className="inline ml-0.5 -mb-0.5" />;
   return <CheckCheck size={14} style={{ color: '#127A56' }} className="inline ml-0.5 -mb-0.5" />;
@@ -81,7 +82,8 @@ export default function MessageBubble({ message, onReply, onForward, onFlag, all
           <div className="relative px-3 py-2 shadow-sm" style={{ background: isSent ? '#E7F2EC' : '#fff', borderRadius: isSent ? '12px 12px 0 12px' : '0 12px 12px 12px', minWidth: '72px', maxWidth: '100%' }}>
             {replyMsg && (<div className="mb-2 px-2 py-1.5 rounded-lg border-l-4" style={{ background: isSent ? 'rgba(0,0,0,0.05)' : '#F2F5F1', borderLeftColor: '#127A56' }}><p className="text-xs font-semibold mb-0.5" style={{ color: '#127A56' }}>{replyMsg.sender === 'me' ? 'You' : 'Contact'}</p><p className="text-xs truncate" style={{ color: '#5A6168' }}>{replyMsg.text.length > 60 ? replyMsg.text.slice(0, 60) + '…' : replyMsg.text}</p></div>)}
             {content()}
-            <div className="flex items-center justify-end gap-0.5 mt-1" style={{ minHeight: '16px' }}><span style={{ color: '#5A6168', fontSize: '11px' }}>{time}</span>{isSent && <Tick status={message.status} />}</div>
+            <div className="flex items-center justify-end gap-0.5 mt-1" style={{ minHeight: '16px' }}><span style={{ color: '#5A6168', fontSize: '11px' }}>{time}</span><Tick status={message.status} /></div>
+            {message.status === 'failed' && <div className="text-[11px] mt-0.5" style={{ color: '#c53030' }}>❗ Ye message client tak nahi pahuncha{message.statusError ? ` (${message.statusError})` : ''}</div>}
           </div>
         </div>
       </div>
