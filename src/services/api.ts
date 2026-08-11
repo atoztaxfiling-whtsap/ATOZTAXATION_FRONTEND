@@ -150,3 +150,61 @@ export async function fetchMsgStatuses(mobile: string): Promise<MsgStatus[]> {
   try { const j = await api(`/api/statuses?mobile=${encodeURIComponent(mobile)}`); return j?.data || []; }
   catch (e) { if ((e as Error).message === "UNAUTHORIZED") throw e; return []; }
 }
+
+/* ================================================================
+   CRM (Supabase-backed) — clients / staff / services add-edit-delete
+   ================================================================ */
+
+export interface CrmClient {
+  id: string;
+  mobile: string;
+  name: string;
+  business_name?: string | null;
+  gstin?: string | null;
+  assigned_to?: string | null;
+  filing_mode?: string;
+  primary_service?: string | null;
+  language?: string;
+  source?: string;
+  notes?: string | null;
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface CrmStaff { id: string; name: string; email?: string | null; phone?: string | null; role: string; is_active: boolean; }
+export interface CrmService { id: string; name: string; default_fee?: number | null; min_fee?: number | null; }
+
+export async function fetchCrmClients(q = ""): Promise<CrmClient[]> {
+  try { const j = await api(`/api/crm/clients${q ? `?q=${encodeURIComponent(q)}` : ""}`); return j?.data || []; }
+  catch (e) { if ((e as Error).message === "UNAUTHORIZED") throw e; return []; }
+}
+
+export async function createCrmClient(data: Partial<CrmClient>): Promise<CrmClient> {
+  const j = await api("/api/crm/clients", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) });
+  return j.data;
+}
+
+export async function updateCrmClient(id: string, data: Partial<CrmClient>): Promise<CrmClient> {
+  const j = await api(`/api/crm/clients/${id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) });
+  return j.data;
+}
+
+export async function deleteCrmClient(id: string): Promise<boolean> {
+  const j = await api(`/api/crm/clients/${id}`, { method: "DELETE" });
+  return !!j.data;
+}
+
+export async function restoreCrmClient(id: string): Promise<boolean> {
+  const j = await api(`/api/crm/clients/${id}/restore`, { method: "POST" });
+  return !!j.data;
+}
+
+export async function fetchCrmStaff(): Promise<CrmStaff[]> {
+  try { const j = await api("/api/crm/staff"); return j?.data || []; }
+  catch (e) { if ((e as Error).message === "UNAUTHORIZED") throw e; return []; }
+}
+
+export async function fetchCrmServices(): Promise<CrmService[]> {
+  try { const j = await api("/api/crm/services"); return j?.data || []; }
+  catch (e) { if ((e as Error).message === "UNAUTHORIZED") throw e; return []; }
+}
