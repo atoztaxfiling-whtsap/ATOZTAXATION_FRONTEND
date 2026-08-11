@@ -1,0 +1,155 @@
+/* Workflow — non-GST kaam (income tax, TDS, registrations, misc) */
+import { useState } from "react";
+import { Plus, Trash2 } from "lucide-react";
+import { useCrm } from "../../services/crmStore";
+import { createTask, updateTask, deleteTask, restoreTask } from "../../services/crmApi";
+import { TASK_CATEGORIES, TASK_STATUSES, money, type Task } from "../../services/crmLogic";
+import { Panel, PageHead, Btn, Scroller, Th, Td, EmptyRow, SelectInput, Modal, Field, Row2, TextInput, Pill, inlineSelect, inlineInput } from "./ui";
+
+export default function Workflow() {
+  const { tasks, clients, staff, reload, loading, toast } = useCrm();
+  const [cat, setCat] = useState("");
+  const [st, setSt] = useState("");
+  const [adding, setAdding] = useState(false);
+
+  const rows = tasks.filter(t => (!cat || t.category === cat) && (!st || t.status === st));
+
+  async function patch(t: Task, field: string, value: any) {
+    try { await updateTask(t.id, { [field]: value } as any); await reload(); }
+    catch (e) { alert((e as Error).message); }
+  }
+  async function remove(t: Task) {
+    if (!confirm(`"${t.name}" delete karna hai?`)) return;
+    await deleteTask(t.id);
+    toast("Task hata diya", async () => { await restoreTask(t.id); });
+    await reload();
+  }
+
+  return (
+    <div className="h-full overflow-y-auto bg-[#F6F5F1] p-5 md:p-7">
+      <PageHead title="Workflow" sub="Non-GST kaam — income tax, TDS, registration, misc"
+        actions={<Btn variant="primary" onClick={() => setAdding(true)}><Plus className="w-3.5 h-3.5" />New task</Btn>} />
+
+      <Panel head={<>
+        <h3 className="text-[13.5px] font-semibold">Tasks <span className="text-[#9BA098] font-normal">({rows.length})</span></h3>
+        <div className="flex gap-2 flex-wrap">
+          <SelectInput value={cat} onChange={e => setCat(e.target.value)} className="!w-auto !text-[12.5px] !py-1.5">
+            <option value="">All categories</option>{TASK_CATEGORIES.map(c => <option key={c}>{c}</option>)}
+          </SelectInput>
+          <SelectInput value={st} onChange={e => setSt(e.target.value)} className="!w-auto !text-[12.5px] !py-1.5">
+            <option value="">All statuses</option>{TASK_STATUSES.map(s => <option key={s}>{s}</option>)}
+          </SelectInput>
+        </div>
+      </>}>
+        <div className="hidden md:block">
+          <Scroller>
+            <thead><tr><Th>Received</Th><Th>Name</Th><Th>Linked client</Th><Th>Category</Th><Th>Status</Th><Th>Agreed</Th><Th>Paid</Th><Th>Assigned</Th><Th>Comments</Th><Th /></tr></thead>
+            <tbody>
+              {loading && <EmptyRow colSpan={10}>Load ho raha hai...</EmptyRow>}
+              {!loading && !rows.length && <EmptyRow colSpan={10}>Koi task nahi mila.</EmptyRow>}
+              {rows.map(t => {
+                const linked = t.client_id ? clients.find(c => c.id === t.client_id) : null;
+                return (
+                  <tr key={t.id} className="hover:bg-[#FBFAF7]">
+                    <Td className="font-mono text-[11.5px] text-[#9BA098] whitespace-nowrap">{t.received_date || "—"}</Td>
+                    <Td className="font-medium whitespace-nowrap">{t.name}</Td>
+                    <Td className="text-[12.5px] text-[#9BA098] whitespace-nowrap">{linked ? linked.name : "—"}</Td>
+                    <Td><Pill status="">{t.category || "Other"}</Pill></Td>
+                    <Td>
+                      <select className={inlineSelect} value={t.status} onChange={e => patch(t, "status", e.target.value)}>
+                        {TASK_STATUSES.map(s => <option key={s}>{s}</option>)}
+                      </select>
+                    </Td>
+                    <Td><input className={inlineInput} style={{ width: 70, minWidth: 70 }} type="number" defaultValue={t.fee_agreed || 0}
+                      onBlur={e => { if (Number(e.target.value) !== Number(t.fee_agreed)) patch(t, "fee_agreed", Number(e.target.value) || 0); }} /></Td>
+                    <Td><input className={inlineInput} style={{ width: 70, minWidth: 70 }} type="number" defaultValue={t.amount_paid || 0}
+                      onBlur={e => { if (Number(e.target.value) !== Number(t.amount_paid)) patch(t, "amount_paid", Number(e.target.value) || 0); }} /></Td>
+                    <Td>
+                      <select className={inlineSelect} value={t.assigned_to || ""} onChange={e => patch(t, "assigned_to", e.target.value)}>
+                        <option value="">—</option>{staff.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}
+                      </select>
+                    </Td>
+                    <Td><input className={inlineInput} defaultValue={t.comment || ""} placeholder="Note"
+                      onBlur={e => { if (e.target.value !== (t.comment || "")) patch(t, "comment", e.target.value); }} /></Td>
+                    <Td><button onClick={() => remove(t)} className="text-[#9BA098] hover:text-[#A32D2D]"><Trash2 className="w-3.5 h-3.5" /></button></Td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </Scroller>
+        </div>
+
+        <div className="md:hidden">
+          {!rows.length && <div className="px-4 py-5 text-[12.5px] text-[#9BA098]">Koi task nahi mila.</div>}
+          {rows.map(t => {
+            const bal = (Number(t.fee_agreed) || 0) - (Number(t.amount_paid) || 0);
+            return (
+              <div key={t.id} className="px-4 py-3 border-b border-[#E6E4DD] last:border-0">
+                <div className="flex items-start justify-between gap-2 mb-1.5">
+                  <div className="min-w-0"><div className="font-medium text-[13.5px] truncate">{t.name}</div>
+                    <div className="text-[11.5px] text-[#6B6F68]">{t.category} · {t.assigned_to || "—"} · {t.received_date}</div></div>
+                  <span className={`font-mono text-[12px] font-semibold ${bal > 0 ? "text-[#A32D2D]" : "text-[#0F6E56]"}`}>{bal > 0 ? money(bal) : "Clear"}</span>
+                </div>
+                <div className="flex gap-1.5 items-center">
+                  <select className={inlineSelect} value={t.status} onChange={e => patch(t, "status", e.target.value)}>
+                    {TASK_STATUSES.map(s => <option key={s}>{s}</option>)}
+                  </select>
+                  <button onClick={() => remove(t)} className="text-[#9BA098] ml-auto"><Trash2 className="w-4 h-4" /></button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </Panel>
+
+      {adding && <TaskModal onClose={() => setAdding(false)} />}
+      <div className="h-8" />
+    </div>
+  );
+}
+
+function TaskModal({ onClose }: { onClose: () => void }) {
+  const { clients, staff, reload, toast } = useCrm();
+  const [f, setF] = useState({ name: "", category: TASK_CATEGORIES[0], assigned_to: staff[0]?.name || "", client_id: "", fee_agreed: "", amount_paid: "", comment: "" });
+  const [saving, setSaving] = useState(false);
+  const set = (k: string, v: string) => setF(p => ({ ...p, [k]: v }));
+
+  async function save() {
+    if (!f.name.trim()) return;
+    setSaving(true);
+    try {
+      await createTask({
+        name: f.name.trim(), category: f.category, assigned_to: f.assigned_to || null,
+        client_id: f.client_id || null, fee_agreed: Number(f.fee_agreed) || 0,
+        amount_paid: Number(f.amount_paid) || 0, comment: f.comment || null, status: "Yet to Pick",
+      });
+      toast("Task add ho gaya"); await reload(); onClose();
+    } catch (e) { alert((e as Error).message); setSaving(false); }
+  }
+
+  return (
+    <Modal title="New task" sub="Non-GST kaam add karo" onClose={onClose}>
+      <Field label="Name / phone"><TextInput value={f.name} onChange={e => set("name", e.target.value)} placeholder="Client ya task ka naam" /></Field>
+      <Row2>
+        <Field label="Category"><SelectInput value={f.category} onChange={e => set("category", e.target.value)}>{TASK_CATEGORIES.map(c => <option key={c}>{c}</option>)}</SelectInput></Field>
+        <Field label="Assigned to"><SelectInput value={f.assigned_to} onChange={e => set("assigned_to", e.target.value)}>
+          <option value="">—</option>{staff.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}
+        </SelectInput></Field>
+      </Row2>
+      <Field label="Kisi client se jodo (optional)">
+        <SelectInput value={f.client_id} onChange={e => set("client_id", e.target.value)}>
+          <option value="">— koi nahi / walk-in —</option>{clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+        </SelectInput>
+      </Field>
+      <Row2>
+        <Field label="Amount agreed (₹)"><TextInput type="number" value={f.fee_agreed} onChange={e => set("fee_agreed", e.target.value)} placeholder="0" /></Field>
+        <Field label="Amount paid (₹)"><TextInput type="number" value={f.amount_paid} onChange={e => set("amount_paid", e.target.value)} placeholder="0" /></Field>
+      </Row2>
+      <Field label="Comment"><TextInput value={f.comment} onChange={e => set("comment", e.target.value)} placeholder="Optional note" /></Field>
+      <div className="flex gap-2 justify-end mt-4">
+        <Btn onClick={onClose}>Cancel</Btn>
+        <Btn variant="primary" onClick={save} disabled={saving}>{saving ? "Saving..." : "Add task"}</Btn>
+      </div>
+    </Modal>
+  );
+}
