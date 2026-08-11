@@ -1,6 +1,6 @@
 export interface Thread { mobile: string; name?: string; lastMessage?: string; timestamp?: string; unread?: number; }
 export interface BackendMessage { from: 'user' | 'bot'; text: string; time: string; }
-export interface FlatMessage { id: string; text: string; sender: 'me' | 'other'; timestamp: string; status?: 'sent' | 'delivered' | 'read'; replyToId?: string; isBot?: boolean; }
+export interface FlatMessage { id: string; text: string; sender: 'me' | 'other'; timestamp: string; status?: 'sent' | 'delivered' | 'read' | 'failed'; statusError?: string; replyToId?: string; isBot?: boolean; }
 export interface AttachmentPreview { file: File; url: string; type: 'image' | 'document'; }
 
 export function getAvatarColor(name: string): string {
