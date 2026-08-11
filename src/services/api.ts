@@ -204,9 +204,86 @@ export async function fetchCrmStaff(): Promise<CrmStaff[]> {
   catch (e) { if ((e as Error).message === "UNAUTHORIZED") throw e; return []; }
 }
 
+export async function createCrmStaff(data: { name: string; email?: string; phone?: string; role?: string }): Promise<CrmStaff> {
+  const j = await api("/api/crm/staff", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) });
+  return j.data;
+}
+
+export async function updateCrmStaff(id: string, data: Partial<CrmStaff>): Promise<CrmStaff> {
+  const j = await api(`/api/crm/staff/${id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) });
+  return j.data;
+}
+
+export async function deleteCrmStaff(id: string): Promise<boolean> {
+  const j = await api(`/api/crm/staff/${id}`, { method: "DELETE" });
+  return !!j.data;
+}
+
+export async function restoreCrmStaff(id: string): Promise<boolean> {
+  const j = await api(`/api/crm/staff/${id}/restore`, { method: "POST" });
+  return !!j.data;
+}
+
 export async function fetchCrmServices(): Promise<CrmService[]> {
   try { const j = await api("/api/crm/services"); return j?.data || []; }
   catch (e) { if ((e as Error).message === "UNAUTHORIZED") throw e; return []; }
+}
+
+export async function createCrmService(data: { name: string; default_fee?: number; min_fee?: number; note?: string }): Promise<CrmService> {
+  const j = await api("/api/crm/services", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) });
+  return j.data;
+}
+
+export async function updateCrmService(id: string, data: Partial<CrmService> & { note?: string }): Promise<CrmService> {
+  const j = await api(`/api/crm/services/${id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) });
+  return j.data;
+}
+
+export async function deleteCrmService(id: string): Promise<boolean> {
+  const j = await api(`/api/crm/services/${id}`, { method: "DELETE" });
+  return !!j.data;
+}
+
+export async function restoreCrmService(id: string): Promise<boolean> {
+  const j = await api(`/api/crm/services/${id}/restore`, { method: "POST" });
+  return !!j.data;
+}
+
+/* ---- Registrations — naye GST case, complete hote hi client banao ---- */
+export interface CrmRegistration {
+  id: string; mobile?: string | null; name: string; business_name?: string | null; trn?: string | null;
+  status: string; fee_quoted?: number | null; fee_agreed?: number | null; assigned_to?: string | null;
+  comment?: string | null; converted_client_id?: string | null; is_active: boolean;
+}
+
+export async function fetchCrmRegistrations(): Promise<CrmRegistration[]> {
+  try { const j = await api("/api/crm/registrations"); return j?.data || []; }
+  catch (e) { if ((e as Error).message === "UNAUTHORIZED") throw e; return []; }
+}
+
+export async function createCrmRegistration(data: Partial<CrmRegistration>): Promise<CrmRegistration> {
+  const j = await api("/api/crm/registrations", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) });
+  return j.data;
+}
+
+export async function updateCrmRegistration(id: string, data: Partial<CrmRegistration>): Promise<CrmRegistration> {
+  const j = await api(`/api/crm/registrations/${id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) });
+  return j.data;
+}
+
+export async function deleteCrmRegistration(id: string): Promise<boolean> {
+  const j = await api(`/api/crm/registrations/${id}`, { method: "DELETE" });
+  return !!j.data;
+}
+
+export async function restoreCrmRegistration(id: string): Promise<boolean> {
+  const j = await api(`/api/crm/registrations/${id}/restore`, { method: "POST" });
+  return !!j.data;
+}
+
+export async function convertRegistration(id: string, data: { mobile?: string; name?: string; business_name?: string; assigned_to?: string; filing_mode?: string; primary_service?: string }): Promise<CrmClient> {
+  const j = await api(`/api/crm/registrations/${id}/convert`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) });
+  return j.data;
 }
 
 /* ---- Filings — is period ka status, har client ka (board view) ---- */
