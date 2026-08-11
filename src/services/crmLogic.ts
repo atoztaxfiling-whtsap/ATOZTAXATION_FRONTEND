@@ -18,7 +18,10 @@ export const REG_STATUSES = [
   "Need Clarification", "Department Approval", "Completed", "Closed Lost", "Not Responding",
 ];
 export const TASK_CATEGORIES = ["Income tax", "TDS", "GST registration", "Other"];
-export const TASK_STATUSES = ["Yet to Pick", "In progress", "Completed", "Not Responding"];
+export const TASK_STATUSES = [
+  "Yet to Pick", "Documents Pending", "Documents Received", "Query Raised",
+  "In progress", "Waiting for Reply", "Completed", "Not Responding",
+];
 export const FILING_MODES = [
   { value: "auto", label: "Auto: quarter khatam hone tak monthly, phir quarterly" },
   { value: "manual-monthly", label: "Hamesha monthly" },
