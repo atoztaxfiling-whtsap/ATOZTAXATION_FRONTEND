@@ -95,6 +95,41 @@ export interface SyncStats { clients_added?: number; clients_filled?: number; cy
 export const runSheetSync = (): Promise<SyncStats> => req("/sheet-sync/run", { method: "POST" }).then(r => r.data);
 export const importFromSheets = (): Promise<SyncStats> => req("/sheet-sync/import", { method: "POST" }).then(r => r.data);
 
+/* ---------- AI command box ---------- */
+export interface AiRow { name: string; sub?: string | null; value?: string | null; mobile?: string | null }
+export interface AiRead { answer: string; rows: AiRow[]; total?: number; count?: number }
+export interface AiPlanItem {
+  op: string; entity: string; id?: string | null; label: string; change: string;
+  window_open?: boolean; text?: string;
+}
+export interface AiPreview {
+  reply: string; writes: AiPlanItem[]; sends: AiPlanItem[]; problems: string[];
+  counts: { writes: number; sends: number; window_closed: number; hidden: number };
+  big: boolean;
+}
+export interface AiResult {
+  ok: boolean; kind: "answer" | "question" | "done" | "confirm";
+  id?: string | null; reply?: string; question?: string;
+  reads?: AiRead[]; preview?: AiPreview; problems?: string[];
+  done?: Array<{ label: string; what: string }>;
+  failed?: Array<{ label: string; why: string }>;
+  can_undo?: boolean; input?: string; error?: string;
+}
+export interface AiRunResult {
+  done: Array<{ label: string; what: string }>;
+  failed: Array<{ label: string; why: string }>;
+  skipped: Array<{ label: string; why: string }>;
+  can_undo: boolean; id: string;
+}
+export interface AiHistoryItem { id: string; input: string; status: string; result?: string | null; at: string; can_undo: boolean }
+
+export const aiPlan = (text: string): Promise<AiResult> => jsonPost("/ai/plan", { text }).then(r => r.data);
+export const aiRun = (id: string, onlyOpenWindow = true): Promise<AiRunResult> =>
+  jsonPost("/ai/run", { id, only_open_window: onlyOpenWindow }).then(r => r.data);
+export const aiCancel = (id: string) => jsonPost("/ai/cancel", { id });
+export const aiUndo = (id: string): Promise<{ reverted: number }> => jsonPost("/ai/undo", { id }).then(r => r.data);
+export const aiHistory = (): Promise<AiHistoryItem[]> => req("/ai/history").then(r => r.data || []);
+
 /* ---------- Backup ---------- */
 export interface BackupInfo {
   name: string; generated_at: string; counts: Record<string, number>;
