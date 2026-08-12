@@ -17,8 +17,18 @@ import {
   aiPlan, aiRun, aiCancel, aiUndo,
   type AiResult, type AiRunResult, type AiRead, type AiPlanItem,
 } from "../../services/crmApi";
-import { useCrm } from "../../services/crmStore";
-import { Btn } from "./ui";
+/* CRM store optional hai — agar App se reload/toast mile to use karega,
+   warna window event bhej dega. Isse ye file kisi bhi repo me chal jaati hai. */
+type Hooks = { reload?: () => void | Promise<void>; toast?: (m: string) => void };
+
+/* chhota local button — kisi bahar ki file pe depend nahi karta */
+function Btn({ children, onClick, variant }: { children: React.ReactNode; onClick?: () => void; variant?: "primary" }) {
+  const base = "px-3 py-1.5 rounded-lg text-[13px] font-medium border transition active:scale-95";
+  const cls = variant === "primary"
+    ? `${base} bg-[#0F6E56] text-white border-[#0F6E56] hover:bg-[#0d5f4a]`
+    : `${base} bg-white text-[#3A3F38] border-[#DDE2D8] hover:bg-[#F4F6F2]`;
+  return <button type="button" onClick={onClick} className={cls}>{children}</button>;
+}
 
 type Entry =
   | { kind: "you"; text: string }
@@ -34,8 +44,15 @@ const SUGGESTIONS = [
   "aaj ke followups",
 ];
 
-export default function AiBox({ onClose }: { onClose: () => void }) {
-  const { reload, toast } = useCrm();
+export default function AiBox({ onClose, reload: reloadProp, toast: toastProp }: { onClose: () => void } & Hooks) {
+  const reload = async () => {
+    if (reloadProp) { await reloadProp(); return; }
+    window.dispatchEvent(new Event("crm-reload"));
+  };
+  const toast = (m: string) => {
+    if (toastProp) { toastProp(m); return; }
+    window.dispatchEvent(new CustomEvent("crm-toast", { detail: m }));
+  };
   const [entries, setEntries] = useState<Entry[]>([]);
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
