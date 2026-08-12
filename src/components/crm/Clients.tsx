@@ -12,6 +12,7 @@ export default function Clients() {
   const [q, setQ] = useState("");
   const [fa, setFa] = useState("");
   const [fc, setFc] = useState("");
+  const [onlyNew, setOnlyNew] = useState(false);
   const [open, setOpen] = useState<Client | null>(null);
   const [adding, setAdding] = useState(false);
 
@@ -21,9 +22,10 @@ export default function Clients() {
       (!s || c.name.toLowerCase().includes(s) || (c.gstin || "").toLowerCase().includes(s) ||
         (c.portal_username || "").toLowerCase().includes(s) || (c.mobile || "").includes(s) ||
         (c.business_name || "").toLowerCase().includes(s)) &&
-      (!fa || c.assigned_to === fa) && (!fc || currentCycle(c) === fc)
+      (!fa || c.assigned_to === fa) && (!fc || currentCycle(c) === fc) &&
+      (!onlyNew || (c.source === "whatsapp" && !c.fee_quarterly_sales && !c.fee_monthly_sales))
     );
-  }, [clients, q, fa, fc]);
+  }, [clients, q, fa, fc, onlyNew]);
 
   return (
     <div className="h-full overflow-y-auto bg-[#F6F5F1] p-5 md:p-7">
@@ -46,6 +48,10 @@ export default function Clients() {
           <SelectInput value={fc} onChange={e => setFc(e.target.value)} className="!w-auto !text-[12.5px] !py-1.5">
             <option value="">All cycles</option><option value="quarterly">Quarterly now</option><option value="monthly">Monthly now</option>
           </SelectInput>
+          <button onClick={() => setOnlyNew(v => !v)}
+            className={`px-2.5 py-1.5 rounded-lg text-[12.5px] font-medium border ${onlyNew ? "bg-[#1C1E1B] text-white border-[#1C1E1B]" : "bg-white text-[#6B6F68] border-[#E6E4DD]"}`}>
+            Naye WhatsApp numbers
+          </button>
         </div>
       </>}>
         {/* Desktop table */}
@@ -62,7 +68,11 @@ export default function Clients() {
                     <Td>
                       <div className="flex items-center gap-2.5">
                         <Avatar name={c.name} onClick={() => setOpen(c)} />
-                        <div><div className="font-medium cursor-pointer" onClick={() => setOpen(c)}>{c.name}</div>
+                        <div><div className="font-medium cursor-pointer flex items-center gap-1.5" onClick={() => setOpen(c)}>
+                            {c.name}
+                            {c.source === "whatsapp" && !c.fee_quarterly_sales && !c.fee_monthly_sales &&
+                              <span className="px-1.5 py-0.5 rounded-full bg-[#FAEEDA] text-[#412402] text-[9.5px] font-bold">NAYA</span>}
+                          </div>
                           <div className="font-mono text-[11.5px] text-[#9BA098]">{c.gstin || "—"}</div></div>
                       </div>
                     </Td>
