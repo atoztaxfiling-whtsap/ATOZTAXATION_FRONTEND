@@ -137,3 +137,5 @@ export interface BackupInfo {
 }
 export const runBackup = (): Promise<BackupInfo> => req("/backup/run", { method: "POST" }).then(r => r.data);
 export const backupBase = () => API_BASE;
+`crmApi_ISKO_END_ME_PASTE_KARO.txt` khol ke pura copy karo, aur apni
+`src/services/crmApi.ts` ke **sabse neeche** chipka do.
