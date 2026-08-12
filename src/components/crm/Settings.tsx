@@ -1,29 +1,90 @@
 /* Staff + Services — dono ek hi screen pe, tabs me */
 import { useState } from "react";
-import { Plus, Trash2, Download } from "lucide-react";
+import { Plus, Trash2, Download, RefreshCw } from "lucide-react";
 import { useCrm } from "../../services/crmStore";
 import {
   createStaff, updateStaff, deleteStaff, restoreStaff,
   createService, updateService, deleteService, restoreService,
   runBackup, backupBase, type BackupInfo,
+  runSheetSync, importFromSheets, type SyncStats,
 } from "../../services/crmApi";
 import { money, type Staff, type Service } from "../../services/crmLogic";
 import { Avatar, Panel, PageHead, Btn, Modal, Field, Row2, TextInput, SelectInput } from "./ui";
 
 export default function Settings() {
-  const [tab, setTab] = useState<"staff" | "services" | "backup">("staff");
+  const [tab, setTab] = useState<"staff" | "services" | "backup" | "sheet">("staff");
   return (
     <div className="h-full overflow-y-auto bg-[#F6F5F1] p-5 md:p-7">
       <PageHead title="Setup" sub="Team, services aur backup" />
       <div className="flex gap-1.5 mb-4">
-        {(["staff", "services", "backup"] as const).map(k => (
+        {(["staff", "services", "backup", "sheet"] as const).map(k => (
           <button key={k} onClick={() => setTab(k)}
             className={`px-3.5 py-1.5 rounded-full text-[12.5px] font-medium border capitalize ${tab === k ? "bg-[#1C1E1B] text-white border-[#1C1E1B]" : "bg-white text-[#6B6F68] border-[#E6E4DD]"}`}>{k}</button>
         ))}
       </div>
-      {tab === "staff" ? <StaffList /> : tab === "services" ? <ServiceList /> : <BackupPanel />}
+      {tab === "staff" ? <StaffList /> : tab === "services" ? <ServiceList /> : tab === "backup" ? <BackupPanel /> : <SheetPanel />}
       <div className="h-8" />
     </div>
+  );
+}
+
+function SheetPanel() {
+  const { reload } = useCrm();
+  const [busy, setBusy] = useState<"" | "sync" | "import">("");
+  const [res, setRes] = useState<SyncStats | null>(null);
+  const [err, setErr] = useState("");
+
+  async function go(kind: "sync" | "import") {
+    if (kind === "import" && !confirm("Sheet ka poora purana data CRM me le aayein? Thoda time lag sakta hai.")) return;
+    setBusy(kind); setErr(""); setRes(null);
+    try { setRes(kind === "sync" ? await runSheetSync() : await importFromSheets()); await reload(); }
+    catch (e) { setErr((e as Error).message); }
+    finally { setBusy(""); }
+  }
+
+  const L: Record<string, string> = {
+    clients_added: "Naye client bane", clients_filled: "Client ki khali jagah bhari",
+    cycle_set: "Monthly/quarterly set hua", tasks_added: "Naye workflow task",
+    tasks_updated: "Workflow task update hue",
+  };
+
+  return (
+    <>
+      <div className="text-[12.5px] text-[#6B6F68] mb-3 leading-relaxed">
+        Sheet aur CRM apne aap barabar rehte hain — <b>har 10 minute</b> me sheet padhi jaati hai.
+        CRM me kuch karo to sheet me turant chala jaata hai. Yahan se turant bhi chala sakte ho.
+      </div>
+      <div className="flex gap-2 flex-wrap">
+        <Btn variant="primary" onClick={() => go("sync")} disabled={!!busy}>
+          <RefreshCw className="w-3.5 h-3.5" />{busy === "sync" ? "Chal raha hai..." : "Abhi sync karo"}
+        </Btn>
+        <Btn onClick={() => go("import")} disabled={!!busy}>
+          {busy === "import" ? "Aa raha hai..." : "Purana data sheet se le aao"}
+        </Btn>
+      </div>
+      {err && <div className="bg-[#FCEBEB] text-[#501313] text-[12.5px] rounded-lg px-3 py-2 mt-3">{err}</div>}
+      {res && (
+        <div className="mt-4">
+          <Panel head={<h3 className="text-[13.5px] font-semibold">Ho gaya</h3>}>
+            <div className="px-4 py-3 text-[12.5px]">
+              {res.skipped && <div className="text-[#9BA098]">Chhoda: {res.skipped}</div>}
+              {res.error && <div className="text-[#A32D2D]">{res.error}</div>}
+              {Object.entries(res).filter(([k]) => L[k]).map(([k, v]) => (
+                <div key={k} className="flex justify-between border-b border-[#E6E4DD] py-1 last:border-0">
+                  <span className="text-[#6B6F68]">{L[k]}</span><span className="font-mono font-semibold">{String(v)}</span>
+                </div>
+              ))}
+              {!Object.entries(res).some(([k, v]) => L[k] && Number(v) > 0) && !res.error &&
+                <div className="text-[#9BA098]">Kuch naya nahi mila — sab pehle se barabar hai.</div>}
+            </div>
+          </Panel>
+        </div>
+      )}
+      <div className="text-[11.5px] text-[#9BA098] mt-3 leading-relaxed">
+        Sheet se aane wala data tumhara bhara hua kabhi nahi mitayega — sirf khali jagah bharega.
+        Rates aur per-period filing history sirf CRM me rehti hai, wo sheet me hai hi nahi.
+      </div>
+    </>
   );
 }
 
