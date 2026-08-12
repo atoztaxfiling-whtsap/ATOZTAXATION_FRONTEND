@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import {
   LayoutDashboard, MessageCircle, Users, Phone, CreditCard, FileText,
   CheckSquare, UserPlus, Settings as SettingsIcon, BarChart3, Megaphone, MoreHorizontal, LogOut,
-  Sparkles,
 } from "lucide-react";
 import Chat from "./components/Chat";
 import CrmDashboard from "./components/crm/CrmDashboard";
@@ -15,7 +14,6 @@ import Registrations from "./components/crm/Registrations";
 import Settings from "./components/crm/Settings";
 import ClientDrawer from "./components/crm/ClientDrawer";
 import GlobalSearch from "./components/crm/GlobalSearch";
-import AiBox from "./components/crm/AiBox";
 import Dashboard from "./components/Dashboard";
 import ReturnsCampaigns from "./components/ReturnsCampaigns";
 import Analytics from "./components/Analytics";
@@ -81,7 +79,6 @@ function Shell({ onLogout }: { onLogout: () => void }) {
   const [tab, setTab] = useState<Tab>("chat");
   const [isMobile, setIsMobile] = useState(false);
   const [drawer, setDrawer] = useState<Client | null>(null);
-  const [ai, setAi] = useState(false);
 
   useEffect(() => { const c = () => setIsMobile(window.innerWidth < 900); c(); window.addEventListener("resize", c); return () => window.removeEventListener("resize", c); }, []);
 
@@ -116,13 +113,9 @@ function Shell({ onLogout }: { onLogout: () => void }) {
             <div className="w-7 h-7 rounded-md bg-[#0F6E56] text-white font-bold text-[13px] font-mono flex items-center justify-center">AZ</div>
             <div><div className="text-white font-semibold text-[15px] leading-tight">ATOZ Taxation</div><div className="text-[#AEB8C4] text-[11px]">GST practice CRM</div></div>
           </div>
-          <div className="px-1 pb-2">
+          <div className="px-1 pb-3">
             <GlobalSearch dark onPickClient={c => setDrawer(c)} onGoto={t => setTab(t as Tab)} />
           </div>
-          <button onClick={() => setAi(true)}
-            className="mx-1 mb-3 flex items-center gap-2 px-2.5 py-2 rounded-lg text-[13.5px] font-medium bg-[#0F6E56]/15 text-[#8FE3BE] hover:bg-[#0F6E56]/25 border border-[#0F6E56]/30">
-            <Sparkles className="w-4 h-4" />AI command
-          </button>
           <NavLabel>Workspace</NavLabel>
           {WORKSPACE.map(n => <NavItem key={n.key} tabKey={n.key} label={n.label} active={tab === n.key} badge={badges[n.key]} onClick={() => setTab(n.key)} />)}
           <div className="h-px bg-white/10 my-3 mx-1.5" />
@@ -165,15 +158,6 @@ function Shell({ onLogout }: { onLogout: () => void }) {
         )}
       </main>
 
-      {!(isMobile && tab === "chat") && (
-        <button onClick={() => setAi(true)} aria-label="AI command box"
-          className="fixed right-4 bottom-[76px] md:bottom-6 md:right-6 rounded-full bg-[#0F6E56] text-white shadow-lg flex items-center justify-center z-40 active:scale-95 transition"
-          style={{ width: 52, height: 52 }}>
-          <Sparkles className="w-5 h-5" />
-        </button>
-      )}
-
-      {ai && <AiBox onClose={() => setAi(false)} />}
       {drawer && <ClientDrawer client={clients.find(c => c.id === drawer.id) || drawer} onClose={() => setDrawer(null)} />}
     </div>
   );
