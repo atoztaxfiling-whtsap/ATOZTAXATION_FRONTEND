@@ -9,6 +9,8 @@ import {
   runSheetSync, importFromSheets, type SyncStats,
 } from "../../services/crmApi";
 import { money, type Staff, type Service } from "../../services/crmLogic";
+import { DocsEditor } from "./Workflow";
+import { docsFor } from "./DocsBox";
 import { Avatar, Panel, PageHead, Btn, Modal, Field, Row2, TextInput, SelectInput } from "./ui";
 
 export default function Settings() {
@@ -220,13 +222,22 @@ function ServiceList() {
   return (
     <>
       <div className="flex justify-end mb-3"><Btn variant="primary" onClick={() => setAdding(true)}><Plus className="w-3.5 h-3.5" />Add service</Btn></div>
-      <div className="text-[12.5px] text-[#6B6F68] mb-3">Ye list non-GST services ke liye hai. GST filing ka rate har client ke apne 4 rates se aata hai.</div>
+      <div className="text-[12.5px] text-[#6B6F68] mb-3">
+        Ye list non-GST services ke liye hai. GST filing ka rate har client ke apne 4 rates se aata hai.
+        Har service ke saath documents ki list bhi rakh sakte ho — Workflow me wo service
+        chunte hi list apne aap aa jayegi.
+      </div>
       <Panel>
         {!services.length && <div className="px-4 py-5 text-[12.5px] text-[#9BA098]">Koi service nahi.</div>}
         {services.map(s => (
           <div key={s.id} onClick={() => setEdit(s)} className="flex items-center gap-3 px-4 py-3 border-b border-[#E6E4DD] last:border-0 cursor-pointer hover:bg-[#FBFAF7]">
             <div className="flex-1 min-w-0"><div className="font-medium text-[13.5px]">{s.name}</div>
-              <div className="text-[11.5px] text-[#6B6F68]">{s.default_fee ? money(Number(s.default_fee)) : "—"}{s.min_fee ? ` (min ${money(Number(s.min_fee))})` : ""}</div></div>
+              <div className="text-[11.5px] text-[#6B6F68]">
+                {s.default_fee ? money(Number(s.default_fee)) : "—"}{s.min_fee ? ` (min ${money(Number(s.min_fee))})` : ""}
+                {s.required_docs?.length
+                  ? <span className="text-[#0F6E56]"> · {s.required_docs.length} document</span>
+                  : <span className="text-[#A35A17]"> · documents ki list nahi bani</span>}
+              </div></div>
             <button onClick={e => { e.stopPropagation(); remove(s); }} className="text-[#9BA098] hover:text-[#A32D2D]"><Trash2 className="w-4 h-4" /></button>
           </div>
         ))}
@@ -242,13 +253,14 @@ function ServiceModal({ item, onClose }: { item: Service | null; onClose: () => 
     name: item?.name || "", default_fee: item?.default_fee?.toString() || "",
     min_fee: item?.min_fee?.toString() || "", note: item?.note || "",
   });
+  const [docs, setDocs] = useState<string[]>(item?.required_docs || []);
   const [saving, setSaving] = useState(false);
   const set = (k: string, v: string) => setF(p => ({ ...p, [k]: v }));
 
   async function save() {
     if (!f.name.trim()) return;
     setSaving(true);
-    const payload = { name: f.name.trim(), default_fee: f.default_fee ? Number(f.default_fee) : undefined, min_fee: f.min_fee ? Number(f.min_fee) : undefined, note: f.note || undefined };
+    const payload = { name: f.name.trim(), default_fee: f.default_fee ? Number(f.default_fee) : undefined, min_fee: f.min_fee ? Number(f.min_fee) : undefined, note: f.note || undefined, required_docs: docs };
     try {
       if (item) await updateService(item.id, payload as any); else await createService(payload as any);
       toast("Service save ho gayi"); await reload(); onClose();
@@ -263,6 +275,16 @@ function ServiceModal({ item, onClose }: { item: Service | null; onClose: () => 
         <Field label="Min fee (₹)"><TextInput type="number" value={f.min_fee} onChange={e => set("min_fee", e.target.value)} /></Field>
       </Row2>
       <Field label="Note"><TextInput value={f.note} onChange={e => set("note", e.target.value)} /></Field>
+      <Field label="Is service ke liye kaunse documents chahiye"
+        hint="Workflow me ye service chunte hi ye list apne aap aa jayegi">
+        <DocsEditor list={docs} onChange={setDocs} />
+        {!docs.length && !!f.name.trim() && docsFor(f.name, []).length > 0 && (
+          <button onClick={() => setDocs(docsFor(f.name, []))}
+            className="text-[11.5px] text-[#0F6E56] font-medium mt-1.5 hover:underline">
+            + Ready list bhar do ({docsFor(f.name, []).length} document)
+          </button>
+        )}
+      </Field>
       <div className="flex gap-2 justify-end mt-4">
         <Btn onClick={onClose}>Cancel</Btn>
         <Btn variant="primary" onClick={save} disabled={saving}>{saving ? "Saving..." : "Save"}</Btn>

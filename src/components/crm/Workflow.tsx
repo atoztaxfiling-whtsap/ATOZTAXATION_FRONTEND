@@ -1,9 +1,10 @@
 /* Workflow — non-GST kaam (income tax, TDS, registrations, misc) */
 import { useState } from "react";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, X, Check } from "lucide-react";
 import { useCrm } from "../../services/crmStore";
 import { createTask, updateTask, deleteTask, restoreTask } from "../../services/crmApi";
 import { TASK_CATEGORIES, TASK_STATUSES, money, type Task } from "../../services/crmLogic";
+import DocsBox, { docsFor } from "./DocsBox";
 import { Panel, PageHead, Btn, Scroller, Th, Td, EmptyRow, SelectInput, Modal, Field, Row2, TextInput, Pill, inlineSelect, inlineInput } from "./ui";
 
 export default function Workflow() {
@@ -13,6 +14,11 @@ export default function Workflow() {
   const [adding, setAdding] = useState(false);
 
   const rows = tasks.filter(t => (!cat || t.category === cat) && (!st || t.status === st));
+
+  async function patchDocs(t: Task, docs_required: string[], docs_received: string[]) {
+    try { await updateTask(t.id, { docs_required, docs_received } as any); await reload(); }
+    catch (e) { alert((e as Error).message); }
+  }
 
   async function patch(t: Task, field: string, value: any) {
     try { await updateTask(t.id, { [field]: value } as any); await reload(); }
@@ -43,10 +49,10 @@ export default function Workflow() {
       </>}>
         <div className="hidden md:block">
           <Scroller>
-            <thead><tr><Th>Received</Th><Th>Name</Th><Th>Linked client</Th><Th>Category</Th><Th>Status</Th><Th>Agreed</Th><Th>Paid</Th><Th>Assigned</Th><Th>Comments</Th><Th /></tr></thead>
+            <thead><tr><Th>Received</Th><Th>Name</Th><Th>Linked client</Th><Th>Category</Th><Th>Documents</Th><Th>Status</Th><Th>Agreed</Th><Th>Paid</Th><Th>Assigned</Th><Th>Comments</Th><Th /></tr></thead>
             <tbody>
-              {loading && <EmptyRow colSpan={10}>Load ho raha hai...</EmptyRow>}
-              {!loading && !rows.length && <EmptyRow colSpan={10}>Koi task nahi mila.</EmptyRow>}
+              {loading && <EmptyRow colSpan={11}>Load ho raha hai...</EmptyRow>}
+              {!loading && !rows.length && <EmptyRow colSpan={11}>Koi task nahi mila.</EmptyRow>}
               {rows.map(t => {
                 const linked = t.client_id ? clients.find(c => c.id === t.client_id) : null;
                 return (
@@ -55,6 +61,7 @@ export default function Workflow() {
                     <Td className="font-medium whitespace-nowrap">{t.name}</Td>
                     <Td className="text-[12.5px] text-[#9BA098] whitespace-nowrap">{linked ? linked.name : "—"}</Td>
                     <Td><Pill status="">{t.category || "Other"}</Pill></Td>
+                    <Td><DocsCell t={t} onSave={(req, rec) => patchDocs(t, req, rec)} /></Td>
                     <Td>
                       <select className={inlineSelect} value={t.status} onChange={e => patch(t, "status", e.target.value)}>
                         {TASK_STATUSES.map(s => <option key={s}>{s}</option>)}
@@ -96,6 +103,7 @@ export default function Workflow() {
                   </select>
                   <button onClick={() => remove(t)} className="text-[#9BA098] ml-auto"><Trash2 className="w-4 h-4" /></button>
                 </div>
+                <div className="mt-1.5"><DocsCell t={t} onSave={(req, rec) => patchDocs(t, req, rec)} /></div>
               </div>
             );
           })}
@@ -109,10 +117,18 @@ export default function Workflow() {
 }
 
 function TaskModal({ onClose }: { onClose: () => void }) {
-  const { clients, staff, reload, toast } = useCrm();
+  const { clients, staff, services, reload, toast } = useCrm();
   const [f, setF] = useState({ name: "", category: TASK_CATEGORIES[0], assigned_to: staff[0]?.name || "", client_id: "", fee_agreed: "", amount_paid: "", comment: "" });
+  const [docs, setDocs] = useState<string[]>(() => docsFor(TASK_CATEGORIES[0], services));
   const [saving, setSaving] = useState(false);
   const set = (k: string, v: string) => setF(p => ({ ...p, [k]: v }));
+  /* Category badli to documents ki list apne aap badal do — par sirf tab jab
+     user ne khud list chhedi na ho. Warna uski likhi hui list mit jayegi. */
+  const [touched, setTouched] = useState(false);
+  function pickCategory(v: string) {
+    set("category", v);
+    if (!touched) setDocs(docsFor(v, services));
+  }
 
   async function save() {
     if (!f.name.trim()) return;
@@ -122,7 +138,8 @@ function TaskModal({ onClose }: { onClose: () => void }) {
         name: f.name.trim(), category: f.category, assigned_to: f.assigned_to || null,
         client_id: f.client_id || null, fee_agreed: Number(f.fee_agreed) || 0,
         amount_paid: Number(f.amount_paid) || 0, comment: f.comment || null, status: "Yet to Pick",
-      });
+        docs_required: docs, docs_received: [],
+      } as any);
       toast("Task add ho gaya"); await reload(); onClose();
     } catch (e) { alert((e as Error).message); setSaving(false); }
   }
@@ -131,7 +148,10 @@ function TaskModal({ onClose }: { onClose: () => void }) {
     <Modal title="New task" sub="Non-GST kaam add karo" onClose={onClose}>
       <Field label="Name / phone"><TextInput value={f.name} onChange={e => set("name", e.target.value)} placeholder="Client ya task ka naam" /></Field>
       <Row2>
-        <Field label="Category"><SelectInput value={f.category} onChange={e => set("category", e.target.value)}>{TASK_CATEGORIES.map(c => <option key={c}>{c}</option>)}</SelectInput></Field>
+        <Field label="Category"><SelectInput value={f.category} onChange={e => pickCategory(e.target.value)}>
+          {TASK_CATEGORIES.map(c => <option key={c}>{c}</option>)}
+          {services.filter(sv => !TASK_CATEGORIES.includes(sv.name)).map(sv => <option key={sv.id}>{sv.name}</option>)}
+        </SelectInput></Field>
         <Field label="Assigned to"><SelectInput value={f.assigned_to} onChange={e => set("assigned_to", e.target.value)}>
           <option value="">—</option>{staff.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}
         </SelectInput></Field>
@@ -145,11 +165,61 @@ function TaskModal({ onClose }: { onClose: () => void }) {
         <Field label="Amount agreed (₹)"><TextInput type="number" value={f.fee_agreed} onChange={e => set("fee_agreed", e.target.value)} placeholder="0" /></Field>
         <Field label="Amount paid (₹)"><TextInput type="number" value={f.amount_paid} onChange={e => set("amount_paid", e.target.value)} placeholder="0" /></Field>
       </Row2>
+      <Field label="Kaunse documents chahiye" hint="Service chunne pe list apne aap aati hai — badal sakte ho, apna bhi likh sakte ho">
+        <DocsEditor list={docs} onChange={l => { setTouched(true); setDocs(l); }} />
+      </Field>
       <Field label="Comment"><TextInput value={f.comment} onChange={e => set("comment", e.target.value)} placeholder="Optional note" /></Field>
       <div className="flex gap-2 justify-end mt-4">
         <Btn onClick={onClose}>Cancel</Btn>
         <Btn variant="primary" onClick={save} disabled={saving}>{saving ? "Saving..." : "Add task"}</Btn>
       </div>
     </Modal>
+  );
+}
+
+/* Table ke andar chhota summary — dabao to poora box khulta hai */
+function DocsCell({ t, onSave }: { t: Task; onSave: (req: string[], rec: string[]) => void }) {
+  const [open, setOpen] = useState(false);
+  const req = t.docs_required || [];
+  const rec = t.docs_received || [];
+  const done = req.filter(d => rec.some(r => r.toLowerCase() === d.toLowerCase())).length;
+  const tone = !req.length ? "text-[#9BA098]" : done === req.length ? "text-[#0F6E56]" : "text-[#A35A17]";
+  return (
+    <>
+      <button onClick={() => setOpen(true)}
+        className={`text-[11.5px] font-medium ${tone} hover:underline whitespace-nowrap`}>
+        {req.length ? `${done}/${req.length} mile` : "+ list banao"}
+      </button>
+      {open && <DocsBox task={t} onClose={() => setOpen(false)} onSave={onSave} />}
+    </>
+  );
+}
+
+/* Naya task banate waqt list edit karne ke liye */
+export function DocsEditor({ list, onChange }: { list: string[]; onChange: (l: string[]) => void }) {
+  const [add, setAdd] = useState("");
+  function push() {
+    const v = add.trim();
+    if (!v || list.some(x => x.toLowerCase() === v.toLowerCase())) { setAdd(""); return; }
+    onChange([...list, v]); setAdd("");
+  }
+  return (
+    <div>
+      <div className="flex flex-wrap gap-1.5 mb-1.5">
+        {list.map(d => (
+          <span key={d} className="inline-flex items-center gap-1 text-[11.5px] bg-[#F2F1EC] border border-[#E6E4DD] rounded-full pl-2.5 pr-1 py-1">
+            {d}
+            <button onClick={() => onChange(list.filter(x => x !== d))}
+              className="text-[#9BA098] hover:text-[#A32D2D] p-0.5"><X className="w-3 h-3" /></button>
+          </span>
+        ))}
+        {!list.length && <span className="text-[11.5px] text-[#9BA098]">Koi document nahi — neeche likh ke add karo</span>}
+      </div>
+      <div className="flex gap-1.5">
+        <TextInput value={add} onChange={e => setAdd(e.target.value)} placeholder="Document ka naam"
+          onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); push(); } }} />
+        <Btn size="sm" onClick={push}><Check className="w-3.5 h-3.5" /></Btn>
+      </div>
+    </div>
   );
 }
