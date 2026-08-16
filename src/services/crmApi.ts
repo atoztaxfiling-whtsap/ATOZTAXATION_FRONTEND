@@ -44,7 +44,7 @@ export const addClientNote = (id: string, text: string) => jsonPost(`/clients/${
 export const deleteClientNote = (cid: string, nid: string) => req(`/clients/${cid}/notes/${nid}`, { method: "DELETE" });
 
 /* ---------- Filings ---------- */
-export const upsertFiling = (d: { client_id: string; period_key: string; status?: string; type?: string; comment?: string; fee_due?: number | null }): Promise<Filing> =>
+export const upsertFiling = (d: { client_id: string; period_key: string; status?: string; type?: string; comment?: string; fee_due?: number | null; assigned_to?: string }): Promise<Filing> =>
   jsonPost("/filings/upsert", d).then(r => r.data);
 
 /* ---------- Payments ---------- */

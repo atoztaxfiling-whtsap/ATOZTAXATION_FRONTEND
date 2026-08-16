@@ -10,17 +10,17 @@ export const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Au
 export const QUARTER_NAMES = ["JFM", "AMJ", "JAS", "OND"];
 
 export const FILING_STATUSES = [
-  "Yet to Pick", "Documents Pending", "Documents Received", "Query Raised",
-  "GSTR1 Done", "In Progress", "Completed", "Not Responding",
+  "Yet to Pick", "Documents Pending", "Documents Received", "OTP Pending",
+  "Query Raised", "GSTR1 Done", "In Progress", "Completed", "Not Responding",
 ];
 export const REG_STATUSES = [
-  "Documents Pending", "Documents Received", "Query", "Waiting for Reply",
+  "Documents Pending", "Documents Received", "OTP Pending", "Query", "Waiting for Reply",
   "Need Clarification", "Department Approval", "Completed", "Closed Lost", "Not Responding",
 ];
 export const TASK_CATEGORIES = ["Income tax", "TDS", "GST registration", "Other"];
 export const TASK_STATUSES = [
-  "Yet to Pick", "Documents Pending", "Documents Received", "Query Raised",
-  "In progress", "Waiting for Reply", "Completed", "Payment Pending",
+  "Yet to Pick", "Documents Pending", "Documents Received", "OTP Pending",
+  "Query Raised", "In progress", "Waiting for Reply", "Completed", "Payment Pending",
   "Closed", "Not Responding",
 ];
 /* ---------- Fee kab due banti hai ----------
@@ -57,20 +57,26 @@ export interface Client {
 export interface Filing {
   id: string; client_id: string; period_key: string; cycle: string;
   type?: string | null; status: string; fee_due?: number | null; comment?: string | null;
+  assigned_to?: string | null;
+  status_changed_at?: string | null; updated_at?: string | null; created_at?: string | null;
 }
 export interface Payment { id: string; client_id: string; amount: number; paid_on: string; method?: string | null; note?: string | null; kind?: string | null; }
 export interface Task {
   id: string; client_id?: string | null; name: string; mobile?: string | null;
   category?: string | null; status: string; assigned_to?: string | null;
   received_date?: string | null; fee_agreed?: number | null; amount_paid?: number | null; comment?: string | null;
+  docs_required?: string[] | null; docs_received?: string[] | null;
+  status_changed_at?: string | null; updated_at?: string | null; created_at?: string | null;
 }
 export interface Registration {
   id: string; mobile?: string | null; name: string; business_name?: string | null;
   trn?: string | null; status: string; assigned_to?: string | null;
   converted_client_id?: string | null; comment?: string | null;
+  fee_quoted?: number | null; fee_agreed?: number | null;
+  status_changed_at?: string | null; updated_at?: string | null; created_at?: string | null;
 }
 export interface Staff { id: string; name: string; role: string; email?: string | null; phone?: string | null; }
-export interface Service { id: string; name: string; default_fee?: number | null; min_fee?: number | null; note?: string | null; }
+export interface Service { id: string; name: string; default_fee?: number | null; min_fee?: number | null; note?: string | null; required_docs?: string[] | null; }
 export interface ClientNote { id: string; client_id: string; text: string; created_at: string; created_by?: string | null; }
 export interface Followup {
   id: string; client_id: string; kind: string; status: string;
@@ -315,7 +321,7 @@ export function initials(n?: string | null) {
 }
 export function pillClass(status: string) {
   if (["Completed", "Paid", "GSTR1 Done"].includes(status)) return "bg-[#E1F5EE] text-[#04342C]";
-  if (["In progress", "In Progress", "Partial", "Documents Received", "Query Raised", "Query", "Department Approval", "Waiting for Reply", "Need Clarification"].includes(status)) return "bg-[#FAEEDA] text-[#412402]";
+  if (["In progress", "In Progress", "Partial", "Documents Received", "OTP Pending", "Query Raised", "Query", "Department Approval", "Waiting for Reply", "Need Clarification"].includes(status)) return "bg-[#FAEEDA] text-[#412402]";
   if (["Yet to Pick", "Pending", "Overdue", "Closed Lost", "Documents Pending", "Not Responding", "Not paid"].includes(status)) return "bg-[#FCEBEB] text-[#501313]";
   return "bg-[#E6F1FB] text-[#185FA5]";
 }
@@ -340,3 +346,194 @@ export function checkDuplicateGSTIN(clients: Client[], gstin: string, excludeId?
   if (!gstin || gstin === "—") return null;
   return clients.find(c => c.gstin === gstin && c.id !== excludeId) || null;
 }
+
+
+/* ============================================================
+   PENDING TASK — teeno tarah ke kaam ek jagah
+   ============================================================
+   Filings, Workflow tasks aur Registrations — teeno ko ek hi
+   shakl (WorkItem) me badal dete hain, taaki ek hi list me dikha
+   sakein, ek hi jagah se status/employee badal sakein.
+
+   Koi copy nahi banti — WorkItem sirf asli row ka ek "view" hai.
+   Status badloge to seedha usi table me jayega, isliye Filings /
+   Workflow / Registrations / Payments — sab turant mel khayenge.
+   ============================================================ */
+
+export type WorkKind = "filing" | "task" | "registration";
+/* Kaam kiske paas atka hai */
+export type WorkBucket = "us" | "client" | "dept" | "done";
+
+export interface WorkItem {
+  uid: string;                 // "filing:<id>" — React key ke liye
+  kind: WorkKind;
+  id: string;                  // asli row ka id
+  bucket: WorkBucket;
+  clientId: string | null;
+  clientName: string;
+  mobile: string | null;
+  what: string;                // "JAS 2026 · Quarterly · Nil"
+  status: string;
+  statuses: string[];          // dropdown me kya-kya aayega
+  assignedTo: string;
+  note: string;                // comment — Pending task se hi edit ho jata hai
+  days: number;                // status kitne din se wahi hai
+  since: string;               // wo tareekh
+  approxDays: boolean;         // status_changed_at nahi mila (purana record)
+  amount: number;              // is kaam ka paisa
+  amountNote: string;          // "Completed pe due banega" waqaira
+}
+
+/* Kaunsa status kiske paas atka hai.
+   "Yet to Pick" client ke paas ginte hain — filing ka period khulte hi
+   ye default status ban jata hai, matlab abhi documents hi nahi aaye. */
+export const FILING_BUCKET: Record<string, WorkBucket> = {
+  "Documents Received": "us", "GSTR1 Done": "us", "In Progress": "us",
+  "Yet to Pick": "client", "Documents Pending": "client",
+  "OTP Pending": "client", "Query Raised": "client", "Not Responding": "client",
+  "Completed": "done",
+};
+export const TASK_BUCKET: Record<string, WorkBucket> = {
+  "Documents Received": "us", "In progress": "us",
+  "Yet to Pick": "client", "Documents Pending": "client", "OTP Pending": "client",
+  "Query Raised": "client", "Waiting for Reply": "client", "Not Responding": "client",
+  "Completed": "done", "Payment Pending": "done", "Closed": "done",
+};
+export const REG_BUCKET: Record<string, WorkBucket> = {
+  "Documents Received": "us",
+  "Department Approval": "dept",
+  "Documents Pending": "client", "OTP Pending": "client", "Query": "client",
+  "Waiting for Reply": "client", "Need Clarification": "client", "Not Responding": "client",
+  "Completed": "done", "Closed Lost": "done",
+};
+
+export const BUCKET_LABEL: Record<WorkBucket, string> = {
+  us: "Humare paas", client: "Client ke paas", dept: "Department ke paas", done: "Ho gaya",
+};
+
+/* Kitne din baad laal. Badalna ho to sirf yahan badlo. */
+export const LATE_DAYS = 8;
+export const WARN_DAYS = 4;
+
+export type AgeTone = "ok" | "warn" | "bad";
+export function ageTone(days: number): AgeTone {
+  if (days >= LATE_DAYS) return "bad";
+  if (days >= WARN_DAYS) return "warn";
+  return "ok";
+}
+
+function daysSince(iso?: string | null): number {
+  if (!iso) return 0;
+  const t = Date.parse(iso);
+  if (isNaN(t)) return 0;
+  const d = Math.floor((Date.now() - t) / 86400000);
+  return d < 0 ? 0 : d;
+}
+
+/* period_key (M2026-08 / Q2026-07) se padhne layak naam */
+export function periodLabelFromKey(key: string): string {
+  if (!key || key.length < 8) return key || "";
+  const y = parseInt(key.slice(1, 5), 10);
+  const m = parseInt(key.slice(6, 8), 10);
+  if (isNaN(y) || isNaN(m)) return key;
+  if (key[0] === "M") return `${MONTH_NAMES[(m - 1) % 12]} ${y}`;
+  return `${QUARTER_NAMES[Math.floor((m - 1) / 3) % 4]} ${y}`;
+}
+
+const UNASSIGNED = "—";
+
+function ageOf(row: { status_changed_at?: string | null; updated_at?: string | null; created_at?: string | null }) {
+  const since = row.status_changed_at || row.updated_at || row.created_at || "";
+  return { days: daysSince(since), since, approxDays: !row.status_changed_at };
+}
+
+/* ---- Teeno tables ko ek shakl me ---- */
+export function buildWorkItems(
+  clients: Client[], filings: Filing[], tasks: Task[], registrations: Registration[],
+): WorkItem[] {
+  const byId: Record<string, Client> = {};
+  clients.forEach(c => { byId[c.id] = c; });
+  const out: WorkItem[] = [];
+
+  /* Filings — sirf wo jo DB me sach me hain.
+     Har client ke har period ki khali row nahi banate, warna hazaron
+     jhoothi rows aa jayengi jinpe kaam shuru bhi nahi hua. */
+  for (const f of filings) {
+    const c = byId[f.client_id];
+    const a = ageOf(f);
+    const billable = isFilingBillable(f.status);
+    const fee = f.fee_due != null ? Number(f.fee_due)
+      : (c ? rateFor(c, f.cycle, f.type || "nil") : 0);
+    out.push({
+      uid: `filing:${f.id}`, kind: "filing", id: f.id,
+      bucket: FILING_BUCKET[f.status] ?? "us",
+      clientId: f.client_id, clientName: c?.name || "—", mobile: c?.mobile || null,
+      what: `${periodLabelFromKey(f.period_key)} · ${f.cycle === "monthly" ? "Monthly" : "Quarterly"} · ${f.type === "sales" ? "Sales" : "Nil"}`,
+      status: f.status, statuses: FILING_STATUSES,
+      assignedTo: f.assigned_to || UNASSIGNED, note: f.comment || "",
+      days: a.days, since: a.since, approxDays: a.approxDays,
+      amount: fee, amountNote: billable ? "due" : "Completed pe due banega",
+    });
+  }
+
+  /* Workflow tasks */
+  for (const t of tasks) {
+    const c = t.client_id ? byId[t.client_id] : null;
+    const a = ageOf(t);
+    const billable = isTaskBillable(t.status);
+    const left = (Number(t.fee_agreed) || 0) - (Number(t.amount_paid) || 0);
+    out.push({
+      uid: `task:${t.id}`, kind: "task", id: t.id,
+      bucket: TASK_BUCKET[t.status] ?? "us",
+      clientId: t.client_id || null,
+      clientName: c?.name || t.name || "—",
+      mobile: c?.mobile || t.mobile || null,
+      what: c ? `${t.name}${t.category ? ` · ${t.category}` : ""}` : `${t.name}${t.category ? ` · ${t.category}` : ""} · walk-in`,
+      status: t.status, statuses: TASK_STATUSES,
+      assignedTo: t.assigned_to || UNASSIGNED, note: t.comment || "",
+      days: a.days, since: a.since, approxDays: a.approxDays,
+      amount: left > 0 ? left : 0,
+      amountNote: billable ? "due" : "Completed pe due banega",
+    });
+  }
+
+  /* Registrations */
+  for (const r of registrations) {
+    const a = ageOf(r);
+    const fee = Number(r.fee_agreed) || Number(r.fee_quoted) || 0;
+    out.push({
+      uid: `registration:${r.id}`, kind: "registration", id: r.id,
+      bucket: REG_BUCKET[r.status] ?? "us",
+      clientId: r.converted_client_id || null,
+      clientName: r.name || r.business_name || "—", mobile: r.mobile || null,
+      what: r.business_name ? `GST Registration · ${r.business_name}` : "GST Registration",
+      status: r.status, statuses: REG_STATUSES,
+      assignedTo: r.assigned_to || UNASSIGNED, note: r.comment || "",
+      days: a.days, since: a.since, approxDays: a.approxDays,
+      amount: fee, amountNote: r.fee_agreed ? "agreed" : (r.fee_quoted ? "quoted" : ""),
+    });
+  }
+
+  /* Purana pehle — jo sabse zyada atka hai wo sabse upar */
+  return out.sort((x, y) => y.days - x.days);
+}
+
+/* Upar employee tabs ke liye ginti */
+export interface EmpCount { name: string; total: number; late: number; }
+export function workByEmployee(items: WorkItem[]): EmpCount[] {
+  const m = new Map<string, EmpCount>();
+  for (const it of items) {
+    const k = it.assignedTo || UNASSIGNED;
+    if (!m.has(k)) m.set(k, { name: k, total: 0, late: 0 });
+    const e = m.get(k)!;
+    e.total++;
+    if (it.days >= LATE_DAYS) e.late++;
+  }
+  return [...m.values()].sort((a, b) => {
+    if (a.name === UNASSIGNED) return 1;      // "kisi ko nahi diya" sabse aakhir me
+    if (b.name === UNASSIGNED) return -1;
+    return b.total - a.total;
+  });
+}
+
+export const UNASSIGNED_LABEL = UNASSIGNED;
