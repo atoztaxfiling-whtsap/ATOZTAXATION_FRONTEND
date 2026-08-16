@@ -4,8 +4,8 @@ import { Eye, EyeOff, Plus, Trash2 } from "lucide-react";
 import { useCrm } from "../../services/crmStore";
 import { updateClient, deleteClient, restoreClient, createPayment, addClientNote, deleteClientNote } from "../../services/crmApi";
 import {
-  ledgerRows, balanceDue, currentCycle, currentPeriod, rateFor, tasksForClient,
-  TEMPLATES, waLink, money, type Client,
+  fullLedger, currentCycle, currentPeriod, rateFor, tasksForClient,
+  totalFirmPaid, TEMPLATES, waLink, money, type Client,
 } from "../../services/crmLogic";
 import { Drawer, Avatar, Pill, Btn, TextInput, SelectInput } from "./ui";
 import ClientForm from "./ClientForm";
@@ -19,13 +19,17 @@ export default function ClientDrawer({ client, onClose }: { client: Client; onCl
   const [ol, setOl] = useState({ label: "", username: "", password: "" });
   const [amount, setAmount] = useState("");
   const [method, setMethod] = useState("UPI");
+  const [payKind, setPayKind] = useState<"client" | "firm_paid">("client");
+  const [payNote, setPayNote] = useState("");
   const [tpl, setTpl] = useState(TEMPLATES[0].id);
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
 
   const c = client;
-  const rows = ledgerRows(c, filingMap, payments);
-  const bal = balanceDue(c, filingMap, payments, tasks);
+  const led = fullLedger(c, filingMap, payments, tasks);
+  const rows = led.periods;
+  const bal = led.balance;
+  const firmPaidTotal = totalFirmPaid(payments, c.id);
   const cyc = currentCycle(c);
   const cp = currentPeriod(c);
   const myPayments = payments.filter(p => p.client_id === c.id);
@@ -43,8 +47,12 @@ export default function ClientDrawer({ client, onClose }: { client: Client; onCl
     if (!amt || amt <= 0) return;
     setBusy(true);
     try {
-      await createPayment({ client_id: c.id, amount: amt, method });
-      setAmount(""); toast(`${money(amt)} record ho gaya`); await reload();
+      await createPayment({ client_id: c.id, amount: amt, method, kind: payKind, note: payNote.trim() || undefined });
+      setAmount(""); setPayNote("");
+      toast(payKind === "firm_paid"
+        ? `${money(amt)} humne bhara — client ke balance me jud gaya`
+        : `${money(amt)} record ho gaya`);
+      await reload();
     } catch (e) { alert((e as Error).message); }
     finally { setBusy(false); }
   }
@@ -156,7 +164,10 @@ export default function ClientDrawer({ client, onClose }: { client: Client; onCl
                 <td className="py-1.5 border-b border-[#E6E4DD]">{r.period}</td>
                 <td className="py-1.5 border-b border-[#E6E4DD]">{r.type === "sales" ? "Sales" : "Nil"}</td>
                 <td className="py-1.5 border-b border-[#E6E4DD] font-sans text-[11px]">{r.status}</td>
-                <td className="py-1.5 border-b border-[#E6E4DD] text-right">{money(r.due)}</td>
+                <td className={`py-1.5 border-b border-[#E6E4DD] text-right ${r.billable ? "" : "text-[#9BA098]"}`}
+                  title={r.billable ? "" : "Kaam poora nahi hua — abhi due nahi"}>
+                  {money(r.fullDue)}{r.billable ? "" : "*"}
+                </td>
                 <td className={`py-1.5 border-b border-[#E6E4DD] text-right ${r.balance > 0 ? "text-[#A32D2D]" : "text-[#0F6E56]"}`}>{money(r.balance)}</td>
               </tr>
             ))}
@@ -164,22 +175,92 @@ export default function ClientDrawer({ client, onClose }: { client: Client; onCl
           </tbody>
         </table>
 
+        {rows.some(r => !r.billable) && (
+          <div className="text-[10.5px] text-[#9BA098] mt-1">
+            * kaam abhi poora nahi hua — ye amount "baaki" me nahi ginta. Status
+            "Completed" hote hi due ban jayega.
+          </div>
+        )}
+
+        {!!led.advances.length && (
+          <>
+            <Section title="Humne client ke liye bhara" />
+            <table className="w-full text-[11.5px]">
+              <thead><tr className="text-[10px] text-[#6B6F68] uppercase">
+                <th className="text-left py-1 border-b border-[#E6E4DD]">Date</th>
+                <th className="text-left py-1 border-b border-[#E6E4DD]">Kis liye</th>
+                <th className="text-right py-1 border-b border-[#E6E4DD]">Bhara</th>
+                <th className="text-right py-1 border-b border-[#E6E4DD]">Baaki</th>
+              </tr></thead>
+              <tbody>
+                {led.advances.map(a => (
+                  <tr key={a.id} className="font-mono">
+                    <td className="py-1.5 border-b border-[#E6E4DD]">{a.on || "—"}</td>
+                    <td className="py-1.5 border-b border-[#E6E4DD] font-sans">{a.note || "—"}</td>
+                    <td className="py-1.5 border-b border-[#E6E4DD] text-right">{money(a.due)}</td>
+                    <td className={`py-1.5 border-b border-[#E6E4DD] text-right ${a.balance > 0 ? "text-[#A32D2D]" : "text-[#0F6E56]"}`}>{money(a.balance)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <div className="text-[10.5px] text-[#9BA098] py-1">
+              Kul {money(firmPaidTotal)} humne bhara hai. Ye client se lena hai.
+            </div>
+          </>
+        )}
+
         <div className="flex items-center justify-between bg-[#F6F5F1] rounded-lg px-3 py-2.5 mt-2.5">
           <span className="text-[12px] text-[#6B6F68]">Total balance due</span>
           <span className={`font-mono font-semibold text-[15px] ${bal > 0 ? "text-[#A32D2D]" : "text-[#0F6E56]"}`}>{bal > 0 ? money(bal) : "Clear"}</span>
         </div>
 
-        <div className="flex gap-1.5 mt-2.5">
-          <TextInput type="number" placeholder="Amount received (₹)" value={amount} onChange={e => setAmount(e.target.value)} />
+        <div className="flex gap-1 mt-2.5 mb-1.5">
+          <button onClick={() => setPayKind("client")}
+            className={`flex-1 px-2 py-1.5 rounded-lg text-[11.5px] font-medium border transition ${payKind === "client"
+              ? "bg-[#0F6E56] text-white border-[#0F6E56]"
+              : "bg-white text-[#6B6F68] border-[#E6E4DD] hover:bg-[#FBFAF7]"}`}>
+            Client ne diya
+          </button>
+          <button onClick={() => setPayKind("firm_paid")}
+            className={`flex-1 px-2 py-1.5 rounded-lg text-[11.5px] font-medium border transition ${payKind === "firm_paid"
+              ? "bg-[#A35A17] text-white border-[#A35A17]"
+              : "bg-white text-[#6B6F68] border-[#E6E4DD] hover:bg-[#FBFAF7]"}`}>
+            Humne bhara
+          </button>
+        </div>
+
+        <div className="flex gap-1.5">
+          <TextInput type="number"
+            placeholder={payKind === "firm_paid" ? "Kitna bhara (₹)" : "Amount received (₹)"}
+            value={amount} onChange={e => setAmount(e.target.value)} />
           <SelectInput value={method} onChange={e => setMethod(e.target.value)} className="max-w-[90px]"><option>UPI</option><option>Cash</option><option>Bank</option></SelectInput>
           <Btn size="sm" variant="primary" onClick={record} disabled={busy}>Record</Btn>
         </div>
+
+        {payKind === "firm_paid" && (
+          <>
+            <div className="mt-1.5">
+              <TextInput value={payNote} onChange={e => setPayNote(e.target.value)}
+                placeholder="Kis liye bhara? (late fee, GST challan, ITR tax...)" />
+            </div>
+            <div className="text-[10.5px] text-[#A35A17] mt-1">
+              Ye client ke balance me <b>jud jayega</b> — matlab isse client par
+              udhaar chadhega. Client jab paisa dega to sabse pehle purane period
+              clear honge, phir ye.
+            </div>
+          </>
+        )}
 
         {!!myPayments.length && (
           <div className="mt-2 max-h-32 overflow-y-auto">
             {myPayments.slice().reverse().map(p => (
               <div key={p.id} className="flex items-center justify-between text-[11.5px] py-1 border-b border-[#E6E4DD]">
                 <span className="font-mono">{money(Number(p.amount))} · {p.method || "—"} · {p.paid_on}</span>
+                {(p.kind || "client") === "firm_paid" && (
+                  <span className="text-[10px] font-medium text-[#A35A17] bg-[#FFF6E8] border border-[#F2DFBE] rounded px-1.5 py-0.5">
+                    humne bhara
+                  </span>
+                )}
               </div>
             ))}
           </div>
@@ -209,7 +290,10 @@ export default function ClientDrawer({ client, onClose }: { client: Client; onCl
                 })}
               </tbody>
             </table>
-            <div className="text-[11.5px] text-[#9BA098] py-1.5">Ye amounts Workflow tab se edit hote hain.</div>
+            <div className="text-[11.5px] text-[#9BA098] py-1.5">
+              Ye amounts Workflow tab se edit hote hain. Fee tabhi "baaki" me
+              ginti hai jab task Completed / Payment Pending ho.
+            </div>
           </>
         )}
 
