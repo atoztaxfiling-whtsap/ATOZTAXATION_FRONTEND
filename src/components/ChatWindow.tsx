@@ -7,6 +7,7 @@ import ChatInput from './ChatInput';
 import ForwardModal from './ForwardModal';
 import ContactPanel from './ContactPanel';
 import TemplatePicker from './TemplatePicker';
+import ChatSummaryBar from './ChatSummaryBar';
 import { fetchBotPause, setBotPause, flagBotReply } from '../services/api';
 
 interface Props { selectedMobile: string | null; threads: Thread[]; messages: FlatMessage[]; messagesLoading: boolean; isMobile: boolean; onBack: () => void; onSendMessage: (t: string, r?: FlatMessage) => Promise<void>; onSendDocument: (f: File) => Promise<void>; onContactChanged?: () => void; }
@@ -116,6 +117,8 @@ export default function ChatWindow({ selectedMobile, threads, messages, messages
           <button className="p-2 rounded-full hover:bg-white/20 transition"><MoreVertical size={20} className="text-white" /></button>
         </div>
       </div>
+
+      <ChatSummaryBar mobile={thread.mobile} />
 
       {srch !== null && (
         <div className="flex items-center gap-2 px-4 py-2" style={{ background: '#FBFBF9', borderBottom: '1px solid #E6E7E2' }}>
