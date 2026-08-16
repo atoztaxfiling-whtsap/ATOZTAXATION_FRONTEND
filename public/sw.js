@@ -1,4 +1,4 @@
-const CACHE_NAME = "atoz-v8";
+const CACHE_NAME = "atoz-v9";
 const PRECACHE = ["/", "/index.html", "/icon-192.png"];
 
 self.addEventListener("install", e => { e.waitUntil(caches.open(CACHE_NAME).then(c => c.addAll(PRECACHE))); self.skipWaiting(); });
