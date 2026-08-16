@@ -131,6 +131,13 @@ export const aiCancel = (id: string) => jsonPost("/ai/cancel", { id });
 export const aiUndo = (id: string): Promise<{ reverted: number }> => jsonPost("/ai/undo", { id }).then(r => r.data);
 export const aiHistory = (): Promise<AiHistoryItem[]> => req("/ai/history").then(r => r.data || []);
 
+/* ---------- Chat summary ---------- */
+export interface ChatSummary { summary?: string | null; updated_at?: string | null; msgs_covered?: number | null }
+export const fetchChatSummary = (mobile: string): Promise<ChatSummary> =>
+  req(`/chat-summary/${mobile}`).then(r => r.data || {});
+export const refreshChatSummary = (mobile: string): Promise<ChatSummary> =>
+  jsonPost(`/chat-summary/${mobile}/refresh`, {}).then(r => r.data || {});
+
 /* ---------- Backup ---------- */
 export interface BackupInfo {
   name: string; generated_at: string; counts: Record<string, number>;
