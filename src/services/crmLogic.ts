@@ -23,6 +23,16 @@ export const TASK_STATUSES = [
   "In progress", "Waiting for Reply", "Completed", "Payment Pending",
   "Closed", "Not Responding",
 ];
+/* ---------- Fee kab due banti hai ----------
+   Kaam poora hone se pehle fee due nahi hoti. Amount phir bhi dikhta hai
+   (grey), taaki pata rahe kitna banega — par "baaki" me nahi ginta. */
+export const FILING_BILLABLE = ["Completed"];
+export const TASK_BILLABLE = ["Completed", "Payment Pending", "Closed"];
+/* payments.kind = 'firm_paid' matlab humne client ki taraf se bhara hai */
+export const KIND_FIRM_PAID = "firm_paid";
+export function isFilingBillable(status?: string | null) { return FILING_BILLABLE.includes(status || ""); }
+export function isTaskBillable(status?: string | null) { return TASK_BILLABLE.includes(status || ""); }
+
 export const FILING_MODES = [
   { value: "auto", label: "Auto: quarter khatam hone tak monthly, phir quarterly" },
   { value: "manual-monthly", label: "Hamesha monthly" },
@@ -48,7 +58,7 @@ export interface Filing {
   id: string; client_id: string; period_key: string; cycle: string;
   type?: string | null; status: string; fee_due?: number | null; comment?: string | null;
 }
-export interface Payment { id: string; client_id: string; amount: number; paid_on: string; method?: string | null; note?: string | null; }
+export interface Payment { id: string; client_id: string; amount: number; paid_on: string; method?: string | null; note?: string | null; kind?: string | null; }
 export interface Task {
   id: string; client_id?: string | null; name: string; mobile?: string | null;
   category?: string | null; status: string; assigned_to?: string | null;
@@ -76,7 +86,13 @@ export interface FilingEntry { status: string; type: string; comment: string; fe
 export interface LedgerRow {
   period: string; key: string; cycle: string; type: string; status: string;
   due: number; paid: number; balance: number; isOverride: boolean;
+  fullDue: number; billable: boolean;
 }
+/* Firm ne client ki taraf se jo bhara (late fee, challan) */
+export interface AdvanceRow { id: string; on: string; note: string; method: string; due: number; paid: number; balance: number; }
+/* Workflow ka poora ho chuka one-off kaam */
+export interface TaskDueRow { id: string; name: string; status: string; due: number; paid: number; balance: number; }
+export interface FullLedger { periods: LedgerRow[]; advances: AdvanceRow[]; tasks: TaskDueRow[]; balance: number; leftover: number; }
 
 export interface Bootstrap {
   clients: Client[]; filings: Filing[]; payments: Payment[];
@@ -158,31 +174,90 @@ export function rateFor(c: Client, cycle: string, type: string) {
   return Number(type === "nil" ? c.fee_quarterly_nil : c.fee_quarterly_sales) || 0;
 }
 
-/* ---------- Ledger (FIFO — purana period pehle clear hota hai) ---------- */
+/* ---------- Payment buckets ----------
+   Client ka diya hua paisa, aur firm ne client ki taraf se jo bhara —
+   dono alag rakhne padte hain, warna hisaab ulta ho jata hai. */
+export function paymentsOf(payments: Payment[], clientId: string) { return payments.filter(p => p.client_id === clientId); }
+export function clientPayments(payments: Payment[], clientId: string) {
+  return paymentsOf(payments, clientId).filter(p => (p.kind || "client") !== KIND_FIRM_PAID);
+}
+export function firmPaidEntries(payments: Payment[], clientId: string) {
+  return paymentsOf(payments, clientId)
+    .filter(p => (p.kind || "client") === KIND_FIRM_PAID)
+    .slice().sort((a, b) => String(a.paid_on || "").localeCompare(String(b.paid_on || "")));
+}
+export function paymentPool(payments: Payment[], clientId: string) {
+  return clientPayments(payments, clientId).reduce((a, p) => a + Number(p.amount || 0), 0);
+}
+
+/* ---------- Ledger (FIFO — purana period pehle clear hota hai) ----------
+   due      = jo abhi maang sakte ho (kaam poora na ho to 0)
+   fullDue  = poora rate, chahe kaam bacha ho (sirf dikhane ke liye) */
 export function ledgerRows(c: Client, map: Record<string, Filing>, payments: Payment[]): LedgerRow[] {
-  let remaining = payments.filter(p => p.client_id === c.id).reduce((a, p) => a + Number(p.amount || 0), 0);
+  let remaining = paymentPool(payments, c.id);
   return clientPeriods(c).map(period => {
     const e = filingEntry(map, c.id, period.key);
-    const due = e.fee_due != null ? Number(e.fee_due) : periodFee(c, period, e.type);
+    const fullDue = e.fee_due != null ? Number(e.fee_due) : periodFee(c, period, e.type);
+    const billable = isFilingBillable(e.status);
+    const due = billable ? fullDue : 0;
     const paid = Math.min(remaining, due);
     remaining -= paid;
-    return { period: period.label, key: period.key, cycle: period.cycle, type: e.type, status: e.status, due, paid, balance: due - paid, isOverride: e.fee_due != null };
+    return { period: period.label, key: period.key, cycle: period.cycle, type: e.type, status: e.status, due, fullDue, billable, paid, balance: due - paid, isOverride: e.fee_due != null };
   });
 }
 
+/* Poora hisaab ek jagah — periods, phir firm ka bhara hua, phir one-off kaam */
+export function fullLedger(c: Client, map: Record<string, Filing>, payments: Payment[], tasks: Task[]): FullLedger {
+  const periods = ledgerRows(c, map, payments);
+  let remaining = paymentPool(payments, c.id) - periods.reduce((a, r) => a + r.paid, 0);
+
+  const advances: AdvanceRow[] = firmPaidEntries(payments, c.id).map(p => {
+    const due = Number(p.amount || 0);
+    const paid = Math.min(remaining, due);
+    remaining -= paid;
+    return { id: p.id, on: p.paid_on || "", note: p.note || "", method: p.method || "", due, paid, balance: due - paid };
+  });
+
+  const taskRows: TaskDueRow[] = [];
+  for (const t of tasksForClient(tasks, c.id)) {
+    if (!isTaskBillable(t.status)) continue;
+    const due = (Number(t.fee_agreed) || 0) - (Number(t.amount_paid) || 0);
+    if (due <= 0) continue;
+    const paid = Math.min(remaining, due);
+    remaining -= paid;
+    taskRows.push({ id: t.id, name: t.name, status: t.status, due, paid, balance: due - paid });
+  }
+
+  const balance = periods.reduce((a, r) => a + r.balance, 0)
+    + advances.reduce((a, r) => a + r.balance, 0)
+    + taskRows.reduce((a, r) => a + r.balance, 0);
+
+  return { periods, advances, tasks: taskRows, balance, leftover: Math.max(remaining, 0) };
+}
+
 export function tasksForClient(tasks: Task[], clientId: string) { return tasks.filter(t => t.client_id === clientId); }
+/* Sirf poore ho chuke kaam ki baaki fee */
 export function oneOffDue(tasks: Task[], clientId: string) {
-  return tasksForClient(tasks, clientId).reduce((a, t) => a + ((Number(t.fee_agreed) || 0) - (Number(t.amount_paid) || 0)), 0);
+  return tasksForClient(tasks, clientId).reduce((a, t) => {
+    if (!isTaskBillable(t.status)) return a;
+    const d = (Number(t.fee_agreed) || 0) - (Number(t.amount_paid) || 0);
+    return a + (d > 0 ? d : 0);
+  }, 0);
 }
 export function oneOffPaid(tasks: Task[], clientId: string) {
   return tasksForClient(tasks, clientId).reduce((a, t) => a + (Number(t.amount_paid) || 0), 0);
 }
+/* Humne client ke liye kitna bhara — kharche ka hisaab */
+export function totalFirmPaid(payments: Payment[], clientId: string) {
+  return firmPaidEntries(payments, clientId).reduce((a, p) => a + Number(p.amount || 0), 0);
+}
 
 export function balanceDue(c: Client, map: Record<string, Filing>, payments: Payment[], tasks: Task[]) {
-  return ledgerRows(c, map, payments).reduce((a, r) => a + r.balance, 0) + oneOffDue(tasks, c.id);
+  return fullLedger(c, map, payments, tasks).balance;
 }
+/* Client se jitna paisa AAYA. Firm ne jo bhara wo isme nahi ginte. */
 export function totalPaid(c: Client, payments: Payment[], tasks: Task[]) {
-  return payments.filter(p => p.client_id === c.id).reduce((a, p) => a + Number(p.amount || 0), 0) + oneOffPaid(tasks, c.id);
+  return paymentPool(payments, c.id) + oneOffPaid(tasks, c.id);
 }
 
 export function isDefaulter(c: Client, map: Record<string, Filing>) {

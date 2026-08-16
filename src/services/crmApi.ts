@@ -48,7 +48,8 @@ export const upsertFiling = (d: { client_id: string; period_key: string; status?
   jsonPost("/filings/upsert", d).then(r => r.data);
 
 /* ---------- Payments ---------- */
-export const createPayment = (d: { client_id: string; amount: number; method?: string; note?: string }): Promise<Payment> =>
+/* kind: "client" = client ne diya | "firm_paid" = humne uski taraf se bhara */
+export const createPayment = (d: { client_id: string; amount: number; method?: string; note?: string; kind?: string }): Promise<Payment> =>
   jsonPost("/payments", d).then(r => r.data);
 export const deletePayment = (id: string) => req(`/payments/${id}`, { method: "DELETE" }).then(r => r.data);
 export const restorePayment = (id: string) => req(`/payments/${id}/restore`, { method: "POST" }).then(r => r.data);
