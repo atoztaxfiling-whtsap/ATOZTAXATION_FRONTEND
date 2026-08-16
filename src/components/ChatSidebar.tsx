@@ -27,7 +27,7 @@ export default function ChatSidebar({ threads, selectedMobile, onSelectThread, i
 
   return (
     <div className={`${isMobile ? 'w-full' : 'w-[360px]'} flex flex-col flex-shrink-0`} style={{ background: '#fff', borderRight: '1px solid #E6E7E2' }}>
-      <div className="flex items-center justify-between px-4 py-3 flex-shrink-0" style={{ background: '#127A56' }}>
+      <div className="flex items-center justify-between px-4 py-3 flex-shrink-0" style={{ background: '#0F6E56' }}>
         <div className="flex items-center gap-2.5">
           <div className="w-9 h-9 rounded-lg bg-white flex items-center justify-center overflow-hidden flex-shrink-0">
             <img src="/icon-192.png" alt="ATOZ" className="w-8 h-8 object-contain" />
@@ -61,11 +61,11 @@ export default function ChatSidebar({ threads, selectedMobile, onSelectThread, i
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between mb-0.5">
                   <span className="font-semibold text-sm truncate" style={{ color: '#15191E' }}>{label}</span>
-                  <span className="text-xs ml-2 flex-shrink-0" style={{ color: ur > 0 ? '#127A56' : '#5A6168' }}>{fmtTime(t.timestamp)}</span>
+                  <span className="text-xs ml-2 flex-shrink-0" style={{ color: ur > 0 ? '#0F6E56' : '#5A6168' }}>{fmtTime(t.timestamp)}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <p className="text-sm truncate" style={{ color: '#5A6168' }}>{t.lastMessage || ''}</p>
-                  {ur > 0 && <div className="w-5 h-5 rounded-full flex items-center justify-center text-white font-bold ml-2 flex-shrink-0" style={{ background: '#127A56', fontSize: '11px' }}>{ur > 99 ? '99+' : ur}</div>}
+                  {ur > 0 && <div className="w-5 h-5 rounded-full flex items-center justify-center text-white font-bold ml-2 flex-shrink-0" style={{ background: '#0F6E56', fontSize: '11px' }}>{ur > 99 ? '99+' : ur}</div>}
                 </div>
               </div>
             </div>

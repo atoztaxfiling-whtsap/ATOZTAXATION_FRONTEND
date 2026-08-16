@@ -102,7 +102,7 @@ export default function ChatWindow({ selectedMobile, threads, messages, messages
 
   const chatCol = (
     <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-      <div className="flex items-center gap-3 px-4 py-3 flex-shrink-0 shadow-sm" style={{ background: '#127A56' }}>
+      <div className="flex items-center gap-3 px-4 py-3 flex-shrink-0 shadow-sm" style={{ background: '#0F6E56' }}>
         {isMobile && <button onClick={onBack} className="p-1.5 rounded-full hover:bg-white/20 transition"><ArrowLeft size={20} className="text-white" /></button>}
         <div onClick={() => setShowInfo(v => !v)} className="w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold text-sm flex-shrink-0 cursor-pointer" style={{ background: col }}>{ini}</div>
         <div onClick={() => setShowInfo(v => !v)} className="flex-1 min-w-0 cursor-pointer"><h2 className="serif text-white font-semibold text-base truncate">{label}</h2><p className="text-xs" style={{ color: 'rgba(255,255,255,0.8)' }}>{thread.mobile}</p></div>
