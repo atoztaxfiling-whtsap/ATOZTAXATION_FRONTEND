@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import {
   LayoutDashboard, MessageCircle, Users, Phone, CreditCard, FileText,
   CheckSquare, UserPlus, Settings as SettingsIcon, BarChart3, Megaphone, MoreHorizontal, LogOut,
+  ClipboardList,
   Sparkles,
 } from "lucide-react";
 import Chat from "./components/Chat";
@@ -11,6 +12,7 @@ import Followups from "./components/crm/Followups";
 import Payments from "./components/crm/Payments";
 import Filings from "./components/crm/Filings";
 import Workflow from "./components/crm/Workflow";
+import PendingTasks from "./components/crm/PendingTasks";
 import Registrations from "./components/crm/Registrations";
 import Settings from "./components/crm/Settings";
 import ClientDrawer from "./components/crm/ClientDrawer";
@@ -22,7 +24,7 @@ import Analytics from "./components/Analytics";
 import TokenLogin from "./components/TokenLogin";
 import { setupPushNotifications } from "./services/push";
 import { CrmProvider, useCrm } from "./services/crmStore";
-import { isDefaulter, type Client } from "./services/crmLogic";
+import { isDefaulter, buildWorkItems, LATE_DAYS, type Client } from "./services/crmLogic";
 
 /* Token helpers ab yahin hain — pehle ye "./services/api" se aate the, par
    tumhare repo me wo file nahi hai, isliye Netlify pe build fail ho rahi thi.
@@ -31,13 +33,14 @@ const hasToken = (): boolean => !!localStorage.getItem("console_token");
 const clearToken = (): void => localStorage.removeItem("console_token");
 
 type Tab =
-  | "chat" | "dashboard" | "clients" | "followups" | "payments" | "filings"
+  | "chat" | "dashboard" | "clients" | "pending" | "followups" | "payments" | "filings"
   | "workflow" | "registrations" | "setup" | "returns" | "analytics" | "notifications" | "more";
 
 const ICONS: Record<string, JSX.Element> = {
   chat: <MessageCircle className="w-4 h-4" />,
   dashboard: <LayoutDashboard className="w-4 h-4" />,
   clients: <Users className="w-4 h-4" />,
+  pending: <ClipboardList className="w-4 h-4" />,
   followups: <Phone className="w-4 h-4" />,
   payments: <CreditCard className="w-4 h-4" />,
   filings: <FileText className="w-4 h-4" />,
@@ -53,6 +56,7 @@ const WORKSPACE: Array<{ key: Tab; label: string }> = [
   { key: "chat", label: "Chat" },
   { key: "dashboard", label: "Dashboard" },
   { key: "clients", label: "Clients" },
+  { key: "pending", label: "Pending task" },
   { key: "followups", label: "Followups" },
   { key: "payments", label: "Payments" },
   { key: "filings", label: "Filings" },
@@ -69,7 +73,7 @@ const MOBILE_NAV: Array<{ key: Tab; label: string }> = [
   { key: "chat", label: "Chat" },
   { key: "dashboard", label: "Home" },
   { key: "clients", label: "Clients" },
-  { key: "filings", label: "Filings" },
+  { key: "pending", label: "Pending" },
   { key: "more", label: "More" },
 ];
 
@@ -82,7 +86,7 @@ export default function App() {
 }
 
 function Shell({ onLogout }: { onLogout: () => void }) {
-  const { clients, filingMap, staff } = useCrm();
+  const { clients, filingMap, staff, filings, tasks, registrations } = useCrm();
   const [tab, setTab] = useState<Tab>("chat");
   const [isMobile, setIsMobile] = useState(false);
   const [drawer, setDrawer] = useState<Client | null>(null);
@@ -92,13 +96,21 @@ function Shell({ onLogout }: { onLogout: () => void }) {
 
   const followupCount = clients.filter(c => c.followup_text).length;
   const defaulterCount = clients.filter(c => isDefaulter(c, filingMap)).length;
-  const badges: Partial<Record<Tab, number>> = { clients: clients.length, followups: followupCount, filings: defaulterCount };
+  /* Pending task ka badge = jo kaam humare paas LATE_DAYS+ din se atka hai.
+     Sirf laal wale, warna badge hamesha bada number dikhata rahega aur
+     uska matlab hi khatam ho jayega. */
+  const lateCount = buildWorkItems(clients, filings, tasks, registrations)
+    .filter(i => i.bucket === "us" && i.days >= LATE_DAYS).length;
+  const badges: Partial<Record<Tab, number>> = {
+    clients: clients.length, pending: lateCount, followups: followupCount, filings: defaulterCount,
+  };
 
   function screen(t: Tab) {
     switch (t) {
       case "chat": return <Chat />;
       case "dashboard": return <CrmDashboard />;
       case "clients": return <Clients />;
+      case "pending": return <PendingTasks />;
       case "followups": return <Followups />;
       case "payments": return <Payments />;
       case "filings": return <Filings />;
