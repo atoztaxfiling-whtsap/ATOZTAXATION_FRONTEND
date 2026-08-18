@@ -39,6 +39,15 @@ export const FILING_MODES = [
   { value: "manual-quarterly", label: "Hamesha quarterly" },
 ];
 
+/* Business type — GST cadence isi se tay hoti hai (Tukda 2) */
+export const BUSINESS_TYPES = [
+  { value: "unknown", label: "— pata nahi —" },
+  { value: "b2b", label: "B2B / actual bills (ITC) — last date 13" },
+  { value: "ecommerce", label: "E-commerce — last date 20" },
+  { value: "b2c", label: "B2C only (turnover) — last date 20" },
+  { value: "nil", label: "Nil (aksar) — 13 se pehle confirm" },
+];
+
 /* ---------- Types ---------- */
 export interface Client {
   id: string; mobile: string; name: string;
@@ -52,6 +61,7 @@ export interface Client {
   linked_client_ids?: string[] | null;
   other_logins?: Array<{ label: string; username: string; password: string }> | null;
   primary_service?: string | null; source?: string | null; notes?: string | null;
+  business_type?: string | null;
   is_active?: boolean; created_at?: string;
 }
 export interface Filing {

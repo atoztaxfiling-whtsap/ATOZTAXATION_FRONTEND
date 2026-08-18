@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { useCrm } from "../../services/crmStore";
 import { createClient, updateClient } from "../../services/crmApi";
-import { FILING_MODES, checkDuplicateGSTIN, type Client } from "../../services/crmLogic";
+import { FILING_MODES, BUSINESS_TYPES, checkDuplicateGSTIN, type Client } from "../../services/crmLogic";
 import { Modal, Field, Row2, TextInput, SelectInput, FieldsetLabel, Btn } from "./ui";
 
 interface Props { client?: Client | null; onClose: () => void; onSaved?: (c: Client) => void; }
@@ -30,6 +30,7 @@ export default function ClientForm({ client, onClose, onSaved }: Props) {
     fee_quarterly_nil: client?.fee_quarterly_nil ?? "",
     fee_quarterly_sales: client?.fee_quarterly_sales ?? "",
     assigned_to: client?.assigned_to || (staff[0]?.name ?? ""),
+    business_type: client?.business_type || "unknown",
   });
   const [linked, setLinked] = useState<string[]>(client?.linked_client_ids || []);
   const [saving, setSaving] = useState(false);
@@ -54,6 +55,7 @@ export default function ClientForm({ client, onClose, onSaved }: Props) {
       fee_quarterly_nil: f.fee_quarterly_nil === "" ? 800 : Number(f.fee_quarterly_nil),
       fee_quarterly_sales: f.fee_quarterly_sales === "" ? 2000 : Number(f.fee_quarterly_sales),
       assigned_to: f.assigned_to || null,
+      business_type: f.business_type || null,
     };
     if (editing) payload.linked_client_ids = linked;
 
@@ -115,12 +117,19 @@ export default function ClientForm({ client, onClose, onSaved }: Props) {
         <Field label="Sales filing (₹)"><TextInput type="number" value={f.fee_quarterly_sales} onChange={e => set("fee_quarterly_sales", e.target.value)} placeholder="2000" /></Field>
       </Row2>
 
-      <Field label="Assigned to">
-        <SelectInput value={f.assigned_to} onChange={e => set("assigned_to", e.target.value)}>
-          <option value="">— koi nahi —</option>
-          {staff.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}
-        </SelectInput>
-      </Field>
+      <Row2>
+        <Field label="Assigned to">
+          <SelectInput value={f.assigned_to} onChange={e => set("assigned_to", e.target.value)}>
+            <option value="">— koi nahi —</option>
+            {staff.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}
+          </SelectInput>
+        </Field>
+        <Field label="Business type" hint="GST followup ki last date isi se: B2B=13, baaki=20">
+          <SelectInput value={f.business_type} onChange={e => set("business_type", e.target.value)}>
+            {BUSINESS_TYPES.map(b => <option key={b.value} value={b.value}>{b.label}</option>)}
+          </SelectInput>
+        </Field>
+      </Row2>
 
       {editing && (
         <Field label="Linked customer accounts (same banda, doosre GSTIN)"
