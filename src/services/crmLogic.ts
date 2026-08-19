@@ -128,10 +128,16 @@ function pad2(n: number) { return n < 10 ? `0${n}` : `${n}`; }
 export function keyM(idx: number) { return `M${Math.floor(idx / 12)}-${pad2((idx % 12) + 1)}`; }
 export function keyQ(qIdx: number) { return `Q${Math.floor(qIdx / 12)}-${pad2((qIdx % 12) + 1)}`; }
 
+// CRM GO-LIVE cutoff — is mahine se pehle ke period pending NAHI.
+// ZAROORI: ledger.py (backend) me bhi YEHI value (CRM_START_YEAR/MONTH).
+export const CRM_START_INDEX = monthIndex(2026, 8);
+
 function clientStartIndex(c: Client) {
-  if (c.reg_year && c.reg_month) return monthIndex(c.reg_year, c.reg_month);
-  if (c.created_at) { const d = new Date(c.created_at); return d.getFullYear() * 12 + d.getMonth(); }
-  return todayIndex();
+  let idx: number;
+  if (c.reg_year && c.reg_month) idx = monthIndex(c.reg_year, c.reg_month);
+  else if (c.created_at) { const d = new Date(c.created_at); idx = d.getFullYear() * 12 + d.getMonth(); }
+  else idx = todayIndex();
+  return Math.max(idx, CRM_START_INDEX);
 }
 
 /** Client ke registration se aaj tak ke saare periods. */
