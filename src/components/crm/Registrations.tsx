@@ -123,6 +123,7 @@ function ConvertModal({ reg, onClose }: { reg: Registration; onClose: () => void
   const { staff, reload, toast } = useCrm();
   const [f, setF] = useState({
     business_name: reg.business_name || reg.name, mobile: reg.mobile || "",
+    gstin: "",
     portal_username: "", portal_password: "",
     regdate: new Date().toISOString().slice(0, 10), filing_mode: "auto",
     fee_monthly_nil: "", fee_monthly_sales: "", fee_quarterly_nil: "", fee_quarterly_sales: "",
@@ -134,10 +135,11 @@ function ConvertModal({ reg, onClose }: { reg: Registration; onClose: () => void
 
   async function save() {
     if (!/^[6-9]\d{9}$/.test(f.mobile)) { setErr("Sahi 10-digit mobile number chahiye"); return; }
+    if (!f.gstin.trim()) { setErr("GSTIN zaroori hai — registration complete hone par GSTIN daal ke hi client banega"); return; }
     const [y, m] = f.regdate.split("-").map(Number);
     setSaving(true); setErr("");
     const payload: Partial<Client> = {
-      mobile: f.mobile, business_name: f.business_name || null,
+      mobile: f.mobile, gstin: f.gstin.trim().toUpperCase(), business_name: f.business_name || null,
       portal_username: f.portal_username || null, portal_password: f.portal_password || null,
       reg_year: y, reg_month: m, filing_mode: f.filing_mode, assigned_to: f.assigned_to || null,
       fee_monthly_nil: Number(f.fee_monthly_nil) || 500,
@@ -156,6 +158,7 @@ function ConvertModal({ reg, onClose }: { reg: Registration; onClose: () => void
         <Field label="Business name"><TextInput value={f.business_name} onChange={e => set("business_name", e.target.value)} /></Field>
         <Field label="Phone (WhatsApp)"><TextInput value={f.mobile} maxLength={10} onChange={e => set("mobile", e.target.value.replace(/\D/g, ""))} /></Field>
       </Row2>
+      <Field label="GSTIN (zaroori)"><TextInput value={f.gstin} onChange={e => set("gstin", e.target.value.toUpperCase())} placeholder="15-digit GSTIN" /></Field>
       <Row2>
         <Field label="GST username"><TextInput value={f.portal_username} onChange={e => set("portal_username", e.target.value)} /></Field>
         <Field label="Password"><TextInput value={f.portal_password} onChange={e => set("portal_password", e.target.value)} /></Field>
