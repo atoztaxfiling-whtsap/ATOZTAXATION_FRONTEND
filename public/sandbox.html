@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ATOZ sandbox — 5 day office demo</title>
+  <style>
+:root {
+  --green: #0F6E56;
+  --ink: #182430;
+  --muted: #6B6F68;
+  --line: #E6E4DD;
+  --bg: #F6F5F1;
+  --wa: #EFEAE2;
+}
+* { box-sizing: border-box; }
+body { margin: 0; font-family: ui-sans-serif, system-ui, sans-serif; background: var(--bg); color: var(--ink); }
+.top {
+  display: flex; flex-wrap: wrap; gap: 12px; align-items: center;
+  background: var(--ink); color: #fff; padding: 12px 16px;
+}
+.brand { display: flex; gap: 10px; align-items: center; min-width: 220px; }
+.logo { width: 32px; height: 32px; background: var(--green); border-radius: 6px; display: flex; align-items: center; justify-content: center; font-weight: 800; }
+.sub { font-size: 11px; color: #AEB8C4; }
+.clock { flex: 1; text-align: center; }
+.when { font-weight: 700; }
+.day { font-size: 12px; color: #8FE3BE; }
+.clock-btns { display: flex; flex-wrap: wrap; gap: 6px; }
+button {
+  border: 0; background: #232F3C; color: #fff; padding: 7px 10px; border-radius: 8px; cursor: pointer; font-size: 12px;
+}
+button:hover { filter: brightness(1.1); }
+button.danger { background: #7a2d2d; }
+.banner, .howto { margin: 10px 16px; background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 10px 14px; font-size: 13px; color: var(--muted); }
+.howto ol { margin: 8px 0 0 18px; }
+.grid { display: grid; grid-template-columns: 340px 1fr 280px; gap: 12px; padding: 0 16px 20px; align-items: stretch; min-height: 70vh; }
+@media (max-width: 1100px) { .grid { grid-template-columns: 1fr; } }
+.phone, .console, .log { background: #fff; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; min-height: 560px; }
+.phone-bar, .staff-bar {
+  background: #075E54; color: #fff; padding: 10px; display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 13px;
+}
+.phone-bar select, .staff-bar select { max-width: 180px; }
+.bubbles { flex: 1; overflow: auto; padding: 12px; background: var(--wa); display: flex; flex-direction: column; gap: 6px; }
+.b { max-width: 85%; padding: 8px 10px; border-radius: 10px; font-size: 13px; line-height: 1.35; white-space: pre-wrap; }
+.b.in { align-self: flex-end; background: #D9FDD3; }
+.b.out { align-self: flex-start; background: #fff; }
+.b.staff { background: #fff3cd; }
+.b .meta { font-size: 10px; color: var(--muted); margin-top: 4px; }
+.composer { display: flex; gap: 6px; padding: 8px; border-top: 1px solid var(--line); }
+.composer input { flex: 1; padding: 8px; border: 1px solid var(--line); border-radius: 8px; }
+.chips { display: flex; flex-wrap: wrap; gap: 4px; padding: 8px; }
+.chips button { background: #E1F5EE; color: #04342C; }
+.tabs { display: flex; gap: 0; border-bottom: 1px solid var(--line); overflow-x: auto; }
+.tabs button { background: transparent; color: var(--muted); border-radius: 0; padding: 10px 12px; }
+.tabs button.on { color: var(--green); border-bottom: 2px solid var(--green); }
+.tab { display: none; flex: 1; overflow: auto; }
+.tab.on { display: block; }
+.split { display: grid; grid-template-columns: 160px 1fr; min-height: 500px; }
+.thread-list { border-right: 1px solid var(--line); overflow: auto; }
+.thread-list div { padding: 10px; cursor: pointer; font-size: 13px; border-bottom: 1px solid var(--line); }
+.thread-list div.on { background: #E1F5EE; }
+.thread-chat { display: flex; flex-direction: column; min-height: 500px; }
+table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+th, td { text-align: left; padding: 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.log { padding: 12px; }
+.log h3 { margin: 0 0 8px; font-size: 14px; }
+#events { font-size: 12px; color: var(--muted); display: flex; flex-direction: column; gap: 8px; overflow: auto; }
+#events .e { border-left: 3px solid var(--green); padding-left: 8px; }
+code { background: #eee; padding: 1px 4px; border-radius: 4px; }
+.pill { display: inline-block; padding: 2px 8px; border-radius: 99px; font-size: 11px; background: #E1F5EE; }
+.warn { background: #FBF1DC; }
+.bad { background: #FCEBEB; }
+
+</style>
+</head>
+<body>
+  <header class="top">
+    <div class="brand">
+      <span class="logo">AZ</span>
+      <div>
+        <strong>ATOZ Taxation</strong>
+        <div class="sub">Office sandbox — WhatsApp jaisa, bina asli WhatsApp</div>
+      </div>
+    </div>
+    <div class="clock">
+      <div class="when" id="when">—</div>
+      <div class="day" id="daylabel">Demo day 0 / 5</div>
+    </div>
+    <div class="clock-btns">
+      <button onclick="advance(0,1)">+1 hour</button>
+      <button onclick="advance(1,0)">+1 day</button>
+      <button onclick="advance(0,6)">Skip to evening</button>
+      <button onclick="jumpNight()">1:30am (night)</button>
+      <button class="danger" onclick="resetDemo()">Reset</button>
+    </div>
+  </header>
+
+  <p class="banner">Yahan se jo message jaata hai wo <b>asli WhatsApp pe nahi</b> jaata. Bot, followup, payment claim, naya client — sab yahi dikhega. Clock aage badhao to 5 din ke chase dikhenge.</p>
+
+  <section class="howto">
+    <strong>5 din ka walkthrough</strong>
+    <ol>
+      <li><b>Day 0:</b> Left phone pe naya number <code>9876500999</code> choose karo. Likho <i>GST registration chahiye</i>. CRM me client banega, bot fee+docs dega.</li>
+      <li>Wahi chat me <i>Aadhaar photo bhej diya</i> — docs tick. Phir <i>sir se baat karni hai</i> — escalation.</li>
+      <li>Ramesh (<code>9876500101</code>) pe <i>is month sales thi</i> — filing type sales.</li>
+      <li>Lakshmi (<code>9876500102</code>) pe <i>payment kar diya UTR 123</i> — claim. Right side Confirm dabao.</li>
+      <li><b>+1 day</b> 4–5 baar: lead/docs/payment/GST reminders. Night 1–5am pe bot sirf “Noted”.</li>
+    </ol>
+  </section>
+
+  <main class="grid">
+    <section class="phone">
+      <div class="phone-bar">
+        <span>Client WhatsApp (fake)</span>
+        <select id="phoneMobile"></select>
+      </div>
+      <div class="bubbles" id="clientBubbles"></div>
+      <form class="composer" onsubmit="return sendClient(event)">
+        <input id="clientText" placeholder="Client yahan type kare..." autocomplete="off" />
+        <button type="submit">Send</button>
+      </form>
+      <div class="chips">
+        <button type="button" onclick="quick('GST registration chahiye')">GST registration</button>
+        <button type="button" onclick="quick('Aadhaar photo bhej diya')">Docs</button>
+        <button type="button" onclick="quick('payment kar diya UTR 123456')">Paid</button>
+        <button type="button" onclick="quick('Arshad sir se baat karni hai')">Call sir</button>
+        <button type="button" onclick="quick('is month sales thi')">Sales thi</button>
+        <button type="button" onclick="quick('GST return status kahan tak hai')">Status</button>
+        <button type="button" onclick="quick('నాకు GST registration కావాలి please')">Telenglish</button>
+        <button type="button" onclick="quick('mat bhejo STOP')">STOP</button>
+      </div>
+    </section>
+
+    <section class="console">
+      <nav class="tabs">
+        <button class="on" data-tab="inbox">Inbox</button>
+        <button data-tab="clients">Clients</button>
+        <button data-tab="filings">Filings</button>
+        <button data-tab="pay">Payments</button>
+        <button data-tab="fu">Followups</button>
+        <button data-tab="esc">Escalations</button>
+      </nav>
+      <div id="tab-inbox" class="tab on">
+        <div class="split">
+          <div class="thread-list" id="threads"></div>
+          <div class="thread-chat">
+            <div class="staff-bar">
+              <span id="staffTitle">Select chat</span>
+              <button onclick="pauseBot()">Pause 2h</button>
+            </div>
+            <div class="bubbles" id="staffBubbles"></div>
+            <form class="composer" onsubmit="return sendStaff(event)">
+              <input id="staffText" placeholder="Staff (Deeksha) type..." autocomplete="off" />
+              <button type="submit">Send</button>
+            </form>
+          </div>
+        </div>
+      </div>
+      <div id="tab-clients" class="tab"></div>
+      <div id="tab-filings" class="tab"></div>
+      <div id="tab-pay" class="tab"></div>
+      <div id="tab-fu" class="tab"></div>
+      <div id="tab-esc" class="tab"></div>
+    </section>
+
+    <aside class="log">
+      <h3>Kya hua</h3>
+      <div id="events"></div>
+    </aside>
+  </main>
+  <script>
+/* Browser copy of the ATOZ sandbox engine — no server, no WhatsApp. */
+(function (g) {
+  const START = "2026-08-03 11:00:00";
+  const NEW_LEAD = [0, 1, 2, 3, 7, 10, 14, 17];
+  const PAY = [1, 3, 7, 14];
+  const GST_DAY = { b2b: 13, ecommerce: 20, b2c: 20, nil: 20, unknown: 20 };
+  const GST_BEFORE = { b2b: [10, 5, 2, 1], ecommerce: [10, 5, 1], b2c: [5, 1], nil: [7, 2], unknown: [10, 5, 2, 1] };
+
+  function pad(n) { return n < 10 ? "0" + n : "" + n; }
+  function parse(s) {
+    const [d, t] = s.split(" ");
+    const [y, m, day] = d.split("-").map(Number);
+    const [hh, mm, ss] = (t || "00:00:00").split(":").map(Number);
+    return new Date(y, m - 1, day, hh, mm, ss || 0);
+  }
+  function iso(dt) {
+    return dt.getFullYear() + "-" + pad(dt.getMonth() + 1) + "-" + pad(dt.getDate()) + " " +
+      pad(dt.getHours()) + ":" + pad(dt.getMinutes()) + ":" + pad(dt.getSeconds());
+  }
+  function dayStr(dt) { return iso(dt).slice(0, 10); }
+  function isNight(dt) { const h = dt.getHours(); return h >= 1 && h < 5; }
+  function shouldSend(offsets, days, sent) { return offsets.filter(o => o <= days).length > sent && sent < offsets.length; }
+  function gstShould(type, dtd, sent) {
+    const before = GST_BEFORE[type] || GST_BEFORE.unknown;
+    if (dtd >= 0) return before.filter(b => b >= dtd).length > sent;
+    if (-dtd <= 1) return sent < before.length + 1;
+    return false;
+  }
+
+  let db;
+
+  function ev(kind, text) {
+    db.events.unshift({ id: db.events.length + 1, created_at: db.now, kind, text });
+  }
+  function nid(arr) { return (arr.reduce((m, x) => Math.max(m, x.id || 0), 0) || 0) + 1; }
+
+  function snapshot() {
+    const clients = db.clients.map(c => {
+      const filing = db.filings.filter(f => f.client_id === c.id).slice(-1)[0] || null;
+      return { ...c, balance: balance(c.id), filing };
+    });
+    return {
+      now: db.now, day_index: db.day_index, night: isNight(parse(db.now)),
+      clients, filings: db.filings, payments: db.payments, claims: db.claims,
+      messages: db.messages, followups: db.followups, escalations: db.escalations, events: db.events,
+    };
+  }
+
+  function balance(cid) {
+    const c = db.clients.find(x => x.id === cid);
+    let due = Number(c.opening_balance || 0);
+    db.filings.filter(f => f.client_id === cid && f.status === "Completed").forEach(f => { due += Number(f.fee_due || 0); });
+    db.payments.filter(p => p.client_id === cid && p.kind === "firm_paid").forEach(p => { due += Number(p.amount); });
+    db.payments.filter(p => p.client_id === cid && p.kind !== "firm_paid").forEach(p => { due -= Number(p.amount); });
+    return Math.round(due * 100) / 100;
+  }
+
+  function reset() {
+    db = { now: START, day_index: 0, seq: 1, clients: [], filings: [], payments: [], claims: [], messages: [], followups: [], escalations: [], events: [] };
+    const n = parse(START);
+    const yday = iso(new Date(n.getTime() - 86400000));
+    function addC(o) { o.id = nid(db.clients); o.created_at = START; o.stop_followups = 0; o.gst_pause = 0; o.bot_paused_until = ""; db.clients.push(o); return o; }
+    const r = addC({ mobile: "9876500101", name: "Ramesh", business_name: "Ramesh Traders", gstin: "36AAAAA0001A1Z5", gstin2: "", gstin2_status: "", assigned_to: "Deeksha", filing_mode: "auto", business_type: "b2b", language: "Hinglish", opening_balance: 0, notes: "Existing GST. Docs pending." });
+    const l = addC({ mobile: "9876500102", name: "Lakshmi", business_name: "Lakshmi Kirana", gstin: "36BBBBB0002B1Z8", gstin2: "", gstin2_status: "", assigned_to: "Deeksha", filing_mode: "auto", business_type: "b2c", language: "Hinglish", opening_balance: 0, notes: "Filing completed, fee due." });
+    addC({ mobile: "9876500103", name: "Kumar", business_name: "Kumar Fabrics", gstin: "36CCCCC0003C1Z1", gstin2: "36CCCCC0003C2Z2", gstin2_status: "cancelled", assigned_to: "Tejaswini", filing_mode: "auto", business_type: "b2b", language: "Telenglish", opening_balance: 0, notes: "Two GSTINs, one WhatsApp." });
+    const o = addC({ mobile: "9876500104", name: "Old Shop", business_name: "Old Shop", gstin: "36DDDDD0004D1Z4", gstin2: "", gstin2_status: "cancelled", assigned_to: "Arshad", filing_mode: "auto", business_type: "nil", language: "Hinglish", opening_balance: 800, notes: "GSTIN cancelled. Purana baaki." });
+    db.filings.push({ id: 1, client_id: r.id, period_key: "M2026-08", cycle: "monthly", type: "sales", status: "Documents Pending", fee_due: 1000, assigned_to: "Deeksha" });
+    db.filings.push({ id: 2, client_id: l.id, period_key: "M2026-08", cycle: "monthly", type: "nil", status: "Completed", fee_due: 500, assigned_to: "Deeksha" });
+    db.filings.push({ id: 3, client_id: 3, period_key: "M2026-08", cycle: "monthly", type: "sales", status: "In Progress", fee_due: 1000, assigned_to: "Tejaswini" });
+    db.followups.push({ id: 1, client_id: l.id, mobile: l.mobile, kind: "payment", status: "active", started_on: yday, sent_count: 0, note: "Fee due after Completed" });
+    db.followups.push({ id: 2, client_id: r.id, mobile: r.mobile, kind: "returns", status: "active", started_on: START, sent_count: 0, note: "GST Aug docs pending" });
+    db.followups.push({ id: 3, client_id: o.id, mobile: o.mobile, kind: "payment", status: "active", started_on: yday, sent_count: 0, note: "Opening balance 800" });
+    ev("system", "Demo reset. Clock 3 Aug 2026 11:00 IST. Ye asli WhatsApp nahi hai.");
+    return snapshot();
+  }
+
+  function has(text, ...ws) { const t = (text || "").toLowerCase(); return ws.some(w => t.includes(w.toLowerCase())); }
+  function tel(text) { return /[\u0C00-\u0C7F]/.test(text || ""); }
+
+  function decide(text, client) {
+    const lang = tel(text) ? "Telenglish" : (client.language || "Hinglish");
+    const out = { reply: "", language: lang, escalate: false, escalate_reason: "", stop_followups: false, payment_claimed: false, create_client: false, set_sales_type: null, followup: null };
+    const say = (h, e, te) => { out.reply = lang === "English" ? (e || h) : lang === "Telenglish" ? (te || h) : h; };
+    if (has(text, "stop", "mat bhejo")) { out.stop_followups = true; say("Theek hai ji, followup band kar deta hoon.", "I will stop follow-ups.", "Followups stop chestunnanu."); return out; }
+    if (has(text, "arshad", "sir se baat", "call karo", "call me", "phone karo")) { out.escalate = true; out.escalate_reason = "Client asked for Arshad / call"; say("Theek hai, ye Arshad sir dekhenge. Main unko bata deta hoon.", "Arshad sir will look at this.", "Arshad sir chustaru, nenu cheptha."); return out; }
+    if (has(text, "notice", "penalty", "raid", "summon", "refund", "inspection")) { out.escalate = true; out.escalate_reason = "Notice/legal"; say("Ye Arshad sir dekhenge, main unko bata deta hoon.", "Arshad sir will handle this.", "Idi Arshad sir chustaru."); return out; }
+    if (has(text, "kaun ho", "who are you", "office kaun")) { say("Main Arshad sir ki team se hoon. ATOZ Taxation, Hyderabad.", "I am from Arshad sir's team, ATOZ Taxation, Hyderabad.", "Nenu ATOZ Taxation team, Hyderabad."); return out; }
+    if (has(text, "paid", "payment kar diya", "utr", "paise bhej")) { out.payment_claimed = true; say("Theek hai, check karke confirm karta hoon. UTR ya screenshot bhej dijiye.", "Noted. Share UTR or screenshot.", "Office confirm chestundi. UTR pampandi."); return out; }
+    if (has(text, "sales thi", "sale hui", "bills hain", "invoice")) { out.set_sales_type = "sales"; say("Theek hai, is period ko sales maan leta hoon. Report bhej dijiye.", "Marking as sales.", "Sales ga tesukuntunna."); return out; }
+    if (has(text, "nil hai", "koi sale nahi", "nil return")) { out.set_sales_type = "nil"; say("Theek hai, nil maan leta hoon.", "Marking as nil.", "Nil ga tesukuntunna."); return out; }
+    if ((has(text, "aadhaar", "adhar", "pan", "document", "docs") && has(text, "bhej", "send", "diya", "photo", "pdf"))) {
+      say("Received. Documents check kar raha hoon. Jo baaki hain wo bhej dijiye.", "Received. Send whatever is still pending.", "Received. Migilina documents pampandi.");
+      out.followup = { kind: "docs", note: "Docs pending" }; return out;
+    }
+    if (has(text, "gst registration", "gst nahi hai", "naya gst", "register")) {
+      out.create_client = true;
+      say("GST registration. Fee 1500 (kam se kam 1000). Documents: Aadhaar, PAN, Email, Phone, Electricity bill, Business naam, Business category. Owned ho to bill kiske naam pe dekho — doosre naam pe NOC. Rented ho to rental agreement.", "GST registration fee 1500. Need Aadhaar, PAN, bill, business name.", "GST registration. Fee 1500. Documents pampandi.");
+      out.followup = { kind: "lead", note: "GST registration docs pending" }; return out;
+    }
+    if (has(text, "itr", "income tax")) { say("ITR ke liye pehle income samajhni padegi. Sirf salary ho to ITR-1, fee 500. Business ho to ITR-1 nahi. Figure main suggest nahi karunga.", "Need nature of income first. Salary = ITR-1 fee 500.", "ITR kosam income type cheppandi."); out.followup = { kind: "workflow", note: "ITR" }; return out; }
+    if (has(text, "kitna fee", "charges", "rate", "price")) { say("GST registration 1500, monthly GST sales 1000 / nil 500, ITR-1 500. List se bahar Arshad sir.", "Fees from list only.", "Fees list prakaram."); return out; }
+    if (has(text, "upi", "qr", "kahan bheju", "payment number")) { say("UPI: 9391717330@ybl. Payment ke baad UTR bhej dijiye, confirm office karega.", "UPI 9391717330@ybl. Then send UTR.", "UPI 9391717330@ybl."); return out; }
+    if (has(text, "status", "kahan tak", "ho gaya", "pending")) { say("Check karke batata hoon. Abhi filing: " + (client.filing_status || "Yet to Pick") + ".", "Checking the file.", "File chusi cheptha."); return out; }
+    if (has(text, "hi", "hello", "salaam", "namaste", "kaise ho")) { say("Ji, ATOZ Taxation. Bataiye.", "Hello, ATOZ Taxation.", "Namaskaram, ATOZ Taxation."); return out; }
+    out.create_client = true;
+    say("Theek hai ji, bataiye kaam kya hai.", "Tell me how we can help.", "Em help kavali cheppandi.");
+    return out;
+  }
+
+  function ensure(mobile, name) {
+    let c = db.clients.find(x => x.mobile === mobile);
+    if (c) return c;
+    c = { id: nid(db.clients), mobile, name: name || ("WhatsApp " + mobile.slice(-4)), assigned_to: "Deeksha", filing_mode: "auto", business_type: "unknown", language: "Hinglish", opening_balance: 0, notes: "", gstin: "", gstin2: "", gstin2_status: "", created_at: db.now, stop_followups: 0, gst_pause: 0, bot_paused_until: "" };
+    db.clients.push(c);
+    db.filings.push({ id: nid(db.filings), client_id: c.id, period_key: "M2026-08", cycle: "monthly", type: "nil", status: "Yet to Pick", fee_due: 500, assigned_to: "Deeksha" });
+    ev("crm", "Naya client CRM me bana: " + mobile);
+    return c;
+  }
+
+  function addMsg(mobile, direction, body, source) {
+    db.messages.push({ id: nid(db.messages), mobile, direction, body, source, created_at: db.now });
+  }
+  function muted(mobile) {
+    const c = db.clients.find(x => x.mobile === mobile);
+    if (!c || !c.bot_paused_until) return false;
+    return parse(c.bot_paused_until) > parse(db.now);
+  }
+  function outToday(mobile) {
+    const d = db.now.slice(0, 10);
+    return db.messages.filter(m => m.mobile === mobile && m.direction === "out" && m.source === "bot" && m.created_at.slice(0, 10) === d).length;
+  }
+
+  function clientSend(mobile, text) {
+    mobile = String(mobile || "").replace(/\D/g, "").slice(-10);
+    addMsg(mobile, "in", text, "client");
+    const c = ensure(mobile);
+    if (muted(mobile)) { ev("mute", mobile + " inbound, bot chup"); return snapshot(); }
+    if (isNight(parse(db.now))) {
+      addMsg(mobile, "out", "Noted. 1am–5am ke beech reply nahi hota. Thodi der mein reply kar dunga.", "bot");
+      ev("wa_out", "night ack → " + mobile);
+      return snapshot();
+    }
+    const snap = { ...c, filing_status: (db.filings.filter(f => f.client_id === c.id).slice(-1)[0] || {}).status, balance: balance(c.id) };
+    const d = decide(text, snap);
+    if (d.set_sales_type) {
+      db.filings.filter(f => f.client_id === c.id && f.period_key === "M2026-08").forEach(f => { f.type = d.set_sales_type; });
+      ev("filing", mobile + ": type=" + d.set_sales_type);
+    }
+    if (d.payment_claimed) {
+      db.claims.unshift({ id: nid(db.claims), client_id: c.id, mobile, note: text.slice(0, 200), status: "open", created_at: db.now });
+      ev("payment", mobile + ": payment CLAIM");
+    }
+    if (d.escalate) {
+      db.escalations.unshift({ id: nid(db.escalations), mobile, question: text.slice(0, 300), reason: d.escalate_reason, status: "open", created_at: db.now });
+      ev("escalate", mobile + ": " + d.escalate_reason);
+    }
+    if (d.stop_followups) {
+      c.stop_followups = 1;
+      db.followups.filter(f => f.client_id === c.id).forEach(f => { f.status = "paused"; });
+    }
+    if (d.followup && d.followup.kind && !db.followups.some(f => f.client_id === c.id && f.kind === d.followup.kind && f.status === "active")) {
+      db.followups.unshift({ id: nid(db.followups), client_id: c.id, mobile, kind: d.followup.kind, status: "active", started_on: db.now, sent_count: 0, note: d.followup.note || "" });
+    }
+    if (d.reply) { addMsg(mobile, "out", d.reply, "bot"); ev("wa_out", "→ " + mobile + ": " + d.reply.slice(0, 80)); }
+    return snapshot();
+  }
+
+  function staffSend(mobile, text) {
+    mobile = String(mobile || "").replace(/\D/g, "").slice(-10);
+    ensure(mobile);
+    addMsg(mobile, "out", text, "staff");
+    pause(mobile);
+    ev("wa_out", "STAFF → " + mobile);
+    return snapshot();
+  }
+
+  function pause(mobile) {
+    const c = db.clients.find(x => x.mobile === mobile);
+    if (!c) return snapshot();
+    const until = new Date(parse(db.now).getTime() + 2 * 3600000);
+    c.bot_paused_until = iso(until);
+    ev("pause", mobile + ": bot chup 2 ghante till " + c.bot_paused_until);
+    return snapshot();
+  }
+
+  function day0(d) { const x = new Date(d); x.setHours(0, 0, 0, 0); return x.getTime(); }
+
+  function tick(dt) {
+    if (isNight(dt)) return;
+    db.followups.filter(f => f.status === "active").forEach(fu => {
+      const c = db.clients.find(x => x.id === fu.client_id);
+      if (!c || c.stop_followups || muted(c.mobile) || outToday(c.mobile) >= 1) return;
+      const days = Math.round((day0(dt) - day0(parse(fu.started_on))) / 86400000);
+      let go = false, body = "";
+      if (fu.kind === "lead" || fu.kind === "docs") {
+        go = shouldSend(NEW_LEAD, days, fu.sent_count);
+        body = (c.name || "Ji") + ", documents pending hain GST registration ke. Jo baaki ho wo bhej dijiye.";
+      } else if (fu.kind === "payment") {
+        go = shouldSend(PAY, days, fu.sent_count);
+        const bal = balance(c.id);
+        body = fu.sent_count + 1 >= PAY.length
+          ? (c.name || "Ji") + ", last reminder. " + bal + " pending. Office call karega."
+          : "Ji, fee " + bal + " pending hai. UPI 9391717330@ybl.";
+      } else if (fu.kind === "returns") {
+        const frow = db.filings.find(f => f.client_id === c.id && f.period_key === "M2026-08");
+        if (!frow || ["Completed", "Documents Received", "In Progress", "GSTR1 Done"].includes(frow.status)) return;
+        const dueDay = GST_DAY[c.business_type] || 20;
+        const deadline = new Date(dt.getFullYear(), dt.getMonth(), dueDay);
+        const dtd = Math.round((day0(deadline) - day0(dt)) / 86400000);
+        go = gstShould(c.business_type, dtd, fu.sent_count);
+        body = (c.name || "Ji") + ", August GST return pending hai. Last date " + dueDay + " tarikh. Documents bhej dijiye.";
+      } else if (fu.kind === "workflow") {
+        go = shouldSend(NEW_LEAD, days, fu.sent_count);
+        body = "Ji, ITR ke documents pending hain.";
+      }
+      if (go && body) {
+        addMsg(c.mobile, "out", body, "bot");
+        fu.sent_count += 1;
+        fu.last_sent_on = db.now;
+        ev("followup", c.mobile + " [" + fu.kind + "] " + body.slice(0, 70));
+      }
+    });
+  }
+
+  function advance(days, hours) {
+    let cur = parse(db.now);
+    const target = new Date(cur.getTime() + (days || 0) * 86400000 + (hours || 0) * 3600000);
+    while (cur < target) {
+      cur = new Date(cur.getTime() + 3600000);
+      if (cur > target) cur = target;
+      db.now = iso(cur);
+      tick(cur);
+    }
+    db.day_index = Math.round((day0(target) - day0(parse(START))) / 86400000);
+    ev("clock", "Clock → " + db.now + " (demo day " + db.day_index + ")");
+    return snapshot();
+  }
+
+  function confirmClaim(id) {
+    const cl = db.claims.find(x => x.id === id);
+    if (!cl) return snapshot();
+    const amt = balance(cl.client_id) || 500;
+    db.payments.push({ id: nid(db.payments), client_id: cl.client_id, amount: amt, paid_on: db.now.slice(0, 10), method: "UPI", kind: "client", note: "Confirmed from claim" });
+    cl.status = "confirmed";
+    db.followups.filter(f => f.client_id === cl.client_id && f.kind === "payment").forEach(f => { f.status = "done"; });
+    ev("payment", "Claim #" + id + " CONFIRMED ₹" + amt);
+    return snapshot();
+  }
+  function rejectClaim(id) {
+    const cl = db.claims.find(x => x.id === id);
+    if (cl) cl.status = "rejected";
+    ev("payment", "Claim #" + id + " rejected");
+    return snapshot();
+  }
+  function setFilingStatus(id, status) {
+    const f = db.filings.find(x => x.id === id);
+    if (!f) return snapshot();
+    f.status = status;
+    if (status === "Completed") {
+      const c = db.clients.find(x => x.id === f.client_id);
+      db.followups.unshift({ id: nid(db.followups), client_id: c.id, mobile: c.mobile, kind: "payment", status: "active", started_on: db.now, sent_count: 0, note: "Fee due after Completed" });
+      ev("filing", c.mobile + " Completed → payment followup");
+    }
+    return snapshot();
+  }
+
+  reset();
+  g.AtozDemo = {
+    state: snapshot, reset, clientSend, staffSend, advance, pause, confirmClaim, rejectClaim, setFilingStatus,
+  };
+})(window);
+
+let S = null;
+let staffMobile = "9876500101";
+const EXTRA = [{ mobile: "9876500999", name: "Naya lead (empty)" }];
+
+function apply(s) { S = s; render(); }
+function boot() { apply(AtozDemo.reset()); }
+function resetDemo() { apply(AtozDemo.reset()); }
+function advance(days, hours) { apply(AtozDemo.advance(days || 0, hours || 0)); }
+function jumpNight() {
+  if (!S) return;
+  const h = Number((S.now || "").slice(11, 13));
+  let hours = (25 - h) % 24;
+  if (hours < 1) hours = 2;
+  apply(AtozDemo.advance(0, hours));
+}
+
+function phones() {
+  const fromClients = (S.clients || []).map(c => ({ mobile: c.mobile, name: c.name || c.mobile }));
+  const map = {};
+  [...EXTRA, ...fromClients].forEach(p => { map[p.mobile] = p; });
+  return Object.values(map);
+}
+
+function msgs(mobile) {
+  return (S.messages || []).filter(m => m.mobile === mobile);
+}
+
+function fillSelect() {
+  const sel = document.getElementById("phoneMobile");
+  const cur = sel.value;
+  sel.innerHTML = phones().map(p => `<option value="${p.mobile}">${p.name} · ${p.mobile}</option>`).join("");
+  if ([...sel.options].some(o => o.value === cur)) sel.value = cur;
+  else if (!sel.value) sel.value = "9876500999";
+}
+
+function bubbleHtml(m, side) {
+  const mine = side === "client" ? m.direction === "in" : m.direction === "out";
+  const cls = m.direction === "in" ? "b in" : (m.source === "staff" ? "b out staff" : "b out");
+  const who = m.direction === "in" ? "Client" : (m.source === "staff" ? "Staff" : "Bot");
+  return `<div class="${cls}"><div>${esc(m.body || "")}</div><div class="meta">${who} · ${m.created_at || ""}</div></div>`;
+}
+
+function esc(s) {
+  return String(s).replace(/[&<>]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
+}
+
+function render() {
+  if (!S || S.error) return;
+  document.getElementById("when").textContent = S.now + (S.night ? "  · NIGHT (bot ack only)" : "");
+  document.getElementById("daylabel").textContent = `Demo day ${S.day_index} / 5`;
+  fillSelect();
+  const cm = document.getElementById("phoneMobile").value;
+  document.getElementById("clientBubbles").innerHTML = msgs(cm).map(m => bubbleHtml(m, "client")).join("");
+  const box = document.getElementById("clientBubbles");
+  box.scrollTop = box.scrollHeight;
+
+  const threads = {};
+  (S.messages || []).forEach(m => { threads[m.mobile] = m; });
+  const tEl = document.getElementById("threads");
+  tEl.innerHTML = Object.keys(threads).sort().map(mob => {
+    const c = (S.clients || []).find(x => x.mobile === mob);
+    return `<div class="${mob === staffMobile ? "on" : ""}" onclick="pickStaff('${mob}')">${esc((c && c.name) || mob)}<div class="meta">${mob}</div></div>`;
+  }).join("") || "<div class='meta'>Abhi koi chat nahi</div>";
+  document.getElementById("staffTitle").textContent = staffMobile;
+  document.getElementById("staffBubbles").innerHTML = msgs(staffMobile).map(m => bubbleHtml(m, "staff")).join("");
+  const sb = document.getElementById("staffBubbles");
+  sb.scrollTop = sb.scrollHeight;
+
+  document.getElementById("tab-clients").innerHTML = `<table><tr><th>Name</th><th>Mobile</th><th>GSTIN</th><th>Type</th><th>Balance</th><th>Filing</th></tr>${
+    (S.clients || []).map(c => `<tr><td>${esc(c.name)}</td><td>${c.mobile}</td><td>${esc(c.gstin || "—")}${c.gstin2 ? "<br><span class='pill warn'>2nd " + esc(c.gstin2) + " " + esc(c.gstin2_status || "") + "</span>" : ""}</td><td>${esc(c.business_type)}</td><td>₹${c.balance}</td><td>${esc((c.filing && c.filing.status) || "—")}</td></tr>`).join("")
+  }</table>`;
+
+  document.getElementById("tab-filings").innerHTML = `<table><tr><th>Client</th><th>Period</th><th>Type</th><th>Status</th><th></th></tr>${
+    (S.filings || []).map(f => {
+      const c = (S.clients || []).find(x => x.id === f.client_id);
+      return `<tr><td>${esc((c && c.name) || f.client_id)}</td><td>${f.period_key} ${f.cycle}</td><td>${f.type}</td><td>${f.status}</td><td><button onclick="setStatus(${f.id},'Completed')">Mark Completed</button></td></tr>`;
+    }).join("")
+  }</table><p class="meta" style="padding:8px">Completed = GSTR-3B done. Uske baad fee due + payment followup start.</p>`;
+
+  const claims = (S.claims || []).map(cl => `<tr><td>#${cl.id}</td><td>${cl.mobile}</td><td>${esc(cl.note || "")}</td><td>${cl.status}</td><td>${
+    cl.status === "open" ? `<button onclick="confirmClaim(${cl.id})">Confirm</button> <button class="danger" onclick="rejectClaim(${cl.id})">Reject</button>` : ""
+  }</td></tr>`).join("");
+  const pays = (S.payments || []).map(p => `<tr><td>${p.paid_on}</td><td>₹${p.amount}</td><td>${p.method} ${p.kind}</td><td>${esc(p.note || "")}</td></tr>`).join("");
+  document.getElementById("tab-pay").innerHTML = `<h4 style="padding:8px">Claims (client bola paid)</h4><table><tr><th>ID</th><th>Mobile</th><th>Note</th><th>Status</th><th></th></tr>${claims || "<tr><td colspan=5>Koi claim nahi</td></tr>"}</table><h4 style="padding:8px">Ledger payments</h4><table><tr><th>Date</th><th>Amt</th><th>How</th><th>Note</th></tr>${pays || "<tr><td colspan=4>Koi payment nahi</td></tr>"}</table>`;
+
+  document.getElementById("tab-fu").innerHTML = `<table><tr><th>Kind</th><th>Mobile</th><th>Sent</th><th>Status</th><th>Note</th></tr>${
+    (S.followups || []).map(f => `<tr><td>${f.kind}</td><td>${f.mobile}</td><td>${f.sent_count}</td><td>${f.status}</td><td>${esc(f.note || "")}</td></tr>`).join("")
+  }</table>`;
+
+  document.getElementById("tab-esc").innerHTML = `<table><tr><th>When</th><th>Mobile</th><th>Reason</th><th>Q</th></tr>${
+    (S.escalations || []).map(e => `<tr><td>${e.created_at}</td><td>${e.mobile}</td><td>${esc(e.reason || "")}</td><td>${esc(e.question || "")}</td></tr>`).join("") || "<tr><td colspan=4>Koi escalate nahi</td></tr>"
+  }</table>`;
+
+  document.getElementById("events").innerHTML = (S.events || []).map(e => `<div class="e"><b>${esc(e.kind)}</b> · ${e.created_at}<div>${esc(e.text)}</div></div>`).join("");
+}
+
+function pickStaff(m) { staffMobile = m; render(); }
+
+function sendClient(ev) {
+  ev.preventDefault();
+  const mobile = document.getElementById("phoneMobile").value;
+  const text = document.getElementById("clientText").value.trim();
+  if (!text) return false;
+  document.getElementById("clientText").value = "";
+  staffMobile = mobile;
+  apply(AtozDemo.clientSend(mobile, text));
+  return false;
+}
+function sendStaff(ev) {
+  ev.preventDefault();
+  const text = document.getElementById("staffText").value.trim();
+  if (!text) return false;
+  document.getElementById("staffText").value = "";
+  apply(AtozDemo.staffSend(staffMobile, text));
+  return false;
+}
+function quick(t) {
+  document.getElementById("clientText").value = t;
+  sendClient({ preventDefault() {} });
+}
+function pauseBot() { apply(AtozDemo.pause(staffMobile)); }
+function confirmClaim(id) { apply(AtozDemo.confirmClaim(id)); }
+function rejectClaim(id) { apply(AtozDemo.rejectClaim(id)); }
+function setStatus(id, status) { apply(AtozDemo.setFilingStatus(id, status)); }
+
+document.querySelectorAll(".tabs button").forEach(b => {
+  b.onclick = () => {
+    document.querySelectorAll(".tabs button").forEach(x => x.classList.remove("on"));
+    document.querySelectorAll(".tab").forEach(x => x.classList.remove("on"));
+    b.classList.add("on");
+    document.getElementById("tab-" + b.dataset.tab).classList.add("on");
+  };
+});
+document.getElementById("phoneMobile").onchange = () => {
+  staffMobile = document.getElementById("phoneMobile").value;
+  render();
+};
+
+boot();
+
+</script>
+</body>
+</html>
