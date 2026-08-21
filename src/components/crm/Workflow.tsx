@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Plus, Trash2, X, Check } from "lucide-react";
 import { useCrm } from "../../services/crmStore";
 import { createTask, updateTask, deleteTask, restoreTask } from "../../services/crmApi";
-import { TASK_CATEGORIES, TASK_STATUSES, money, type Task } from "../../services/crmLogic";
+import { TASK_CATEGORIES, TASK_STATUSES, money, waLink, type Task } from "../../services/crmLogic";
 import DocsBox, { docsFor } from "./DocsBox";
 import { Panel, PageHead, Btn, Scroller, Th, Td, EmptyRow, SelectInput, Modal, Field, Row2, TextInput, Pill, inlineSelect, inlineInput } from "./ui";
 
@@ -49,16 +49,17 @@ export default function Workflow() {
       </>}>
         <div className="hidden md:block">
           <Scroller>
-            <thead><tr><Th>Received</Th><Th>Name</Th><Th>Linked client</Th><Th>Category</Th><Th>Documents</Th><Th>Status</Th><Th>Agreed</Th><Th>Paid</Th><Th>Assigned</Th><Th>Comments</Th><Th /></tr></thead>
+            <thead><tr><Th>Received</Th><Th>Name</Th><Th>Number</Th><Th>Linked client</Th><Th>Category</Th><Th>Documents</Th><Th>Status</Th><Th>Agreed</Th><Th>Paid</Th><Th>Assigned</Th><Th>Comments</Th><Th /></tr></thead>
             <tbody>
-              {loading && <EmptyRow colSpan={11}>Load ho raha hai...</EmptyRow>}
-              {!loading && !rows.length && <EmptyRow colSpan={11}>Koi task nahi mila.</EmptyRow>}
+              {loading && <EmptyRow colSpan={12}>Load ho raha hai...</EmptyRow>}
+              {!loading && !rows.length && <EmptyRow colSpan={12}>Koi task nahi mila.</EmptyRow>}
               {rows.map(t => {
                 const linked = t.client_id ? clients.find(c => c.id === t.client_id) : null;
                 return (
                   <tr key={t.id} className="hover:bg-[#FBFAF7]">
                     <Td className="font-mono text-[11.5px] text-[#9BA098] whitespace-nowrap">{t.received_date || "—"}</Td>
                     <Td className="font-medium whitespace-nowrap">{t.name}</Td>
+                    <Td className="font-mono text-[11.5px] whitespace-nowrap">{t.mobile ? <a href={waLink(t.mobile, "")} target="_blank" rel="noreferrer" className="text-[#0F6E56] hover:underline">{t.mobile}</a> : "—"}</Td>
                     <Td className="text-[12.5px] text-[#9BA098] whitespace-nowrap">{linked ? linked.name : "—"}</Td>
                     <Td><Pill status="">{t.category || "Other"}</Pill></Td>
                     <Td><DocsCell t={t} onSave={(req, rec) => patchDocs(t, req, rec)} /></Td>
@@ -94,6 +95,7 @@ export default function Workflow() {
               <div key={t.id} className="px-4 py-3 border-b border-[#E6E4DD] last:border-0">
                 <div className="flex items-start justify-between gap-2 mb-1.5">
                   <div className="min-w-0"><div className="font-medium text-[13.5px] truncate">{t.name}</div>
+                    {t.mobile && <div className="text-[11.5px] text-[#6B6F68] font-mono">{t.mobile}</div>}
                     <div className="text-[11.5px] text-[#6B6F68]">{t.category} · {t.assigned_to || "—"} · {t.received_date}</div></div>
                   <span className={`font-mono text-[12px] font-semibold ${bal > 0 ? "text-[#A32D2D]" : "text-[#0F6E56]"}`}>{bal > 0 ? money(bal) : "Clear"}</span>
                 </div>
@@ -118,7 +120,7 @@ export default function Workflow() {
 
 function TaskModal({ onClose }: { onClose: () => void }) {
   const { clients, staff, services, reload, toast } = useCrm();
-  const [f, setF] = useState({ name: "", category: TASK_CATEGORIES[0], assigned_to: staff[0]?.name || "", client_id: "", fee_agreed: "", amount_paid: "", comment: "" });
+  const [f, setF] = useState({ name: "", mobile: "", category: TASK_CATEGORIES[0], assigned_to: staff[0]?.name || "", client_id: "", fee_agreed: "", amount_paid: "", comment: "" });
   const [docs, setDocs] = useState<string[]>(() => docsFor(TASK_CATEGORIES[0], services));
   const [saving, setSaving] = useState(false);
   const set = (k: string, v: string) => setF(p => ({ ...p, [k]: v }));
@@ -135,7 +137,7 @@ function TaskModal({ onClose }: { onClose: () => void }) {
     setSaving(true);
     try {
       await createTask({
-        name: f.name.trim(), category: f.category, assigned_to: f.assigned_to || null,
+        name: f.name.trim(), mobile: f.mobile.trim() || null, category: f.category, assigned_to: f.assigned_to || null,
         client_id: f.client_id || null, fee_agreed: Number(f.fee_agreed) || 0,
         amount_paid: Number(f.amount_paid) || 0, comment: f.comment || null, status: "Yet to Pick",
         docs_required: docs, docs_received: [],
@@ -146,7 +148,10 @@ function TaskModal({ onClose }: { onClose: () => void }) {
 
   return (
     <Modal title="New task" sub="Non-GST kaam add karo" onClose={onClose}>
-      <Field label="Name / phone"><TextInput value={f.name} onChange={e => set("name", e.target.value)} placeholder="Client ya task ka naam" /></Field>
+      <Row2>
+        <Field label="Name"><TextInput value={f.name} onChange={e => set("name", e.target.value)} placeholder="Client ya task ka naam" /></Field>
+        <Field label="Phone (WhatsApp)"><TextInput value={f.mobile} maxLength={10} onChange={e => set("mobile", e.target.value.replace(/\D/g, ""))} placeholder="10-digit" /></Field>
+      </Row2>
       <Row2>
         <Field label="Category"><SelectInput value={f.category} onChange={e => pickCategory(e.target.value)}>
           {TASK_CATEGORIES.map(c => <option key={c}>{c}</option>)}
