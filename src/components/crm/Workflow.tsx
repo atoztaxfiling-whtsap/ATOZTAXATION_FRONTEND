@@ -1,6 +1,6 @@
 /* Workflow — non-GST kaam (income tax, TDS, registrations, misc) */
 import { useState } from "react";
-import { Plus, Trash2, X, Check } from "lucide-react";
+import { Plus, Trash2, X, Check, Pencil } from "lucide-react";
 import { useCrm } from "../../services/crmStore";
 import { createTask, updateTask, deleteTask, restoreTask } from "../../services/crmApi";
 import { TASK_CATEGORIES, TASK_STATUSES, money, waLink, type Task } from "../../services/crmLogic";
@@ -8,27 +8,31 @@ import DocsBox, { docsFor } from "./DocsBox";
 import { Panel, PageHead, Btn, Scroller, Th, Td, EmptyRow, SelectInput, Modal, Field, Row2, TextInput, Pill, inlineSelect, inlineInput } from "./ui";
 
 export default function Workflow() {
-  const { tasks, clients, staff, reload, loading, toast } = useCrm();
+  const { tasks, clients, staff, reload, loading, toast, patchLocal, removeLocal } = useCrm();
   const [cat, setCat] = useState("");
   const [st, setSt] = useState("");
   const [adding, setAdding] = useState(false);
+  const [editing, setEditing] = useState<Task | null>(null);
 
   const rows = tasks.filter(t => (!cat || t.category === cat) && (!st || t.status === st));
 
   async function patchDocs(t: Task, docs_required: string[], docs_received: string[]) {
-    try { await updateTask(t.id, { docs_required, docs_received } as any); await reload(); }
-    catch (e) { alert((e as Error).message); }
+    patchLocal("tasks", t.id, { docs_required, docs_received });   // turant dikha do
+    try { await updateTask(t.id, { docs_required, docs_received } as any); }
+    catch (e) { alert((e as Error).message); await reload(); }     // fail ho to wapas
   }
 
   async function patch(t: Task, field: string, value: any) {
-    try { await updateTask(t.id, { [field]: value } as any); await reload(); }
-    catch (e) { alert((e as Error).message); }
+    patchLocal("tasks", t.id, { [field]: value });   // instant — reload ka intezaar nahi
+    try { await updateTask(t.id, { [field]: value } as any); }
+    catch (e) { alert((e as Error).message); await reload(); }
   }
   async function remove(t: Task) {
     if (!confirm(`"${t.name}" delete karna hai?`)) return;
-    await deleteTask(t.id);
-    toast("Task hata diya", async () => { await restoreTask(t.id); });
-    await reload();
+    removeLocal("tasks", t.id);   // turant list se hata do
+    toast("Task hata diya", async () => { await restoreTask(t.id); await reload(); });
+    try { await deleteTask(t.id); }
+    catch (e) { alert((e as Error).message); await reload(); }
   }
 
   return (
@@ -79,7 +83,10 @@ export default function Workflow() {
                     </Td>
                     <Td><input className={inlineInput} defaultValue={t.comment || ""} placeholder="Note"
                       onBlur={e => { if (e.target.value !== (t.comment || "")) patch(t, "comment", e.target.value); }} /></Td>
-                    <Td><button onClick={() => remove(t)} className="text-[#9BA098] hover:text-[#A32D2D]"><Trash2 className="w-3.5 h-3.5" /></button></Td>
+                    <Td><div className="flex items-center gap-2.5">
+                      <button onClick={() => setEditing(t)} title="Edit details" className="text-[#9BA098] hover:text-[#1D2420]"><Pencil className="w-3.5 h-3.5" /></button>
+                      <button onClick={() => remove(t)} title="Delete" className="text-[#9BA098] hover:text-[#A32D2D]"><Trash2 className="w-3.5 h-3.5" /></button>
+                    </div></Td>
                   </tr>
                 );
               })}
@@ -103,7 +110,8 @@ export default function Workflow() {
                   <select className={inlineSelect} value={t.status} onChange={e => patch(t, "status", e.target.value)}>
                     {TASK_STATUSES.map(s => <option key={s}>{s}</option>)}
                   </select>
-                  <button onClick={() => remove(t)} className="text-[#9BA098] ml-auto"><Trash2 className="w-4 h-4" /></button>
+                  <button onClick={() => setEditing(t)} className="text-[#9BA098] ml-auto"><Pencil className="w-4 h-4" /></button>
+                  <button onClick={() => remove(t)} className="text-[#9BA098]"><Trash2 className="w-4 h-4" /></button>
                 </div>
                 <div className="mt-1.5"><DocsCell t={t} onSave={(req, rec) => patchDocs(t, req, rec)} /></div>
               </div>
@@ -113,6 +121,7 @@ export default function Workflow() {
       </Panel>
 
       {adding && <TaskModal onClose={() => setAdding(false)} />}
+      {editing && <EditTaskModal task={editing} onClose={() => setEditing(null)} onDelete={() => { const t = editing; setEditing(null); remove(t); }} />}
       <div className="h-8" />
     </div>
   );
@@ -177,6 +186,72 @@ function TaskModal({ onClose }: { onClose: () => void }) {
       <div className="flex gap-2 justify-end mt-4">
         <Btn onClick={onClose}>Cancel</Btn>
         <Btn variant="primary" onClick={save} disabled={saving}>{saving ? "Saving..." : "Add task"}</Btn>
+      </div>
+    </Modal>
+  );
+}
+
+function EditTaskModal({ task, onClose, onDelete }: { task: Task; onClose: () => void; onDelete: () => void }) {
+  const { clients, staff, reload, patchLocal, toast } = useCrm();
+  const [f, setF] = useState({
+    name: task.name || "", mobile: task.mobile || "", category: task.category || TASK_CATEGORIES[0],
+    client_id: task.client_id || "", assigned_to: task.assigned_to || "",
+    status: task.status || TASK_STATUSES[0],
+    fee_agreed: String(task.fee_agreed ?? ""), amount_paid: String(task.amount_paid ?? ""),
+    comment: task.comment || "",
+  });
+  const [saving, setSaving] = useState(false);
+  const set = (k: string, v: string) => setF(p => ({ ...p, [k]: v }));
+
+  async function save() {
+    if (!f.name.trim()) return;
+    setSaving(true);
+    const patch = {
+      name: f.name.trim(), mobile: f.mobile.trim() || null, category: f.category,
+      client_id: f.client_id || null, assigned_to: f.assigned_to || null, status: f.status,
+      fee_agreed: Number(f.fee_agreed) || 0, amount_paid: Number(f.amount_paid) || 0,
+      comment: f.comment || null,
+    };
+    patchLocal("tasks", task.id, patch);   // turant dikha do
+    try { await updateTask(task.id, patch as any); toast("Task update ho gaya"); onClose(); }
+    catch (e) { alert((e as Error).message); setSaving(false); await reload(); }
+  }
+
+  return (
+    <Modal title="Edit task" sub={task.name} onClose={onClose}>
+      <Row2>
+        <Field label="Name"><TextInput value={f.name} onChange={e => set("name", e.target.value)} /></Field>
+        <Field label="Phone (WhatsApp)"><TextInput value={f.mobile} maxLength={10} onChange={e => set("mobile", e.target.value.replace(/\D/g, ""))} placeholder="10-digit" /></Field>
+      </Row2>
+      <Row2>
+        <Field label="Category"><SelectInput value={f.category} onChange={e => set("category", e.target.value)}>
+          {TASK_CATEGORIES.map(c => <option key={c}>{c}</option>)}
+        </SelectInput></Field>
+        <Field label="Status"><SelectInput value={f.status} onChange={e => set("status", e.target.value)}>
+          {TASK_STATUSES.map(sx => <option key={sx}>{sx}</option>)}
+        </SelectInput></Field>
+      </Row2>
+      <Field label="Kisi client se jodo (optional)">
+        <SelectInput value={f.client_id} onChange={e => set("client_id", e.target.value)}>
+          <option value="">— koi nahi / walk-in —</option>{clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+        </SelectInput>
+      </Field>
+      <Row2>
+        <Field label="Assigned to"><SelectInput value={f.assigned_to} onChange={e => set("assigned_to", e.target.value)}>
+          <option value="">—</option>{staff.map(sx => <option key={sx.id} value={sx.name}>{sx.name}</option>)}
+        </SelectInput></Field>
+        <Field label="Comment"><TextInput value={f.comment} onChange={e => set("comment", e.target.value)} placeholder="Optional note" /></Field>
+      </Row2>
+      <Row2>
+        <Field label="Amount agreed (₹)"><TextInput type="number" value={f.fee_agreed} onChange={e => set("fee_agreed", e.target.value)} placeholder="0" /></Field>
+        <Field label="Amount paid (₹)"><TextInput type="number" value={f.amount_paid} onChange={e => set("amount_paid", e.target.value)} placeholder="0" /></Field>
+      </Row2>
+      <div className="flex gap-2 justify-between items-center mt-4">
+        <Btn onClick={onDelete} className="!text-[#A32D2D]"><Trash2 className="w-3.5 h-3.5" />Delete</Btn>
+        <div className="flex gap-2">
+          <Btn onClick={onClose}>Cancel</Btn>
+          <Btn variant="primary" onClick={save} disabled={saving}>{saving ? "Saving..." : "Save"}</Btn>
+        </div>
       </div>
     </Modal>
   );

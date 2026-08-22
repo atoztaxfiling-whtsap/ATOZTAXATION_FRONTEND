@@ -15,6 +15,9 @@ interface CrmCtx extends Bootstrap {
   error: string;
   reload: () => Promise<void>;
   toast: (msg: string, undo?: () => Promise<void>) => void;
+  /* instant UI ke liye — server jawab ka intezaar kiye bina local list turant badal do */
+  patchLocal: (table: keyof Bootstrap, id: string, partial: Record<string, unknown>) => void;
+  removeLocal: (table: keyof Bootstrap, id: string) => void;
 }
 
 const EMPTY: Bootstrap = { clients: [], filings: [], payments: [], registrations: [], tasks: [], staff: [], services: [], notes: [], followups: [], escalations: [] };
@@ -38,12 +41,27 @@ export function CrmProvider({ children }: { children: ReactNode }) {
     finally { setLoading(false); }
   }, []);
 
+  const patchLocal = useCallback((table: keyof Bootstrap, id: string, partial: Record<string, unknown>) => {
+    setData(d => {
+      const arr = (d as unknown as Record<string, unknown>)[table];
+      if (!Array.isArray(arr)) return d;
+      return { ...d, [table]: arr.map((x: { id?: string }) => x.id === id ? { ...x, ...partial } : x) };
+    });
+  }, []);
+  const removeLocal = useCallback((table: keyof Bootstrap, id: string) => {
+    setData(d => {
+      const arr = (d as unknown as Record<string, unknown>)[table];
+      if (!Array.isArray(arr)) return d;
+      return { ...d, [table]: arr.filter((x: { id?: string }) => x.id !== id) };
+    });
+  }, []);
+
   useEffect(() => { reload(); }, [reload]);
   useEffect(() => { if (!toastMsg) return; const t = setTimeout(() => setToastMsg(null), 5000); return () => clearTimeout(t); }, [toastMsg]);
 
   const toast = useCallback((msg: string, undo?: () => Promise<void>) => setToastMsg({ msg, undo }), []);
 
-  const value: CrmCtx = { ...data, filingMap: buildFilingMap(data.filings), loading, error, reload, toast };
+  const value: CrmCtx = { ...data, filingMap: buildFilingMap(data.filings), loading, error, reload, toast, patchLocal, removeLocal };
 
   return (
     <Ctx.Provider value={value}>
