@@ -31,12 +31,24 @@ export default function Payments() {
   const pending = clientPending + loosePending;
   const collectedAll = collected + looseCollected;
 
+  /* Is MAHINE ka collected (pure saalo ka nahi). Client payments ki paid_on
+     date se — is mahine jo paisa aaya. (firm_paid advance isme nahi.) */
+  const _now = new Date();
+  const _thisMonth = (ds?: string | null) => {
+    if (!ds) return false;
+    const d = new Date(ds);
+    return !isNaN(d.getTime()) && d.getFullYear() === _now.getFullYear() && d.getMonth() === _now.getMonth();
+  };
+  const collectedThisMonth = payments
+    .filter(p => (p.kind || "client") !== "firm_paid" && _thisMonth(p.paid_on))
+    .reduce((a, p) => a + (Number(p.amount) || 0), 0);
+
   return (
     <div className="h-full overflow-y-auto bg-[#F6F5F1] p-5 md:p-7">
       <PageHead title="Payments" sub="Ledger apne aap ban-ta hai — nil/sales rates aur har period se" />
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5 mb-5">
-        <Metric label="Total collected" value={money(collectedAll)} tone="good" />
+        <Metric label="Is month collected" value={money(collectedThisMonth)} tone="good" />
         <Metric label="Total pending" value={money(pending)} tone="danger" />
         <Metric label="Clients with balance" value={withBal} />
         <Metric label="Workflow kaam ka" value={money(workflowPending)}
