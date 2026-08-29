@@ -35,6 +35,11 @@ export async function fetchBootstrap(): Promise<Bootstrap> {
 
 export async function crmHealth() { return req("/health"); }
 
+/* ---------- Bot settings (prompts / instructions) ---------- */
+export interface BotSettings { instructions: string; }
+export const fetchBotSettings = (): Promise<BotSettings> => req("/settings").then(r => r.data);
+export const saveBotSettings = (d: Partial<BotSettings>): Promise<BotSettings> => jsonPost("/settings", d, "PUT").then(r => r.data);
+
 /* ---------- Clients ---------- */
 export const createClient = (d: Partial<Client>): Promise<Client> => jsonPost("/clients", d).then(r => r.data);
 export const updateClient = (id: string, d: Partial<Client>): Promise<Client> => jsonPost(`/clients/${id}`, d, "PUT").then(r => r.data);

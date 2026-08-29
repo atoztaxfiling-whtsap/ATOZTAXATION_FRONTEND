@@ -1,5 +1,6 @@
 /* Staff + Services — dono ek hi screen pe, tabs me */
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { fetchBotSettings, saveBotSettings } from "../../services/crmApi";
 import { Plus, Trash2, Download, RefreshCw } from "lucide-react";
 import { useCrm } from "../../services/crmStore";
 import {
@@ -14,19 +15,56 @@ import { docsFor } from "./DocsBox";
 import { Avatar, Panel, PageHead, Btn, Modal, Field, Row2, TextInput, SelectInput } from "./ui";
 
 export default function Settings() {
-  const [tab, setTab] = useState<"staff" | "services" | "backup" | "sheet">("staff");
+  const [tab, setTab] = useState<"staff" | "services" | "backup" | "sheet" | "prompts">("staff");
   return (
     <div className="h-full overflow-y-auto bg-[#F6F5F1] p-5 md:p-7">
       <PageHead title="Setup" sub="Team, services aur backup" />
       <div className="flex gap-1.5 mb-4">
-        {(["staff", "services", "backup", "sheet"] as const).map(k => (
+        {(["staff", "services", "backup", "sheet", "prompts"] as const).map(k => (
           <button key={k} onClick={() => setTab(k)}
             className={`px-3.5 py-1.5 rounded-full text-[12.5px] font-medium border capitalize ${tab === k ? "bg-[#1C1E1B] text-white border-[#1C1E1B]" : "bg-white text-[#6B6F68] border-[#E6E4DD]"}`}>{k}</button>
         ))}
       </div>
-      {tab === "staff" ? <StaffList /> : tab === "services" ? <ServiceList /> : tab === "backup" ? <BackupPanel /> : <SheetPanel />}
+      {tab === "staff" ? <StaffList /> : tab === "services" ? <ServiceList /> : tab === "backup" ? <BackupPanel /> : tab === "prompts" ? <PromptsPanel /> : <SheetPanel />}
       <div className="h-8" />
     </div>
+  );
+}
+
+function PromptsPanel() {
+  const [text, setText] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [msg, setMsg] = useState("");
+  useEffect(() => {
+    fetchBotSettings().then(v => setText(v.instructions || "")).catch(e => setMsg((e as Error).message));
+  }, []);
+  async function save() {
+    if (text === null) return;
+    setSaving(true); setMsg("");
+    try { await saveBotSettings({ instructions: text }); setMsg("Save ho gaya. Bot ~30 sec me naye instructions follow karega."); }
+    catch (e) { setMsg((e as Error).message); }
+    finally { setSaving(false); }
+  }
+  return (
+    <Panel head={<h3 className="text-[13.5px] font-semibold">Bot instructions</h3>}>
+      <div className="p-4">
+        <p className="text-[12.5px] text-[#6B6F68] mb-2">
+          Yahan bot ke liye khaas hidayat likho — fee rules, kaunsi baat kaise bole, kya na bole.
+          Bot har jawab me inhe sabse upar rakh ke follow karega. Save ke ~30 sec baad live.
+        </p>
+        {text === null ? <div className="text-[12.5px] text-[#9BA098]">Load ho raha hai...</div> : (
+          <>
+            <textarea value={text} onChange={e => setText(e.target.value)} rows={16}
+              className="w-full border border-[#E6E4DD] rounded-lg p-3 text-[13px] font-mono outline-none focus:border-[#0F6E56] bg-white"
+              placeholder="Bot ke liye instructions likho..." />
+            <div className="flex items-center gap-3 mt-3">
+              <Btn variant="primary" onClick={save} disabled={saving}>{saving ? "Saving..." : "Save"}</Btn>
+              {msg && <span className="text-[12px] text-[#6B6F68]">{msg}</span>}
+            </div>
+          </>
+        )}
+      </div>
+    </Panel>
   );
 }
 
