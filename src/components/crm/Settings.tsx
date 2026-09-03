@@ -1,6 +1,6 @@
 /* Staff + Services — dono ek hi screen pe, tabs me */
 import { useState, useEffect } from "react";
-import { fetchBotSettings, saveBotSettings } from "../../services/crmApi";
+import { fetchBotSettings, saveBotSettings, type SlabTier } from "../../services/crmApi";
 import { Plus, Trash2, Download, RefreshCw } from "lucide-react";
 import { useCrm } from "../../services/crmStore";
 import {
@@ -15,17 +15,17 @@ import { docsFor } from "./DocsBox";
 import { Avatar, Panel, PageHead, Btn, Modal, Field, Row2, TextInput, SelectInput } from "./ui";
 
 export default function Settings() {
-  const [tab, setTab] = useState<"staff" | "services" | "backup" | "sheet" | "prompts">("staff");
+  const [tab, setTab] = useState<"staff" | "services" | "backup" | "sheet" | "prompts" | "incentive">("staff");
   return (
     <div className="h-full overflow-y-auto bg-[#F6F5F1] p-5 md:p-7">
       <PageHead title="Setup" sub="Team, services aur backup" />
       <div className="flex gap-1.5 mb-4">
-        {(["staff", "services", "backup", "sheet", "prompts"] as const).map(k => (
+        {(["staff", "services", "backup", "sheet", "prompts", "incentive"] as const).map(k => (
           <button key={k} onClick={() => setTab(k)}
             className={`px-3.5 py-1.5 rounded-full text-[12.5px] font-medium border capitalize ${tab === k ? "bg-[#1C1E1B] text-white border-[#1C1E1B]" : "bg-white text-[#6B6F68] border-[#E6E4DD]"}`}>{k}</button>
         ))}
       </div>
-      {tab === "staff" ? <StaffList /> : tab === "services" ? <ServiceList /> : tab === "backup" ? <BackupPanel /> : tab === "prompts" ? <PromptsPanel /> : <SheetPanel />}
+      {tab === "staff" ? <StaffList /> : tab === "services" ? <ServiceList /> : tab === "backup" ? <BackupPanel /> : tab === "prompts" ? <PromptsPanel /> : tab === "incentive" ? <IncentivePanel /> : <SheetPanel />}
       <div className="h-8" />
     </div>
   );
@@ -63,6 +63,80 @@ function PromptsPanel() {
             </div>
           </>
         )}
+      </div>
+    </Panel>
+  );
+}
+
+function IncentivePanel() {
+  type Row = { name: string; tiers: SlabTier[] };
+  const [rows, setRows] = useState<Row[] | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [msg, setMsg] = useState("");
+  useEffect(() => {
+    fetchBotSettings()
+      .then(v => setRows(Object.entries(v.incentive_slabs || {}).map(([name, tiers]) => ({ name, tiers: (tiers as SlabTier[]).map(t => [...t] as SlabTier) }))))
+      .catch(e => setMsg((e as Error).message));
+  }, []);
+  function upd(fn: (c: Row[]) => void) {
+    setRows(r => { if (!r) return r; const c = r.map(x => ({ name: x.name, tiers: x.tiers.map(t => [...t] as SlabTier) })); fn(c); return c; });
+  }
+  async function save() {
+    if (!rows) return;
+    const obj: Record<string, SlabTier[]> = {};
+    for (const r of rows) if (r.name.trim()) obj[r.name.trim()] = r.tiers;
+    setSaving(true); setMsg("");
+    try { await saveBotSettings({ incentive_slabs: obj }); setMsg("Save ho gaya. ~30 sec me live."); }
+    catch (e) { setMsg((e as Error).message); }
+    finally { setSaving(false); }
+  }
+  if (rows === null)
+    return <Panel head={<h3 className="text-[13.5px] font-semibold">Incentive slabs</h3>}><div className="p-4 text-[12.5px] text-[#9BA098]">Load ho raha hai...</div></Panel>;
+  return (
+    <Panel head={<h3 className="text-[13.5px] font-semibold">Incentive slabs — speed bonus/penalty</h3>}>
+      <div className="p-4 space-y-4">
+        <p className="text-[12.5px] text-[#6B6F68]">
+          Har service pe: kaam kitne <b>working ghante</b> me hua us hisaab se staff ko ₹ bonus/penalty.
+          "≤ X h" = utne ghante ke andar; "After" = us se late (penalty ke liye minus me likho, jaise -15).
+          Raat 9pm–10am, Sunday, aur client-ka-intezaar (OTP/Clarification/Docs Pending) count nahi hota.
+        </p>
+        {rows.map((r, ri) => (
+          <div key={ri} className="border border-[#E6E4DD] rounded-lg p-3 bg-white">
+            <div className="flex items-center gap-2 mb-2">
+              <input value={r.name} onChange={e => upd(c => { c[ri].name = e.target.value; })}
+                className="flex-1 border border-[#E6E4DD] rounded px-2 py-1 text-[13px] font-medium outline-none focus:border-[#0F6E56]" placeholder="Service naam" />
+              <button onClick={() => upd(c => { c.splice(ri, 1); })} className="text-[#B00020] p-1"><Trash2 size={15} /></button>
+            </div>
+            <div className="space-y-1.5">
+              {r.tiers.map((t, ti) => (
+                <div key={ti} className="flex items-center gap-2 text-[12.5px]">
+                  {t[0] === null ? (
+                    <span className="w-[70px] text-[#6B6F68]">After</span>
+                  ) : (
+                    <span className="flex items-center gap-1">≤
+                      <input type="number" value={t[0] ?? 0} onChange={e => upd(c => { c[ri].tiers[ti][0] = e.target.value === "" ? 0 : Number(e.target.value); })}
+                        className="w-14 border border-[#E6E4DD] rounded px-1.5 py-1 outline-none focus:border-[#0F6E56]" /> h
+                    </span>
+                  )}
+                  <span>→ ₹</span>
+                  <input type="number" value={t[1]} onChange={e => upd(c => { c[ri].tiers[ti][1] = e.target.value === "" ? 0 : Number(e.target.value); })}
+                    className="w-20 border border-[#E6E4DD] rounded px-1.5 py-1 outline-none focus:border-[#0F6E56]" />
+                  <button onClick={() => upd(c => { c[ri].tiers.splice(ti, 1); })} className="text-[#9BA098] hover:text-[#B00020] p-0.5"><Trash2 size={13} /></button>
+                </div>
+              ))}
+              <div className="flex gap-3 pt-1">
+                <button onClick={() => upd(c => { c[ri].tiers.push([1, 0]); })} className="text-[12px] text-[#0F6E56] flex items-center gap-1"><Plus size={12} /> tier</button>
+                <button onClick={() => upd(c => { c[ri].tiers.push([null, 0]); })} className="text-[12px] text-[#6B6F68] flex items-center gap-1"><Plus size={12} /> "After" tier</button>
+              </div>
+            </div>
+          </div>
+        ))}
+        <button onClick={() => upd(c => { c.push({ name: "New Service", tiers: [[2, 0], [null, 0]] }); })}
+          className="text-[12.5px] text-[#0F6E56] flex items-center gap-1"><Plus size={14} /> Service add</button>
+        <div className="flex items-center gap-3 pt-1">
+          <Btn variant="primary" onClick={save} disabled={saving}>{saving ? "Saving..." : "Save"}</Btn>
+          {msg && <span className="text-[12px] text-[#6B6F68]">{msg}</span>}
+        </div>
       </div>
     </Panel>
   );

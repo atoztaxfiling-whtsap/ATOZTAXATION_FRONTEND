@@ -20,8 +20,8 @@ export const REG_STATUSES = [
 export const TASK_CATEGORIES = ["Income tax", "TDS", "GST registration", "Other"];
 export const TASK_STATUSES = [
   "Yet to Pick", "Documents Pending", "Documents Received", "OTP Pending",
-  "Query Raised", "In progress", "Waiting for Reply", "Completed", "Payment Pending",
-  "Closed", "Not Responding",
+  "Clarification Pending", "Query Raised", "In progress", "Waiting for Reply",
+  "Completed", "Payment Pending", "Closed", "Not Responding",
 ];
 /* ---------- Fee kab due banti hai ----------
    Kaam poora hone se pehle fee due nahi hoti. Amount phir bhi dikhta hai

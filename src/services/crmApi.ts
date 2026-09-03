@@ -35,8 +35,12 @@ export async function fetchBootstrap(): Promise<Bootstrap> {
 
 export async function crmHealth() { return req("/health"); }
 
-/* ---------- Bot settings (prompts / instructions) ---------- */
-export interface BotSettings { instructions: string; }
+/* ---------- Bot settings (prompts / instructions + incentive slabs) ---------- */
+export type SlabTier = [number | null, number];   // [max_hours | null(=after), amount ₹]
+export interface BotSettings {
+  instructions: string;
+  incentive_slabs?: Record<string, SlabTier[]>;
+}
 export const fetchBotSettings = (): Promise<BotSettings> => req("/settings").then(r => r.data);
 export const saveBotSettings = (d: Partial<BotSettings>): Promise<BotSettings> => jsonPost("/settings", d, "PUT").then(r => r.data);
 
