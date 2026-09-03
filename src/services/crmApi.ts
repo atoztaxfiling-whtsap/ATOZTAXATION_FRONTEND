@@ -44,6 +44,15 @@ export interface BotSettings {
 export const fetchBotSettings = (): Promise<BotSettings> => req("/settings").then(r => r.data);
 export const saveBotSettings = (d: Partial<BotSettings>): Promise<BotSettings> => jsonPost("/settings", d, "PUT").then(r => r.data);
 
+/* ---------- Incentive earnings (kaun kitna kamaya) ---------- */
+export interface IncentiveTotal { staff: string; amount: number; }
+export interface IncentiveRow {
+  staff: string; category?: string; service_key?: string; tier?: string;
+  amount: number; worked_hours?: number; end_at?: string; computed_at?: string;
+}
+export interface IncentiveData { totals: IncentiveTotal[]; recent: IncentiveRow[]; error?: string; }
+export const fetchIncentive = (): Promise<IncentiveData> => req("/incentive").then(r => r.data);
+
 /* ---------- Clients ---------- */
 export const createClient = (d: Partial<Client>): Promise<Client> => jsonPost("/clients", d).then(r => r.data);
 export const updateClient = (id: string, d: Partial<Client>): Promise<Client> => jsonPost(`/clients/${id}`, d, "PUT").then(r => r.data);

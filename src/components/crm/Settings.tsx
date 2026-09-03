@@ -1,6 +1,6 @@
 /* Staff + Services — dono ek hi screen pe, tabs me */
 import { useState, useEffect } from "react";
-import { fetchBotSettings, saveBotSettings, type SlabTier } from "../../services/crmApi";
+import { fetchBotSettings, saveBotSettings, fetchIncentive, type SlabTier, type IncentiveRow } from "../../services/crmApi";
 import { Plus, Trash2, Download, RefreshCw } from "lucide-react";
 import { useCrm } from "../../services/crmStore";
 import {
@@ -25,7 +25,7 @@ export default function Settings() {
             className={`px-3.5 py-1.5 rounded-full text-[12.5px] font-medium border capitalize ${tab === k ? "bg-[#1C1E1B] text-white border-[#1C1E1B]" : "bg-white text-[#6B6F68] border-[#E6E4DD]"}`}>{k}</button>
         ))}
       </div>
-      {tab === "staff" ? <StaffList /> : tab === "services" ? <ServiceList /> : tab === "backup" ? <BackupPanel /> : tab === "prompts" ? <PromptsPanel /> : tab === "incentive" ? <IncentivePanel /> : <SheetPanel />}
+      {tab === "staff" ? <StaffList /> : tab === "services" ? <ServiceList /> : tab === "backup" ? <BackupPanel /> : tab === "prompts" ? <PromptsPanel /> : tab === "incentive" ? <div className="space-y-4"><EarningsSummary /><IncentivePanel /></div> : <SheetPanel />}
       <div className="h-8" />
     </div>
   );
@@ -62,6 +62,60 @@ function PromptsPanel() {
               {msg && <span className="text-[12px] text-[#6B6F68]">{msg}</span>}
             </div>
           </>
+        )}
+      </div>
+    </Panel>
+  );
+}
+
+function EarningsSummary() {
+  const [totals, setTotals] = useState<{ staff: string; amount: number }[] | null>(null);
+  const [recent, setRecent] = useState<IncentiveRow[]>([]);
+  const [err, setErr] = useState("");
+  useEffect(() => {
+    fetchIncentive()
+      .then(d => { setTotals(d.totals || []); setRecent(d.recent || []); })
+      .catch(e => setErr((e as Error).message));
+  }, []);
+  const monthName = new Date().toLocaleDateString("en-IN", { month: "long" });
+  return (
+    <Panel head={<h3 className="text-[13.5px] font-semibold">Kaun kitna kamaya — {monthName}</h3>}>
+      <div className="p-4">
+        {err && <div className="text-[12px] text-[#B00020] mb-2">{err}</div>}
+        {totals === null ? (
+          <div className="text-[12.5px] text-[#9BA098]">Load ho raha hai...</div>
+        ) : totals.length === 0 ? (
+          <div className="text-[12.5px] text-[#9BA098]">Is mahine abhi koi incentive record nahi.</div>
+        ) : (
+          <div className="flex flex-wrap gap-2 mb-3">
+            {totals.map(t => (
+              <div key={t.staff} className="px-3 py-2 rounded-lg border border-[#E6E4DD] bg-white">
+                <div className="text-[12px] text-[#6B6F68]">{t.staff}</div>
+                <div className={`text-[15px] font-semibold ${t.amount >= 0 ? "text-[#0F6E56]" : "text-[#B00020]"}`}>
+                  {t.amount >= 0 ? "+" : ""}₹{t.amount}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+        {recent.length > 0 && (
+          <div className="mt-1">
+            <div className="text-[11.5px] uppercase tracking-wide text-[#9BA098] mb-1.5">Recent</div>
+            <div className="space-y-1">
+              {recent.slice(0, 12).map((r, i) => (
+                <div key={i} className="flex items-center justify-between text-[12.5px] border-b border-[#F0EEE8] pb-1">
+                  <span className="text-[#3A3D37]">
+                    {r.staff} · <span className="text-[#6B6F68]">{r.category || r.service_key}</span>
+                    {r.worked_hours != null && <span className="text-[#9BA098]"> · {r.worked_hours}h</span>}
+                    {r.tier && <span className="text-[#9BA098]"> · {r.tier}</span>}
+                  </span>
+                  <span className={`font-medium ${r.amount >= 0 ? "text-[#0F6E56]" : "text-[#B00020]"}`}>
+                    {r.amount >= 0 ? "+" : ""}₹{r.amount}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
         )}
       </div>
     </Panel>
