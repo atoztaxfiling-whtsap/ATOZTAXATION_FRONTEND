@@ -5,6 +5,7 @@ import { useCrm } from "../../services/crmStore";
 import { createTask, updateTask, deleteTask, restoreTask } from "../../services/crmApi";
 import { TASK_CATEGORIES, TASK_STATUSES, money, waLink, type Task } from "../../services/crmLogic";
 import DocsBox, { docsFor } from "./DocsBox";
+import BotNotes from "./BotNotes";
 import { Panel, PageHead, Btn, Scroller, Th, Td, EmptyRow, SelectInput, Modal, Field, Row2, TextInput, Pill, inlineSelect, inlineInput } from "./ui";
 
 export default function Workflow() {
@@ -246,6 +247,7 @@ function EditTaskModal({ task, onClose, onDelete }: { task: Task; onClose: () =>
         <Field label="Amount agreed (₹)"><TextInput type="number" value={f.fee_agreed} onChange={e => set("fee_agreed", e.target.value)} placeholder="0" /></Field>
         <Field label="Amount paid (₹)"><TextInput type="number" value={f.amount_paid} onChange={e => set("amount_paid", e.target.value)} placeholder="0" /></Field>
       </Row2>
+      <BotNotes mobile={f.mobile} />
       <div className="flex gap-2 justify-between items-center mt-4">
         <Btn onClick={onDelete} className="!text-[#A32D2D]"><Trash2 className="w-3.5 h-3.5" />Delete</Btn>
         <div className="flex gap-2">
