@@ -44,6 +44,12 @@ export interface BotSettings {
 export const fetchBotSettings = (): Promise<BotSettings> => req("/settings").then(r => r.data);
 export const saveBotSettings = (d: Partial<BotSettings>): Promise<BotSettings> => jsonPost("/settings", d, "PUT").then(r => r.data);
 
+/* ---------- Bot notes (per-client context jo bot padhta hai) ---------- */
+export interface BotNote { id: string; mobile: string; note: string; created_by?: string; created_at?: string; active?: boolean; }
+export const fetchBotNotes = (mobile: string): Promise<BotNote[]> => req(`/bot-notes/${mobile}`).then(r => r.data || []);
+export const addBotNote = (mobile: string, note: string) => jsonPost(`/bot-notes/${mobile}`, { note }).then(r => r.data);
+export const deleteBotNote = (mobile: string, id: string) => req(`/bot-notes/${mobile}/${id}`, { method: "DELETE" }).then(r => r.data);
+
 /* ---------- Incentive earnings (kaun kitna kamaya) ---------- */
 export interface IncentiveTotal { staff: string; amount: number; }
 export interface IncentiveRow {
