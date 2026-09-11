@@ -29,6 +29,8 @@ export default function ClientForm({ client, onClose, onSaved }: Props) {
     fee_monthly_sales: client?.fee_monthly_sales ?? "",
     fee_quarterly_nil: client?.fee_quarterly_nil ?? "",
     fee_quarterly_sales: client?.fee_quarterly_sales ?? "",
+    fee_annual: client?.fee_annual ?? "",
+    annual_due_date: client?.annual_due_date || "",
     assigned_to: client?.assigned_to || (staff[0]?.name ?? ""),
     business_type: client?.business_type || "unknown",
   });
@@ -54,6 +56,8 @@ export default function ClientForm({ client, onClose, onSaved }: Props) {
       fee_monthly_sales: f.fee_monthly_sales === "" ? 1000 : Number(f.fee_monthly_sales),
       fee_quarterly_nil: f.fee_quarterly_nil === "" ? 800 : Number(f.fee_quarterly_nil),
       fee_quarterly_sales: f.fee_quarterly_sales === "" ? 2000 : Number(f.fee_quarterly_sales),
+      fee_annual: f.fee_annual === "" ? null : Number(f.fee_annual),
+      annual_due_date: f.annual_due_date || null,
       assigned_to: f.assigned_to || null,
       business_type: f.business_type || null,
     };
@@ -104,6 +108,19 @@ export default function ClientForm({ client, onClose, onSaved }: Props) {
           </SelectInput>
         </Field>
       </Row2>
+
+      {f.filing_mode === "manual-annual" && (
+        <>
+          <FieldsetLabel>Annual (monthly/quarterly reminder band)</FieldsetLabel>
+          <Row2>
+            <Field label="Annual due date" hint="Is date ke aas-paas reminder + agle saal followup">
+              <TextInput type="date" value={f.annual_due_date} onChange={e => set("annual_due_date", e.target.value)} />
+            </Field>
+            <Field label="Annual fee (₹)"><TextInput type="number" value={f.fee_annual} onChange={e => set("fee_annual", e.target.value)} placeholder="0" /></Field>
+          </Row2>
+          <div className="text-[11.5px] text-[#6B6F68] mb-2">💡 Installment plan (50% ab, 50% baad) client kholke "Installments" me daalo — us date pe payment reminder khud jayega.</div>
+        </>
+      )}
 
       <FieldsetLabel>Monthly rates</FieldsetLabel>
       <Row2>

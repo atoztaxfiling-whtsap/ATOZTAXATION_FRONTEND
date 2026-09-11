@@ -50,6 +50,13 @@ export const fetchBotNotes = (mobile: string): Promise<BotNote[]> => req(`/bot-n
 export const addBotNote = (mobile: string, note: string) => jsonPost(`/bot-notes/${mobile}`, { note }).then(r => r.data);
 export const deleteBotNote = (mobile: string, id: string) => req(`/bot-notes/${mobile}/${id}`, { method: "DELETE" }).then(r => r.data);
 
+/* ---------- Installments (annual GST 50%/50% etc.) ---------- */
+export interface Installment { id: string; client_id?: string; mobile?: string | null; label?: string | null; amount: number; due_date?: string | null; paid?: boolean; paid_on?: string | null; }
+export const fetchInstallments = (clientId: string): Promise<Installment[]> => req(`/installments/${clientId}`).then(r => r.data || []);
+export const addInstallment = (d: Partial<Installment>) => jsonPost("/installments", d).then(r => r.data);
+export const updateInstallment = (id: string, d: Partial<Installment>) => jsonPost(`/installments/${id}`, d, "PUT").then(r => r.data);
+export const deleteInstallment = (id: string) => req(`/installments/${id}`, { method: "DELETE" }).then(r => r.data);
+
 /* ---------- Incentive earnings (kaun kitna kamaya) ---------- */
 export interface IncentiveTotal { staff: string; amount: number; }
 export interface IncentiveRow {

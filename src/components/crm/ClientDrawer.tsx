@@ -3,7 +3,8 @@ import { useState, useEffect } from "react";
 import { Eye, EyeOff, Plus, Trash2 } from "lucide-react";
 import { useCrm } from "../../services/crmStore";
 import { updateClient, deleteClient, restoreClient, createPayment, addClientNote, deleteClientNote,
-  fetchBotNotes, addBotNote, deleteBotNote, type BotNote } from "../../services/crmApi";
+  fetchBotNotes, addBotNote, deleteBotNote, type BotNote,
+  fetchInstallments, addInstallment, updateInstallment, deleteInstallment, type Installment } from "../../services/crmApi";
 import {
   fullLedger, currentCycle, currentPeriod, rateFor, tasksForClient,
   totalFirmPaid, TEMPLATES, waLink, money, type Client,
@@ -314,6 +315,8 @@ export default function ClientDrawer({ client, onClose }: { client: Client; onCl
             className="inline-flex items-center px-3 py-1 text-[12px] font-medium rounded-lg bg-[#1C1E1B] text-white whitespace-nowrap">WhatsApp</a>
         </div>
 
+        <InstallmentsSection clientId={c.id} mobile={c.mobile || ""} />
+
         <BotNotesSection mobile={c.mobile || ""} />
 
         <Section title="Activity notes" />
@@ -343,6 +346,46 @@ export default function ClientDrawer({ client, onClose }: { client: Client; onCl
 
       {editing && <ClientForm client={c} onClose={() => setEditing(false)} />}
     </>
+  );
+}
+
+function InstallmentsSection({ clientId, mobile }: { clientId: string; mobile: string }) {
+  const [items, setItems] = useState<Installment[]>([]);
+  const [label, setLabel] = useState("");
+  const [amount, setAmount] = useState("");
+  const [due, setDue] = useState("");
+  const load = () => { if (clientId) fetchInstallments(clientId).then(setItems).catch(() => {}); };
+  useEffect(load, [clientId]);
+  const add = async () => {
+    if (!amount || !due) return;
+    await addInstallment({ client_id: clientId, mobile, label: label.trim() || "Installment", amount: Number(amount), due_date: due });
+    setLabel(""); setAmount(""); setDue(""); load();
+  };
+  const togglePaid = async (it: Installment) => { await updateInstallment(it.id, { paid: !it.paid }); load(); };
+  const del = async (id: string) => { await deleteInstallment(id); load(); };
+  return (
+    <div className="mt-5">
+      <div className="text-[11px] font-semibold uppercase tracking-wide text-[#0F6E56] mb-2 flex items-center gap-1.5">
+        💸 Installments <span className="text-[#9BA098] font-normal normal-case">(annual / part payment — date pe reminder khud jayega)</span>
+      </div>
+      <div className="flex flex-wrap gap-1.5 items-center">
+        <input value={label} onChange={e => setLabel(e.target.value)} placeholder="1st 50%" className="border border-[#E6E4DD] rounded px-2 py-1.5 text-[12.5px] w-24 outline-none focus:border-[#0F6E56]" />
+        <input type="number" value={amount} onChange={e => setAmount(e.target.value)} placeholder="₹ amount" className="border border-[#E6E4DD] rounded px-2 py-1.5 text-[12.5px] w-28 outline-none focus:border-[#0F6E56]" />
+        <input type="date" value={due} onChange={e => setDue(e.target.value)} className="border border-[#E6E4DD] rounded px-2 py-1.5 text-[12.5px] outline-none focus:border-[#0F6E56]" />
+        <Btn size="sm" onClick={add}>Add</Btn>
+      </div>
+      <div className="mt-2">
+        {items.length ? items.map(it => (
+          <div key={it.id} className="flex items-center gap-2 py-1.5 border-b border-[#E6E4DD] text-[12.5px] group">
+            <span className={`flex-1 min-w-0 ${it.paid ? "line-through text-[#9BA098]" : ""}`}>
+              {it.label} · ₹{Math.round(Number(it.amount || 0))} · {it.due_date ? new Date(it.due_date).toLocaleDateString("en-IN", { day: "numeric", month: "short" }) : "—"}
+            </span>
+            <button onClick={() => togglePaid(it)} className={`text-[11px] px-2 py-0.5 rounded border whitespace-nowrap ${it.paid ? "bg-[#E1F5EE] text-[#04342C] border-[#B7E3D5]" : "bg-white text-[#0F6E56] border-[#B7E3D5]"}`}>{it.paid ? "Paid ✓" : "Mark paid"}</button>
+            <button onClick={() => del(it.id)} className="opacity-0 group-hover:opacity-100 text-[#9BA098] hover:text-[#A32D2D]"><Trash2 className="w-3.5 h-3.5" /></button>
+          </div>
+        )) : <div className="text-[12.5px] text-[#9BA098] py-1">Koi installment nahi. Jaise: 50% aaj, 50% 2 mahine baad — us date pe payment reminder khud jayega.</div>}
+      </div>
+    </div>
   );
 }
 

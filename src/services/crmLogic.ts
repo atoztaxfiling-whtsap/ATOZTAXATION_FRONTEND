@@ -19,8 +19,8 @@ export const REG_STATUSES = [
 ];
 export const TASK_CATEGORIES = ["Income tax", "TDS", "GST registration", "Other"];
 export const TASK_STATUSES = [
-  "Yet to Pick", "Documents Pending", "Documents Received", "OTP Pending",
-  "Clarification Pending", "Query Raised", "In progress", "Waiting for Reply",
+  "Yet to Pick", "Need to Connect", "Documents Pending", "Documents Received", "OTP Pending",
+  "Clarification Pending", "Query Raised", "In progress", "Department Pending", "Waiting for Reply",
   "Completed", "Payment Pending", "Closed", "Not Responding",
 ];
 /* ---------- Fee kab due banti hai ----------
@@ -37,6 +37,7 @@ export const FILING_MODES = [
   { value: "auto", label: "Auto: quarter khatam hone tak monthly, phir quarterly" },
   { value: "manual-monthly", label: "Hamesha monthly" },
   { value: "manual-quarterly", label: "Hamesha quarterly" },
+  { value: "manual-annual", label: "Annual (monthly/quarterly reminder nahi jayega)" },
 ];
 
 /* Business type — GST cadence isi se tay hoti hai (Tukda 2) */
@@ -57,6 +58,7 @@ export interface Client {
   reg_year?: number | null; reg_month?: number | null;
   fee_monthly_nil?: number | null; fee_monthly_sales?: number | null;
   fee_quarterly_nil?: number | null; fee_quarterly_sales?: number | null;
+  fee_annual?: number | null; annual_due_date?: string | null;
   followup_text?: string | null;
   linked_client_ids?: string[] | null;
   other_logins?: Array<{ label: string; username: string; password: string }> | null;
@@ -337,8 +339,8 @@ export function initials(n?: string | null) {
 }
 export function pillClass(status: string) {
   if (["Completed", "Paid", "GSTR1 Done"].includes(status)) return "bg-[#E1F5EE] text-[#04342C]";
-  if (["In progress", "In Progress", "Partial", "Documents Received", "OTP Pending", "Query Raised", "Query", "Department Approval", "Waiting for Reply", "Need Clarification"].includes(status)) return "bg-[#FAEEDA] text-[#412402]";
-  if (["Yet to Pick", "Pending", "Overdue", "Closed Lost", "Documents Pending", "Not Responding", "Not paid"].includes(status)) return "bg-[#FCEBEB] text-[#501313]";
+  if (["In progress", "In Progress", "Partial", "Documents Received", "OTP Pending", "Query Raised", "Query", "Department Approval", "Department Pending", "Waiting for Reply", "Need Clarification", "Clarification Pending"].includes(status)) return "bg-[#FAEEDA] text-[#412402]";
+  if (["Yet to Pick", "Need to Connect", "Pending", "Overdue", "Closed Lost", "Documents Pending", "Not Responding", "Not paid"].includes(status)) return "bg-[#FCEBEB] text-[#501313]";
   return "bg-[#E6F1FB] text-[#185FA5]";
 }
 export function money(n: number) { return `₹${Math.round(n).toLocaleString("en-IN")}`; }

@@ -172,7 +172,11 @@ function TaskModal({ onClose }: { onClose: () => void }) {
         </SelectInput></Field>
       </Row2>
       <Field label="Kisi client se jodo (optional)">
-        <SelectInput value={f.client_id} onChange={e => set("client_id", e.target.value)}>
+        <SelectInput value={f.client_id} onChange={e => {
+          const id = e.target.value;
+          const cl = clients.find(c => c.id === id);
+          setF(p => ({ ...p, client_id: id, name: cl ? (cl.name || p.name) : p.name, mobile: (cl && cl.mobile) ? cl.mobile : p.mobile }));
+        }}>
           <option value="">— koi nahi / walk-in —</option>{clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
         </SelectInput>
       </Field>
@@ -233,7 +237,11 @@ function EditTaskModal({ task, onClose, onDelete }: { task: Task; onClose: () =>
         </SelectInput></Field>
       </Row2>
       <Field label="Kisi client se jodo (optional)">
-        <SelectInput value={f.client_id} onChange={e => set("client_id", e.target.value)}>
+        <SelectInput value={f.client_id} onChange={e => {
+          const id = e.target.value;
+          const cl = clients.find(c => c.id === id);
+          setF(p => ({ ...p, client_id: id, name: cl ? (cl.name || p.name) : p.name, mobile: (cl && cl.mobile) ? cl.mobile : p.mobile }));
+        }}>
           <option value="">— koi nahi / walk-in —</option>{clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
         </SelectInput>
       </Field>
