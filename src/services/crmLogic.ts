@@ -54,6 +54,7 @@ export interface Client {
   id: string; mobile: string; name: string;
   business_name?: string | null; gstin?: string | null;
   portal_username?: string | null; portal_password?: string | null;
+  alt_mobile?: string | null;
   assigned_to?: string | null; filing_mode?: string | null;
   reg_year?: number | null; reg_month?: number | null;
   fee_monthly_nil?: number | null; fee_monthly_sales?: number | null;

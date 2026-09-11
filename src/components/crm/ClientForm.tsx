@@ -20,6 +20,7 @@ export default function ClientForm({ client, onClose, onSaved }: Props) {
     name: client?.name || "",
     business_name: client?.business_name || "",
     mobile: client?.mobile || "",
+    alt_mobile: client?.alt_mobile || "",
     gstin: client?.gstin || "",
     portal_username: client?.portal_username || "",
     portal_password: client?.portal_password || "",
@@ -49,6 +50,7 @@ export default function ClientForm({ client, onClose, onSaved }: Props) {
     const [y, m] = f.regdate.split("-").map(Number);
     const payload: Partial<Client> = {
       name: f.name.trim(), business_name: f.business_name.trim() || null, mobile: f.mobile,
+      alt_mobile: f.alt_mobile.trim() || null,
       gstin: f.gstin.trim() || null, portal_username: f.portal_username.trim() || null,
       portal_password: f.portal_password.trim() || null,
       reg_year: y, reg_month: m, filing_mode: f.filing_mode,
@@ -95,6 +97,12 @@ export default function ClientForm({ client, onClose, onSaved }: Props) {
       <Row2>
         <Field label="Phone (WhatsApp)"><TextInput value={f.mobile} maxLength={10} onChange={e => set("mobile", e.target.value.replace(/\D/g, ""))} placeholder="9876543210" /></Field>
         <Field label="GSTIN"><TextInput value={f.gstin} onChange={e => set("gstin", e.target.value.toUpperCase())} placeholder="GSTIN" /></Field>
+      </Row2>
+      <Row2>
+        <Field label="Alternate number" hint="Sirf record ke liye — is number pe bot koi followup NAHI bhejega">
+          <TextInput value={f.alt_mobile} onChange={e => set("alt_mobile", e.target.value)} placeholder="Doosra number (optional)" />
+        </Field>
+        <div />
       </Row2>
       <Row2>
         <Field label="GST username"><TextInput value={f.portal_username} onChange={e => set("portal_username", e.target.value)} placeholder="portal username" /></Field>
