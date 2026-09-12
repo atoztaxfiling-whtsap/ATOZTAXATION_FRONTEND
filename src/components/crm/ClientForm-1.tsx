@@ -1,7 +1,7 @@
 /* Add / Edit client — demo wale saare fields (4 rates, mode, logins, linked) */
 import { useState } from "react";
 import { useCrm } from "../../services/crmStore";
-import { createClient, updateClient } from "../../services/crmApi";
+import { createClient, updateClient, linkGroup } from "../../services/crmApi";
 import { FILING_MODES, BUSINESS_TYPES, checkDuplicateGSTIN, type Client } from "../../services/crmLogic";
 import { Modal, Field, Row2, TextInput, SelectInput, FieldsetLabel, Btn } from "./ui";
 
@@ -41,37 +41,6 @@ export default function ClientForm({ client, onClose, onSaved }: Props) {
 
   const set = (k: string, v: string) => setF(p => ({ ...p, [k]: v }));
 
-  function sameSet(a: string[], b: string[]) {
-    if (a.length !== b.length) return false;
-    const sb = new Set(b); return a.every(x => sb.has(x));
-  }
-
-  // Kisi ek member se link karne par poore group ko mesh kar deta hai.
-  async function meshGroupLinks(focalId: string, selectedIds: string[]) {
-    const byId = new Map(clients.map(c => [c.id, c] as const));
-    const adj = (id: string) => (byId.get(id)?.linked_client_ids || []).filter(x => x !== focalId);
-    const comp = new Set(selectedIds.filter(x => x && x !== focalId));
-    const stack = [...comp];
-    while (stack.length) {
-      const cur = stack.pop() as string;
-      for (const nb of adj(cur)) if (nb !== focalId && !comp.has(nb)) { comp.add(nb); stack.push(nb); }
-    }
-    const group = new Set<string>([focalId, ...comp]);
-    const writes: Promise<unknown>[] = [];
-    writes.push(updateClient(focalId, { linked_client_ids: [...group].filter(x => x !== focalId) }));
-    for (const id of comp) {
-      const desired = [...group].filter(x => x !== id);
-      const cur = byId.get(id)?.linked_client_ids || [];
-      if (!sameSet(cur, desired)) writes.push(updateClient(id, { linked_client_ids: desired }));
-    }
-    for (const c of clients) {
-      if (c.id === focalId || group.has(c.id)) continue;
-      const cur = c.linked_client_ids || [];
-      if (cur.includes(focalId)) writes.push(updateClient(c.id, { linked_client_ids: cur.filter(x => x !== focalId) }));
-    }
-    await Promise.all(writes);
-  }
-
   async function save() {
     if (!f.name.trim()) { setErr("Naam zaroori hai"); return; }
     if (!/^[6-9]\d{9}$/.test(f.mobile)) { setErr("Sahi 10-digit mobile number daalo"); return; }
@@ -99,7 +68,7 @@ export default function ClientForm({ client, onClose, onSaved }: Props) {
     try {
       const saved = editing ? await updateClient(client!.id, payload) : await createClient(payload);
       // Group-mesh: jis ek se bhi link karo, poore group se link ho (aur sab me naya bhi aa jaye)
-      await meshGroupLinks(saved.id, linked);
+      if (linked.length) await linkGroup(saved.id, linked);
       toast(editing ? "Client update ho gaya" : "Client add ho gaya");
       await reload();
       onSaved?.(saved);
