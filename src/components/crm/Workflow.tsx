@@ -12,10 +12,14 @@ export default function Workflow() {
   const { tasks, clients, staff, reload, loading, toast, patchLocal, removeLocal } = useCrm();
   const [cat, setCat] = useState("");
   const [st, setSt] = useState("");
+  const [asg, setAsg] = useState("");
   const [adding, setAdding] = useState(false);
   const [editing, setEditing] = useState<Task | null>(null);
 
-  const rows = tasks.filter(t => (!cat || t.category === cat) && (!st || t.status === st));
+  const rows = tasks.filter(t =>
+    (!cat || t.category === cat) &&
+    (!st || t.status === st) &&
+    (!asg || (asg === "—" ? !t.assigned_to : t.assigned_to === asg)));
 
   async function patchDocs(t: Task, docs_required: string[], docs_received: string[]) {
     patchLocal("tasks", t.id, { docs_required, docs_received });   // turant dikha do
@@ -49,6 +53,11 @@ export default function Workflow() {
           </SelectInput>
           <SelectInput value={st} onChange={e => setSt(e.target.value)} className="!w-auto !text-[12.5px] !py-1.5">
             <option value="">All statuses</option>{TASK_STATUSES.map(s => <option key={s}>{s}</option>)}
+          </SelectInput>
+          <SelectInput value={asg} onChange={e => setAsg(e.target.value)} className="!w-auto !text-[12.5px] !py-1.5">
+            <option value="">All assigned</option>
+            {staff.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}
+            <option value="—">Unassigned</option>
           </SelectInput>
         </div>
       </>}>

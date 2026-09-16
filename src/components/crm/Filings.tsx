@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react";
 import { Pencil, ChevronDown } from "lucide-react";
 import { useCrm } from "../../services/crmStore";
-import { upsertFiling } from "../../services/crmApi";
+import { upsertFiling, updateClient } from "../../services/crmApi";
 import {
   FILING_STATUSES, clientPeriods, currentPeriod, filingEntry, periodFee, isDefaulter,
   globalQuarterPeriods, globalMonthPeriods, findClientPeriod, TEMPLATES, waLink, money,
@@ -15,7 +15,7 @@ import ClientDrawer from "./ClientDrawer";
 type Tab = "quarterly" | "monthly" | "defaulters";
 
 export default function Filings() {
-  const { clients, filingMap, staff, reload, loading, toast } = useCrm();
+  const { clients, filingMap, staff, reload, loading, toast, patchLocal } = useCrm();
   const [tab, setTab] = useState<Tab>("quarterly");
   const [qPeriod, setQPeriod] = useState("current");
   const [mPeriod, setMPeriod] = useState("current");
@@ -55,6 +55,14 @@ export default function Filings() {
   async function patch(c: Client, p: Period, field: string, value: any) {
     try { await upsertFiling({ client_id: c.id, period_key: p.key, [field]: value } as any); await reload(); }
     catch (e) { alert((e as Error).message); }
+  }
+
+  /* Assigned column CLIENT-level hai (customer kis staff ke paas). Isliye
+     seedha client update karo — us client ke sabhi periods me dikhega. */
+  async function assignStaff(c: Client, value: string) {
+    patchLocal("clients", c.id, { assigned_to: value || null });   // turant dikha do
+    try { await updateClient(c.id, { assigned_to: value || null } as any); }
+    catch (e) { alert((e as Error).message); await reload(); }
   }
 
   const periods = tab === "quarterly" ? qPeriods : mPeriods;
@@ -151,7 +159,11 @@ export default function Filings() {
                       </select>
                     </Td>
                     <Td><input className={inlineInput} defaultValue={e.comment} placeholder="Add note" onBlur={ev => { if (ev.target.value !== e.comment) patch(c, cp, "comment", ev.target.value); }} /></Td>
-                    <Td><span className="text-[12.5px] text-[#6B6F68] whitespace-nowrap">{c.assigned_to || "—"}</span></Td>
+                    <Td>
+                      <select className={inlineSelect} value={c.assigned_to || ""} onChange={ev => assignStaff(c, ev.target.value)}>
+                        <option value="">—</option>{staff.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}
+                      </select>
+                    </Td>
                   </tr>
                 );
               })}
@@ -175,7 +187,11 @@ export default function Filings() {
                     <Td><div className="flex items-center gap-2.5"><Avatar name={c.name} onClick={() => setOpen(c)} /><span className="font-medium cursor-pointer" onClick={() => setOpen(c)}>{c.name}</span></div></Td>
                     <Td className="font-mono text-[11.5px] text-[#6B6F68]">{c.portal_username || "—"}</Td>
                     <Td className="text-[12.5px] text-[#9BA098]">{txt}</Td>
-                    <Td><span className="text-[12.5px] text-[#6B6F68]">{c.assigned_to || "—"}</span></Td>
+                    <Td>
+                      <select className={inlineSelect} value={c.assigned_to || ""} onChange={ev => assignStaff(c, ev.target.value)}>
+                        <option value="">—</option>{staff.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}
+                      </select>
+                    </Td>
                     <Td>
                       <a href={waLink(c.mobile, TEMPLATES.find(t => t.id === "defaulter")!.text(c, { balance: 0, period: "" }))} target="_blank" rel="noreferrer"
                         className="inline-flex px-2.5 py-1 text-[12px] font-medium rounded-md border border-[#E6E4DD] bg-white">WhatsApp</a>

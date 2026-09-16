@@ -54,6 +54,26 @@ export default function Followups() {
     await reload();
   }
 
+  /* "Tumhara jawab chahiye" — ek customer ke kai messages ki alag-alag line
+     nahi. Customer ke hisaab se ek hi line, aur "Ho gaya" dabaao to us
+     customer ke SAARE pending sawaal ek saath clear. */
+  const escGroups = (() => {
+    const m = new Map<string, { key: string; c: Client | null; label: string; items: typeof escalations }>();
+    for (const e of escalations) {
+      const c = byId(e.client_id);
+      const key = e.client_id || e.mobile || e.id;
+      if (!m.has(key)) m.set(key, { key, c, label: c?.name || e.mobile || "—", items: [] as typeof escalations });
+      m.get(key)!.items.push(e);
+    }
+    return [...m.values()];
+  })();
+
+  async function closeEscGroup(g: (typeof escGroups)[number]) {
+    await Promise.all(g.items.map(e => closeEscalation(e.id)));
+    toast(`${g.label} nipta diya`);
+    await reload();
+  }
+
   const total = botRows.length + manualRows.length;
 
   return (
@@ -93,26 +113,35 @@ export default function Followups() {
         </>
       )}
 
-      {!!escalations.length && (
+      {!!escGroups.length && (
         <>
           <h2 className="text-[14.5px] font-semibold mb-3 flex items-center gap-1.5">
             <AlertTriangle className="w-4 h-4 text-[#BA7517]" />Tumhara jawab chahiye
+            <span className="text-[#9BA098] font-normal">({escGroups.length})</span>
           </h2>
           <Panel>
-            {escalations.map(e => {
-              const c = byId(e.client_id);
-              return (
-                <div key={e.id} className="flex items-start gap-3.5 px-4 py-3 border-b border-[#E6E4DD] last:border-0">
-                  <Avatar name={c?.name || e.mobile} onClick={() => c && setOpen(c)} />
-                  <div className="flex-1 min-w-0">
-                    <div className="text-[13.5px] font-medium">{c?.name || e.mobile}</div>
-                    <div className="text-[12.5px] text-[#6B6F68] break-words">{e.question}</div>
-                    {e.reason && <div className="text-[11.5px] text-[#9BA098] mt-0.5">{e.reason}</div>}
+            {escGroups.map(g => (
+              <div key={g.key} className="flex items-start gap-3.5 px-4 py-3 border-b border-[#E6E4DD] last:border-0">
+                <Avatar name={g.label} onClick={() => g.c && setOpen(g.c)} />
+                <div className="flex-1 min-w-0">
+                  <div className="text-[13.5px] font-medium flex items-center gap-1.5">
+                    {g.label}
+                    {g.items.length > 1 && (
+                      <span className="px-1.5 py-0.5 rounded-full bg-[#FAEEDA] text-[#7A4A12] text-[10px] font-semibold">
+                        {g.items.length} sawaal
+                      </span>
+                    )}
                   </div>
-                  <Btn size="sm" onClick={async () => { await closeEscalation(e.id); toast("Nipta diya"); await reload(); }}>Ho gaya</Btn>
+                  {g.items.map((e, i) => (
+                    <div key={e.id} className={i ? "mt-1 pt-1 border-t border-[#F0EEE8]" : ""}>
+                      <div className="text-[12.5px] text-[#6B6F68] break-words">{e.question}</div>
+                      {e.reason && <div className="text-[11.5px] text-[#9BA098] mt-0.5">{e.reason}</div>}
+                    </div>
+                  ))}
                 </div>
-              );
-            })}
+                <Btn size="sm" onClick={() => closeEscGroup(g)}>Ho gaya</Btn>
+              </div>
+            ))}
           </Panel>
           <div className="h-5" />
         </>
