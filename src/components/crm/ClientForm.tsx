@@ -1,7 +1,7 @@
 /* Add / Edit client — demo wale saare fields (4 rates, mode, logins, linked) */
 import { useState } from "react";
 import { useCrm } from "../../services/crmStore";
-import { createClient, updateClient } from "../../services/crmApi";
+import { createClient, updateClient, linkGroup } from "../../services/crmApi";
 import { FILING_MODES, BUSINESS_TYPES, checkDuplicateGSTIN, type Client } from "../../services/crmLogic";
 import { Modal, Field, Row2, TextInput, SelectInput, FieldsetLabel, Btn } from "./ui";
 
@@ -63,21 +63,12 @@ export default function ClientForm({ client, onClose, onSaved }: Props) {
       assigned_to: f.assigned_to || null,
       business_type: f.business_type || null,
     };
-    if (editing) payload.linked_client_ids = linked;
 
     setSaving(true); setErr("");
     try {
       const saved = editing ? await updateClient(client!.id, payload) : await createClient(payload);
-      // dono taraf link jode (jaise demo me hota hai)
-      if (editing) {
-        await Promise.all(clients.filter(o => o.id !== client!.id).map(async o => {
-          const cur = o.linked_client_ids || [];
-          const should = linked.includes(o.id);
-          const has = cur.includes(client!.id);
-          if (should && !has) await updateClient(o.id, { linked_client_ids: [...cur, client!.id] });
-          if (!should && has) await updateClient(o.id, { linked_client_ids: cur.filter(x => x !== client!.id) });
-        }));
-      }
+      // Group-mesh: jis ek se bhi link karo, poore group se link ho (aur sab me naya bhi aa jaye)
+      if (linked.length) await linkGroup(saved.id, linked);
       toast(editing ? "Client update ho gaya" : "Client add ho gaya");
       await reload();
       onSaved?.(saved);
@@ -156,18 +147,16 @@ export default function ClientForm({ client, onClose, onSaved }: Props) {
         </Field>
       </Row2>
 
-      {editing && (
-        <Field label="Linked customer accounts (same banda, doosre GSTIN)"
-          hint="Ctrl/Cmd dabakar ek se zyada select karo. Jab ek hi customer ke kai business hon.">
-          <select multiple size={4} value={linked}
-            onChange={e => setLinked([...e.target.selectedOptions].map(o => o.value))}
-            className="w-full px-2.5 py-2 border border-[#E6E4DD] rounded-lg text-[13px] outline-none focus:border-[#0F6E56] bg-white">
-            {clients.filter(o => o.id !== client!.id).map(o => (
-              <option key={o.id} value={o.id}>{o.name} — {o.business_name || "—"}</option>
-            ))}
-          </select>
-        </Field>
-      )}
+      <Field label="Linked customer accounts (same banda, doosre GSTIN)"
+        hint="Group me se KISI EK ko select karo — poore group se apne aap link ho jayega.">
+        <select multiple size={4} value={linked}
+          onChange={e => setLinked([...e.target.selectedOptions].map(o => o.value))}
+          className="w-full px-2.5 py-2 border border-[#E6E4DD] rounded-lg text-[13px] outline-none focus:border-[#0F6E56] bg-white">
+          {clients.filter(o => o.id !== client?.id).map(o => (
+            <option key={o.id} value={o.id}>{o.name} — {o.business_name || o.gstin || "—"}</option>
+          ))}
+        </select>
+      </Field>
 
       <div className="flex gap-2 justify-end mt-5">
         <Btn onClick={onClose}>Cancel</Btn>

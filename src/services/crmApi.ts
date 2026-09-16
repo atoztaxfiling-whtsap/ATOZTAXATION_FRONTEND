@@ -69,6 +69,8 @@ export const fetchIncentive = (): Promise<IncentiveData> => req("/incentive").th
 /* ---------- Clients ---------- */
 export const createClient = (d: Partial<Client>): Promise<Client> => jsonPost("/clients", d).then(r => r.data);
 export const updateClient = (id: string, d: Partial<Client>): Promise<Client> => jsonPost(`/clients/${id}`, d, "PUT").then(r => r.data);
+export const linkGroup = (focalId: string, selectedIds: string[]) =>
+  jsonPost("/clients/link-group", { focal_id: focalId, selected_ids: selectedIds }).then(r => r);
 export const deleteClient = (id: string) => req(`/clients/${id}`, { method: "DELETE" }).then(r => r.data);
 export const restoreClient = (id: string) => req(`/clients/${id}/restore`, { method: "POST" }).then(r => r.data);
 export const addClientNote = (id: string, text: string) => jsonPost(`/clients/${id}/notes`, { text }).then(r => r.data);
