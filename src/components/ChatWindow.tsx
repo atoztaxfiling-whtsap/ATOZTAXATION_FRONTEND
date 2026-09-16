@@ -35,6 +35,13 @@ export default function ChatWindow({ selectedMobile, threads, messages, messages
   const prevCount = useRef(0);
   const thread: Thread | undefined = threads.find(t => t.mobile === selectedMobile) || (selectedMobile ? { mobile: selectedMobile } : undefined);
 
+  // 24-ghante window: client (sender=other) ka aakhri message 24h ke andar ho
+  // to window khuli (free-text ja sakta). Warna sirf approved template.
+  const _lastInbound = [...messages].reverse().find(m => m.sender === 'other');
+  const windowOpen = (messagesLoading || messages.length === 0)
+    ? true
+    : (!!_lastInbound && (Date.now() - new Date(_lastInbound.timestamp).getTime()) < 24 * 60 * 60 * 1000);
+
   const scrollBottom = useCallback((smooth = true) => { endRef.current?.scrollIntoView({ behavior: smooth ? 'smooth' : 'instant' }); }, []);
 
   useEffect(() => { if (messages.length > prevCount.current) { const el = scrollRef.current; const near = el ? el.scrollHeight - el.scrollTop - el.clientHeight < 200 : true; if (near || messages.length - prevCount.current === messages.length) scrollBottom(messages.length - prevCount.current < 5); } prevCount.current = messages.length; }, [messages, scrollBottom]);
@@ -165,7 +172,14 @@ export default function ChatWindow({ selectedMobile, threads, messages, messages
         {showScroll && <button onClick={() => scrollBottom()} className="absolute bottom-4 right-4 w-10 h-10 rounded-full shadow-lg flex items-center justify-center z-10" style={{ background: '#fff' }}><ChevronDown size={20} style={{ color: '#5A6168' }} /></button>}
       </div>
 
-      <ChatInput onSendMessage={handleSend} onSendDocument={handleDoc} replyTo={replyTo} onCancelReply={() => setReplyTo(null)} disabled={sending} />
+      {windowOpen ? (
+        <ChatInput onSendMessage={handleSend} onSendDocument={handleDoc} replyTo={replyTo} onCancelReply={() => setReplyTo(null)} disabled={sending} />
+      ) : (
+        <div className="flex items-center gap-3 px-4 py-3" style={{ borderTop: '1px solid #E6E7E2', background: '#FCF6E9' }}>
+          <span className="flex-1 text-xs" style={{ color: '#8A6D1F' }}>24 ghante ka window band hai (client ne 24h me reply nahi kiya). Ab sirf approved template ja sakta hai. Client reply karega to normal message wapas chalu.</span>
+          <button onClick={() => setShowTemplates(true)} className="px-4 py-2 rounded-lg text-sm font-semibold text-white flex-shrink-0" style={{ background: '#0F6E56' }}>Template bhejo</button>
+        </div>
+      )}
 
       {fwdMsg && <ForwardModal message={fwdMsg} threads={threads} onClose={() => setFwdMsg(null)} />}
       {showTemplates && selectedMobile && (
