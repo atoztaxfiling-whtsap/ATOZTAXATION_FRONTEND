@@ -63,7 +63,7 @@ export default function Workflow() {
       </>}>
         <div className="hidden md:block">
           <Scroller>
-            <thead><tr><Th>Received</Th><Th>Name</Th><Th>Number</Th><Th>Linked client</Th><Th>Category</Th><Th>Documents</Th><Th>Status</Th><Th>Agreed</Th><Th>Paid</Th><Th>Assigned</Th><Th>Comments</Th><Th /></tr></thead>
+            <thead><tr><Th>Received</Th><Th>Name</Th><Th>Number</Th><Th>Linked client</Th><Th>Category</Th><Th>Assigned</Th><Th>Status</Th><Th>Agreed</Th><Th>Paid</Th><Th>Documents</Th><Th>Comments</Th><Th /></tr></thead>
             <tbody>
               {loading && <EmptyRow colSpan={12}>Load ho raha hai...</EmptyRow>}
               {!loading && !rows.length && <EmptyRow colSpan={12}>Koi task nahi mila.</EmptyRow>}
@@ -76,7 +76,11 @@ export default function Workflow() {
                     <Td className="font-mono text-[11.5px] whitespace-nowrap">{t.mobile ? <a href={waLink(t.mobile, "")} target="_blank" rel="noreferrer" className="text-[#0F6E56] hover:underline">{t.mobile}</a> : "—"}</Td>
                     <Td className="text-[12.5px] text-[#9BA098] whitespace-nowrap">{linked ? linked.name : "—"}</Td>
                     <Td><Pill status="">{t.category || "Other"}</Pill></Td>
-                    <Td><DocsCell t={t} onSave={(req, rec) => patchDocs(t, req, rec)} /></Td>
+                    <Td>
+                      <select className={inlineSelect} value={t.assigned_to || ""} onChange={e => patch(t, "assigned_to", e.target.value)}>
+                        <option value="">—</option>{staff.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}
+                      </select>
+                    </Td>
                     <Td>
                       <select className={inlineSelect} value={t.status} onChange={e => patch(t, "status", e.target.value)}>
                         {TASK_STATUSES.map(s => <option key={s}>{s}</option>)}
@@ -86,11 +90,7 @@ export default function Workflow() {
                       onBlur={e => { if (Number(e.target.value) !== Number(t.fee_agreed)) patch(t, "fee_agreed", Number(e.target.value) || 0); }} /></Td>
                     <Td><input className={inlineInput} style={{ width: 70, minWidth: 70 }} type="number" defaultValue={t.amount_paid || 0}
                       onBlur={e => { if (Number(e.target.value) !== Number(t.amount_paid)) patch(t, "amount_paid", Number(e.target.value) || 0); }} /></Td>
-                    <Td>
-                      <select className={inlineSelect} value={t.assigned_to || ""} onChange={e => patch(t, "assigned_to", e.target.value)}>
-                        <option value="">—</option>{staff.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}
-                      </select>
-                    </Td>
+                    <Td><DocsCell t={t} onSave={(req, rec) => patchDocs(t, req, rec)} /></Td>
                     <Td><input className={inlineInput} defaultValue={t.comment || ""} placeholder="Note"
                       onBlur={e => { if (e.target.value !== (t.comment || "")) patch(t, "comment", e.target.value); }} /></Td>
                     <Td><div className="flex items-center gap-2.5">
