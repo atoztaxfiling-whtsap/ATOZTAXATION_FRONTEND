@@ -4,7 +4,7 @@ import { Check, Plus, Bot, User, AlertTriangle, IndianRupee } from "lucide-react
 import { useCrm } from "../../services/crmStore";
 import { updateClient, closeFollowup, closeEscalation, confirmPaymentClaim, rejectPaymentClaim } from "../../services/crmApi";
 import { balanceDue, money, type Client } from "../../services/crmLogic";
-import { Avatar, Panel, PageHead, Btn, Modal, Field, TextInput, SelectInput, Pill } from "./ui";
+import { Avatar, Panel, PageHead, Btn, Modal, Field, TextInput, SelectInput } from "./ui";
 import ClientDrawer from "./ClientDrawer";
 
 const QUICK = ["Aaj shaam", "Kal subah", "Kal shaam", "Parso", "Is hafte"];

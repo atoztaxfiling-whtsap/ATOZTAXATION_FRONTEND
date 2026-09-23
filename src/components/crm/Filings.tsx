@@ -9,7 +9,7 @@ import {
   globalQuarterPeriods, globalMonthPeriods, findClientPeriod, TEMPLATES, waLink, money,
   type Client, type Period,
 } from "../../services/crmLogic";
-import { Avatar, Panel, PageHead, Btn, Scroller, Th, Td, EmptyRow, SelectInput, Modal, Field, TextInput, inlineSelect, inlineInput, Pill } from "./ui";
+import { Avatar, Panel, PageHead, Btn, Scroller, Th, Td, EmptyRow, SelectInput, Modal, Field, TextInput, inlineSelect, inlineInput } from "./ui";
 import ClientDrawer from "./ClientDrawer";
 
 type Tab = "quarterly" | "monthly" | "defaulters";
