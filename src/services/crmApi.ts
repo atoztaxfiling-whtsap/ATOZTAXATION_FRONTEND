@@ -124,6 +124,22 @@ export const rejectPaymentClaim = (mobile: string) => jsonPost("/payments/reject
 export const closeFollowup = (id: string) => req(`/followups/${id}/done`, { method: "POST" });
 export const closeEscalation = (id: string) => req(`/escalations/${id}/close`, { method: "POST" });
 
+/* ---------- Followup review (HOLD queue — pehle review, phir client ko) ---------- */
+export interface HoldItem {
+  id: string; mobile: string; kind: string; name?: string | null;
+  draft?: string | null; note?: string | null; status: string;
+  created_at?: string; updated_at?: string; approved_at?: string | null; edited?: boolean;
+}
+export interface FollowupReviewData { hold_on: boolean; pending: HoldItem[]; recent: HoldItem[]; }
+export const fetchFollowupReview = (): Promise<FollowupReviewData> =>
+  req("/followup-review").then(r => r.data);
+export const approveHold = (id: string) => jsonPost(`/followup-review/${id}/approve`, {});
+export const skipHold = (id: string) => jsonPost(`/followup-review/${id}/skip`, {});
+/* draft badlo; approve=true ho to edit + approve ek saath (edited text verbatim jayega) */
+export const editHold = (id: string, draft: string, approve = false) =>
+  jsonPost(`/followup-review/${id}`, { draft, approve }, "PUT");
+export const deleteHold = (id: string) => req(`/followup-review/${id}`, { method: "DELETE" });
+
 /* ---------- Sheet sync ---------- */
 export interface SyncStats { clients_added?: number; clients_filled?: number; cycle_set?: number; tasks_added?: number; tasks_updated?: number; skipped?: string; error?: string }
 export const runSheetSync = (): Promise<SyncStats> => req("/sheet-sync/run", { method: "POST" }).then(r => r.data);

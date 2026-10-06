@@ -2,13 +2,14 @@ import { useState, useEffect } from "react";
 import {
   LayoutDashboard, MessageCircle, Users, Phone, CreditCard, FileText,
   CheckSquare, UserPlus, Settings as SettingsIcon, BarChart3, Megaphone, MoreHorizontal, LogOut,
-  ClipboardList,
+  ClipboardList, Inbox,
   Sparkles,
 } from "lucide-react";
 import Chat from "./components/Chat";
 import CrmDashboard from "./components/crm/CrmDashboard";
 import Clients from "./components/crm/Clients";
 import Followups from "./components/crm/Followups";
+import FollowupReview from "./components/crm/FollowupReview";
 import Payments from "./components/crm/Payments";
 import Filings from "./components/crm/Filings";
 import Workflow from "./components/crm/Workflow";
@@ -33,7 +34,7 @@ const hasToken = (): boolean => !!localStorage.getItem("console_token");
 const clearToken = (): void => localStorage.removeItem("console_token");
 
 type Tab =
-  | "chat" | "dashboard" | "clients" | "pending" | "followups" | "payments" | "filings"
+  | "chat" | "dashboard" | "clients" | "pending" | "followups" | "review" | "payments" | "filings"
   | "workflow" | "registrations" | "setup" | "returns" | "analytics" | "notifications" | "more";
 
 const ICONS: Record<string, JSX.Element> = {
@@ -42,6 +43,7 @@ const ICONS: Record<string, JSX.Element> = {
   clients: <Users className="w-4 h-4" />,
   pending: <ClipboardList className="w-4 h-4" />,
   followups: <Phone className="w-4 h-4" />,
+  review: <Inbox className="w-4 h-4" />,
   payments: <CreditCard className="w-4 h-4" />,
   filings: <FileText className="w-4 h-4" />,
   workflow: <CheckSquare className="w-4 h-4" />,
@@ -58,6 +60,7 @@ const WORKSPACE: Array<{ key: Tab; label: string }> = [
   { key: "clients", label: "Clients" },
   { key: "pending", label: "Pending task" },
   { key: "followups", label: "Followups" },
+  { key: "review", label: "Followup review" },
   { key: "payments", label: "Payments" },
   { key: "filings", label: "Filings" },
   { key: "workflow", label: "Workflow" },
@@ -112,6 +115,7 @@ function Shell({ onLogout }: { onLogout: () => void }) {
       case "clients": return <Clients />;
       case "pending": return <PendingTasks />;
       case "followups": return <Followups />;
+      case "review": return <FollowupReview />;
       case "payments": return <Payments />;
       case "filings": return <Filings />;
       case "workflow": return <Workflow />;
@@ -214,6 +218,7 @@ function NavItem({ tabKey, label, active, badge, onClick }: { tabKey: string; la
 function MoreMenu({ onPick }: { onPick: (t: Tab) => void }) {
   const tiles: Array<{ key: Tab; label: string; sub: string }> = [
     { key: "followups", label: "Followups", sub: "Yaad rakhne wale kaam" },
+    { key: "review", label: "Followup review", sub: "Pehle review, phir client ko" },
     { key: "payments", label: "Payments", sub: "Ledger + collection" },
     { key: "workflow", label: "Workflow", sub: "Non-GST kaam" },
     { key: "registrations", label: "Registrations", sub: "Naye GST cases" },
