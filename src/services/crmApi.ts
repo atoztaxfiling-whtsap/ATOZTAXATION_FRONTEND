@@ -140,6 +140,11 @@ export const editHold = (id: string, draft: string, approve = false) =>
   jsonPost(`/followup-review/${id}`, { draft, approve }, "PUT");
 export const deleteHold = (id: string) => req(`/followup-review/${id}`, { method: "DELETE" });
 
+/* ---------- Workflow money (walk-in/ITR/TDS — archive se is mahine) ---------- */
+export interface WorkflowMoney { today: number; month: number; open_advance: number; error?: string; }
+export const fetchWorkflowMoney = (): Promise<WorkflowMoney> =>
+  req("/workflow-money").then(r => r.data);
+
 /* ---------- Sheet sync ---------- */
 export interface SyncStats { clients_added?: number; clients_filled?: number; cycle_set?: number; tasks_added?: number; tasks_updated?: number; skipped?: string; error?: string }
 export const runSheetSync = (): Promise<SyncStats> => req("/sheet-sync/run", { method: "POST" }).then(r => r.data);

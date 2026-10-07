@@ -111,7 +111,7 @@ function Shell({ onLogout }: { onLogout: () => void }) {
   function screen(t: Tab) {
     switch (t) {
       case "chat": return <Chat />;
-      case "dashboard": return <CrmDashboard />;
+      case "dashboard": return <CrmDashboard onGoto={(x) => setTab(x as Tab)} />;
       case "clients": return <Clients />;
       case "pending": return <PendingTasks />;
       case "followups": return <Followups />;
