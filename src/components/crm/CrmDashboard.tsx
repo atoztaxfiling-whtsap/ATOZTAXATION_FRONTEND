@@ -8,7 +8,7 @@ import { updateClient, closeEscalation, fetchWorkflowMoney } from "../../service
 import {
   balanceDue, currentCycle, currentPeriod, clientPeriods, filingEntry, isDefaulter,
   dueDatesForPeriod, daysUntil, fmtDate, quarterLabel, quarterStartIndex, monthLabel, todayIndex, money,
-  waLink, KIND_FIRM_PAID, TASK_BUCKET, isTaskBillable,
+  waLink, KIND_FIRM_PAID, isTaskBillable, buildWorkItems, UNASSIGNED_LABEL,
   type Client,
 } from "../../services/crmLogic";
 import { Avatar, Metric, Panel, PageHead, Btn, Pill } from "./ui";
@@ -27,7 +27,7 @@ const BT_LABEL: Record<string, string> = { b2b: "B2B", ecommerce: "E-com", b2c: 
 type Tab = string;
 
 export default function CrmDashboard({ onGoto }: { onGoto?: (tab: Tab) => void }) {
-  const { clients, filingMap, payments, tasks, escalations, reload, loading, removeLocal } = useCrm();
+  const { clients, filings, filingMap, payments, tasks, registrations, escalations, reload, loading, removeLocal } = useCrm();
   const [open, setOpen] = useState<Client | null>(null);
   const [wf, setWf] = useState<{ today: number; month: number; open_advance: number }>({ today: 0, month: 0, open_advance: 0 });
   const go = (t: Tab) => onGoto && onGoto(t);
@@ -129,19 +129,19 @@ export default function CrmDashboard({ onGoto }: { onGoto?: (tab: Tab) => void }
     .sort((a, b) => (b.days ?? 0) - (a.days ?? 0))
     .slice(0, 6);
 
-  /* ---------- Team workload (Workflow tasks: us vs client) ---------- */
+  /* ---------- Team workload (teeno: GST returns/filings + workflow + registrations) ---------- */
   type TRow = { name: string; total: number; us: number; client: number; oldest: number };
+  const workItems = buildWorkItems(clients, filings, tasks, registrations);
   const team: Record<string, TRow> = {};
   let unassigned = 0;
-  tasks.forEach(t => {
-    const bucket = TASK_BUCKET[t.status || ""] || "client";
-    if (bucket === "done") return;
-    const name = (t.assigned_to || "").trim();
+  workItems.forEach(it => {
+    if (it.bucket === "done") return;
+    const name = it.assignedTo && it.assignedTo !== UNASSIGNED_LABEL ? it.assignedTo : "";
     if (!name) { unassigned++; return; }
     const r = team[name] || (team[name] = { name, total: 0, us: 0, client: 0, oldest: 0 });
     r.total++;
-    if (bucket === "us") r.us++; else if (bucket === "client") r.client++;
-    const d = daysOf(t.status_changed_at || t.created_at); if (d != null && d > r.oldest) r.oldest = d;
+    if (it.bucket === "us") r.us++; else if (it.bucket === "client") r.client++;
+    if (it.days > r.oldest) r.oldest = it.days;   // us/client ke alawa 'dept' sirf total me
   });
   const teamList = Object.values(team).sort((a, b) => b.total - a.total);
 
@@ -276,8 +276,9 @@ export default function CrmDashboard({ onGoto }: { onGoto?: (tab: Tab) => void }
             </div>
 
             <div>
-              <SectionTitle onClick={() => go("pending")} linkLabel="Pending task">Team workload</SectionTitle>
+              <SectionTitle onClick={() => go("pending")} linkLabel="Pending task">Team workload — sab kaam</SectionTitle>
               <Panel>
+                <div className="px-4 py-2 text-[11.5px] text-[#9BA098] border-b border-[#E6E4DD]">GST returns + workflow + registration — teeno milake har staff ka bojh.</div>
                 {teamList.length ? teamList.map(r => (
                   <div key={r.name} className="flex items-center gap-3 px-4 py-3 border-b border-[#E6E4DD] last:border-0 cursor-pointer hover:bg-[#FBFAF7]" onClick={() => go("pending")}>
                     <Avatar name={r.name} />
