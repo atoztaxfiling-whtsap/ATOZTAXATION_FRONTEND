@@ -79,6 +79,9 @@ export const deleteClientNote = (cid: string, nid: string) => req(`/clients/${ci
 /* ---------- Filings ---------- */
 export const upsertFiling = (d: { client_id: string; period_key: string; status?: string; type?: string; comment?: string; fee_due?: number | null; assigned_to?: string }): Promise<Filing> =>
   jsonPost("/filings/upsert", d).then(r => r.data);
+/* AI (CRM Bot) ne jo filing update ki (amber) — use verify/confirm karo, flag hato */
+export const confirmFilingAi = (id: string): Promise<Filing> =>
+  jsonPost(`/filings/${id}/confirm-ai`, {}).then(r => r.data);
 
 /* ---------- Payments ---------- */
 /* kind: "client" = client ne diya | "firm_paid" = humne uski taraf se bhara */

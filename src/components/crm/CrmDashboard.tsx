@@ -150,6 +150,16 @@ export default function CrmDashboard({ onGoto }: { onGoto?: (tab: Tab) => void }
   const defaulters = clients.filter(c => isDefaulter(c, filingMap));
   const openEsc = escalations.filter(e => (e.status || "") === "open");
 
+  /* ---------- Filing status counts (abhi ke period ka) ---------- */
+  const fStatusCounts: Record<string, number> = {};
+  clients.forEach(c => {
+    const cp = currentPeriod(c);
+    if (!cp) return;
+    const st = filingEntry(filingMap, c.id, cp.key).status || "Yet to Pick";
+    fStatusCounts[st] = (fStatusCounts[st] || 0) + 1;
+  });
+  const fStatusList = Object.entries(fStatusCounts).sort((a, b) => b[1] - a[1]);
+
   async function markDone(c: Client) { await updateClient(c.id, { followup_text: null }); await reload(); }
   async function dismissAlert(id: string) {
     removeLocal("escalations", id);          // turant UI se hatao
@@ -177,6 +187,20 @@ export default function CrmDashboard({ onGoto }: { onGoto?: (tab: Tab) => void }
             <button onClick={() => go("workflow")} className="text-left"><Metric label="Workflow collected" value={money(wf.month)} sub="is mahine (archive) →" tone="good" /></button>
             <button onClick={() => go("workflow")} className="text-left"><Metric label="Workflow baaki" value={money(wfOutstanding)} sub={`${wfBillableOpen} kaam pe pending →`} tone={wfOutstanding > 0 ? "danger" : undefined} /></button>
           </div>
+
+          {/* Filing status counts — abhi ke period ka haal (click -> Filings) */}
+          <SectionTitle onClick={() => go("filings")} linkLabel="Filings">Filing status — current period</SectionTitle>
+          <Panel>
+            <div className="flex flex-wrap gap-2 p-3">
+              {fStatusList.length ? fStatusList.map(([st, n]) => (
+                <button key={st} onClick={() => go("filings")}
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg border border-[#E6E4DD] bg-white hover:border-[#0F6E56]">
+                  <span className="text-[12.5px] text-[#6B6F68]">{st}</span>
+                  <span className="text-[14px] font-semibold text-[#1C1E1B]">{n}</span>
+                </button>
+              )) : <Empty>Koi filing nahi.</Empty>}
+            </div>
+          </Panel>
 
           {/* GST reminder calendar — bot kin dino pe followup bhejega */}
           <SectionTitle onClick={() => go("review")} linkLabel="Review">

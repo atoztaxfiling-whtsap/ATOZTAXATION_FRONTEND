@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react";
 import { Pencil, ChevronDown } from "lucide-react";
 import { useCrm } from "../../services/crmStore";
-import { upsertFiling, updateClient } from "../../services/crmApi";
+import { upsertFiling, updateClient, confirmFilingAi } from "../../services/crmApi";
 import {
   FILING_STATUSES, clientPeriods, currentPeriod, filingEntry, periodFee, isDefaulter,
   globalQuarterPeriods, globalMonthPeriods, findClientPeriod, TEMPLATES, waLink, money,
@@ -54,6 +54,13 @@ export default function Filings() {
 
   async function patch(c: Client, p: Period, field: string, value: any) {
     try { await upsertFiling({ client_id: c.id, period_key: p.key, [field]: value } as any); await reload(); }
+    catch (e) { alert((e as Error).message); }
+  }
+
+  /* CRM Bot (AI) ne jo filing update ki (amber) — verify karke flag hatao */
+  async function confirmAi(id?: string) {
+    if (!id) return;
+    try { await confirmFilingAi(id); await reload(); toast("Confirm ho gaya"); }
     catch (e) { alert((e as Error).message); }
   }
 
@@ -134,11 +141,13 @@ export default function Filings() {
                 const e = filingEntry(filingMap, c.id, cp.key);
                 const amt = e.fee_due != null ? e.fee_due : periodFee(c, cp, e.type);
                 return (
-                  <tr key={c.id} className="hover:bg-[#FBFAF7]">
+                  <tr key={c.id} className={e.ai_updated ? "bg-[#FDF3E3] hover:bg-[#FBEBD2]" : "hover:bg-[#FBFAF7]"}
+                    title={e.ai_updated ? (e.ai_note || "CRM Bot ne update kiya — verify karo") : undefined}>
                     <Td>
                       <div className="flex items-center gap-2.5">
                         <Avatar name={c.name} onClick={() => setOpen(c)} />
                         <span className="font-medium cursor-pointer whitespace-nowrap" onClick={() => setOpen(c)}>{c.name}</span>
+                        {e.ai_updated && <span className="shrink-0 text-[10px] px-1.5 py-0.5 rounded-full bg-[#F2C879] text-[#412402]" title={e.ai_note || ""}>🤖 AI</span>}
                       </div>
                     </Td>
                     <Td className="font-mono text-[11.5px] text-[#6B6F68]">{c.portal_username || "—"}</Td>
@@ -158,7 +167,15 @@ export default function Filings() {
                         {FILING_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
                       </select>
                     </Td>
-                    <Td><input className={inlineInput} defaultValue={e.comment} placeholder="Add note" onBlur={ev => { if (ev.target.value !== e.comment) patch(c, cp, "comment", ev.target.value); }} /></Td>
+                    <Td>
+                      <div className="flex items-center gap-1.5">
+                        <input className={inlineInput} defaultValue={e.comment} placeholder="Add note" onBlur={ev => { if (ev.target.value !== e.comment) patch(c, cp, "comment", ev.target.value); }} />
+                        {e.ai_updated && (
+                          <button onClick={() => confirmAi(e.id)} title="AI update verify/confirm karo"
+                            className="shrink-0 px-2 py-1 text-[11px] font-medium rounded-md border border-[#C9933A] bg-[#F2C879] text-[#412402] whitespace-nowrap">✓ Confirm</button>
+                        )}
+                      </div>
+                    </Td>
                     <Td>
                       <select className={inlineSelect} value={c.assigned_to || ""} onChange={ev => assignStaff(c, ev.target.value)}>
                         <option value="">—</option>{staff.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}

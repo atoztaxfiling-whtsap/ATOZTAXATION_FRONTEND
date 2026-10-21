@@ -34,6 +34,8 @@ export default function ClientForm({ client, onClose, onSaved }: Props) {
     annual_due_date: client?.annual_due_date || "",
     assigned_to: client?.assigned_to || (staff[0]?.name ?? ""),
     business_type: client?.business_type || "unknown",
+    personal_note: client?.personal_note || "",
+    followup_off: !!client?.followup_off,
   });
   const [linked, setLinked] = useState<string[]>(client?.linked_client_ids || []);
   const [saving, setSaving] = useState(false);
@@ -62,6 +64,8 @@ export default function ClientForm({ client, onClose, onSaved }: Props) {
       annual_due_date: f.annual_due_date || null,
       assigned_to: f.assigned_to || null,
       business_type: f.business_type || null,
+      personal_note: f.personal_note.trim() || null,
+      followup_off: !!f.followup_off,
     };
 
     setSaving(true); setErr("");
@@ -146,6 +150,20 @@ export default function ClientForm({ client, onClose, onSaved }: Props) {
           </SelectInput>
         </Field>
       </Row2>
+
+      <FieldsetLabel>Personal note + followup</FieldsetLabel>
+      <Field label="Personal note (sirf office ke liye)" hint="Is client ke baare me koi bhi baat — bot ise context maanta hai.">
+        <textarea value={f.personal_note}
+          onChange={e => setF(p => ({ ...p, personal_note: e.target.value }))}
+          rows={3} placeholder="jaise: purana client, sirf ITR karta hai, followup ki zaroorat nahi..."
+          className="w-full px-2.5 py-2 border border-[#E6E4DD] rounded-lg text-[13px] outline-none focus:border-[#0F6E56] bg-white resize-y" />
+      </Field>
+      <label className="flex items-center gap-2 mb-3 cursor-pointer select-none">
+        <input type="checkbox" checked={f.followup_off}
+          onChange={e => setF(p => ({ ...p, followup_off: e.target.checked }))}
+          className="w-4 h-4 accent-[#0F6E56]" />
+        <span className="text-[13px] text-[#30352E]">Followup OFF — is client ko koi automatic followup/reminder mat bhejo</span>
+      </label>
 
       <Field label="Linked customer accounts (same banda, doosre GSTIN)"
         hint="Group me se KISI EK ko select karo — poore group se apne aap link ho jayega.">

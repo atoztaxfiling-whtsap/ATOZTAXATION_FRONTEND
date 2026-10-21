@@ -65,12 +65,14 @@ export interface Client {
   other_logins?: Array<{ label: string; username: string; password: string }> | null;
   primary_service?: string | null; source?: string | null; notes?: string | null;
   business_type?: string | null;
+  personal_note?: string | null; followup_off?: boolean | null;
   is_active?: boolean; created_at?: string;
 }
 export interface Filing {
   id: string; client_id: string; period_key: string; cycle: string;
   type?: string | null; status: string; fee_due?: number | null; comment?: string | null;
   assigned_to?: string | null;
+  ai_updated?: boolean | null; ai_note?: string | null;
   status_changed_at?: string | null; updated_at?: string | null; created_at?: string | null;
 }
 export interface Payment { id: string; client_id: string; amount: number; paid_on: string; method?: string | null; note?: string | null; kind?: string | null; }
@@ -101,7 +103,7 @@ export interface Escalation {
 }
 
 export interface Period { key: string; label: string; cycle: "monthly" | "quarterly"; }
-export interface FilingEntry { status: string; type: string; comment: string; fee_due: number | null; id?: string; }
+export interface FilingEntry { status: string; type: string; comment: string; fee_due: number | null; id?: string; ai_updated?: boolean; ai_note?: string | null; }
 export interface LedgerRow {
   period: string; key: string; cycle: string; type: string; status: string;
   due: number; paid: number; balance: number; isOverride: boolean;
@@ -185,7 +187,7 @@ export function buildFilingMap(filings: Filing[]) {
 export function filingEntry(map: Record<string, Filing>, clientId: string, key: string): FilingEntry {
   const f = map[`${clientId}|${key}`];
   if (!f) return { status: "Yet to Pick", type: "nil", comment: "", fee_due: null };
-  return { id: f.id, status: f.status || "Yet to Pick", type: f.type || "nil", comment: f.comment || "", fee_due: f.fee_due ?? null };
+  return { id: f.id, status: f.status || "Yet to Pick", type: f.type || "nil", comment: f.comment || "", fee_due: f.fee_due ?? null, ai_updated: !!f.ai_updated, ai_note: f.ai_note ?? null };
 }
 
 /* ---------- Fees ---------- */
