@@ -127,6 +127,10 @@ export default function ClientDrawer({ client, onClose }: { client: Client; onCl
               }}
               className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[12px] font-medium bg-white text-[#0E7A52] border border-[#CBE3D8]">📄 GSTR-1</button>
           )}
+          {c.docs_folder_url && (
+            <a href={c.docs_folder_url} target="_blank" rel="noreferrer"
+              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[12px] font-medium bg-white text-[#16211D] border border-[#E4E8E6]">📁 Drive folder</a>
+          )}
           <button onClick={async () => { try { toast("Docs zip ban raha…"); await downloadClientDocs(c.mobile || ""); } catch (e) { alert((e as Error).message); } }}
             className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[12px] font-medium bg-white text-[#16211D] border border-[#E4E8E6]">⬇ Docs</button>
           <button onClick={async () => { await updateClient(c.id, { followup_off: !c.followup_off } as any); await reload(); toast(c.followup_off ? "Followup ON" : "Followup OFF"); }}

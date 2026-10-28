@@ -66,6 +66,7 @@ export interface Client {
   primary_service?: string | null; source?: string | null; notes?: string | null;
   business_type?: string | null;
   personal_note?: string | null; followup_off?: boolean | null;
+  docs_folder_url?: string | null;
   is_active?: boolean; created_at?: string;
 }
 export interface Filing {
