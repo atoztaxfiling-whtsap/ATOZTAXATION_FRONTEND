@@ -15,11 +15,23 @@ export default function Workflow() {
   const [asg, setAsg] = useState("");
   const [adding, setAdding] = useState(false);
   const [editing, setEditing] = useState<Task | null>(null);
+  const [view, setView] = useState<"active" | "stuck">("active");
 
-  const rows = tasks.filter(t =>
+  const LATE = 14;
+  const baseRows = tasks.filter(t =>
     (!cat || t.category === cat) &&
     (!st || t.status === st) &&
     (!asg || (asg === "—" ? !t.assigned_to : t.assigned_to === asg)));
+  // Open (kaam baaki) task kitne din se atka — status_changed_at/created se.
+  const daysOpen = (t: Task) => {
+    if (["Completed", "Closed", "Cancelled"].includes(t.status)) return -1;
+    const ts = Date.parse(t.status_changed_at || t.created_at || t.received_date || "");
+    if (isNaN(ts)) return 0;
+    return Math.max(0, Math.floor((Date.now() - ts) / 86400000));
+  };
+  const stuck = baseRows.filter(t => daysOpen(t) >= LATE);
+  const active = baseRows.filter(t => daysOpen(t) < LATE);
+  const rows = view === "stuck" ? stuck : active;
 
   async function patchDocs(t: Task, docs_required: string[], docs_received: string[]) {
     patchLocal("tasks", t.id, { docs_required, docs_received });   // turant dikha do
@@ -44,6 +56,21 @@ export default function Workflow() {
     <div className="h-full overflow-y-auto bg-[#F5F7F6] p-5 md:p-7">
       <PageHead title="Workflow" sub="Non-GST kaam — income tax, TDS, registration, misc"
         actions={<Btn variant="primary" onClick={() => setAdding(true)}><Plus className="w-3.5 h-3.5" />New task</Btn>} />
+
+      <div className="flex gap-1.5 mb-4 flex-wrap">
+        {([["active", `Chalu ${active.length}`], ["stuck", `Atke · 14+ din ${stuck.length}`]] as ["active" | "stuck", string][]).map(([k, label]) => (
+          <button key={k} onClick={() => setView(k)}
+            className={`px-3.5 py-1.5 rounded-full text-[12.5px] font-medium border ${view === k ? "bg-[#1C1E1B] text-white border-[#1C1E1B]" : k === "stuck" && stuck.length ? "bg-[#FBE7E3] text-[#962C1E] border-[#F0C9C2]" : "bg-white text-[#6B6F68] border-[#E4E8E6]"}`}>
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {view === "stuck" && (
+        <div className="text-[12px] text-[#962C1E] bg-[#FBE7E3] border border-[#F0C9C2] rounded-lg px-3.5 py-2.5 mb-3">
+          Ye kaam 14+ din se atke hain — nipta do ya client/dept se follow karo.
+        </div>
+      )}
 
       <Panel head={<>
         <h3 className="text-[13.5px] font-semibold">Tasks <span className="text-[#9BA098] font-normal">({rows.length})</span></h3>

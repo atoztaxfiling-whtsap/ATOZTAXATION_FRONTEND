@@ -5,7 +5,7 @@ import { useCrm } from "../../services/crmStore";
 import { updateClient, deleteClient, restoreClient, createPayment, addClientNote, deleteClientNote,
   fetchBotNotes, addBotNote, deleteBotNote, type BotNote,
   fetchInstallments, addInstallment, updateInstallment, deleteInstallment, type Installment,
-  openChat, backupBase } from "../../services/crmApi";
+  openChat, backupBase, downloadClientDocs } from "../../services/crmApi";
 import {
   fullLedger, currentCycle, currentPeriod, rateFor, tasksForClient,
   totalFirmPaid, TEMPLATES, waLink, money, type Client,
@@ -127,6 +127,8 @@ export default function ClientDrawer({ client, onClose }: { client: Client; onCl
               }}
               className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[12px] font-medium bg-white text-[#0E7A52] border border-[#CBE3D8]">📄 GSTR-1</button>
           )}
+          <button onClick={async () => { try { toast("Docs zip ban raha…"); await downloadClientDocs(c.mobile || ""); } catch (e) { alert((e as Error).message); } }}
+            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[12px] font-medium bg-white text-[#16211D] border border-[#E4E8E6]">⬇ Docs</button>
           <button onClick={async () => { await updateClient(c.id, { followup_off: !c.followup_off } as any); await reload(); toast(c.followup_off ? "Followup ON" : "Followup OFF"); }}
             className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[12px] font-medium border ${c.followup_off ? "bg-[#FBE7E3] text-[#962C1E] border-[#F0C9C2]" : "bg-white text-[#5E6B66] border-[#E4E8E6]"}`}>
             {c.followup_off ? "🔕 Followup OFF" : "🔔 Followup ON"}

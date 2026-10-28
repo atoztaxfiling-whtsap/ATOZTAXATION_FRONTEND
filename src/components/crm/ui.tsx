@@ -130,5 +130,5 @@ export function Td({ children, className = "" }: { children?: ReactNode; classNa
 }
 
 export function Scroller({ children }: { children: ReactNode }) {
-  return <div className="overflow-x-auto"><table className="w-full border-collapse">{children}</table></div>;
+  return <div className="overflow-x-auto sticky-first"><table className="w-full border-collapse">{children}</table></div>;
 }

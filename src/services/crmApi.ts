@@ -21,6 +21,20 @@ async function req(path: string, opt: RequestInit = {}): Promise<any> {
 const jsonPost = (path: string, body: any, method = "POST") =>
   req(path, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
 
+/* Ek client ke SAARE docs ek ZIP me download (token header ke saath). */
+export async function downloadClientDocs(mobile: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/api/crm/client-docs/${encodeURIComponent(mobile)}`, { headers: { "X-Console-Token": token() } });
+  if (!res.ok) {
+    let msg = "Docs nahi mile"; try { msg = JSON.parse(await res.text()).error || msg; } catch { /* noop */ }
+    throw new Error(msg);
+  }
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a"); a.href = url; a.download = `docs_${mobile}.zip`;
+  document.body.appendChild(a); a.click();
+  setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 1500);
+}
+
 /* Kahin se bhi client ki WhatsApp chat app ke andar kholo.
    Shell "chat" tab pe switch karta, Chat us thread ko select karta. */
 export function openChat(mobile: string) {
