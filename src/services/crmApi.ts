@@ -21,6 +21,13 @@ async function req(path: string, opt: RequestInit = {}): Promise<any> {
 const jsonPost = (path: string, body: any, method = "POST") =>
   req(path, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
 
+/* Kahin se bhi client ki WhatsApp chat app ke andar kholo.
+   Shell "chat" tab pe switch karta, Chat us thread ko select karta. */
+export function openChat(mobile: string) {
+  const m = String(mobile || "").replace(/\D/g, "").slice(-10);
+  try { window.dispatchEvent(new CustomEvent("judwa-open-chat", { detail: { mobile: m } })); } catch { /* noop */ }
+}
+
 /* ---------- Bootstrap ---------- */
 export async function fetchBootstrap(): Promise<Bootstrap> {
   const j = await req("/bootstrap");

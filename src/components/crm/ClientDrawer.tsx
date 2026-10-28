@@ -4,7 +4,8 @@ import { Eye, EyeOff, Plus, Trash2 } from "lucide-react";
 import { useCrm } from "../../services/crmStore";
 import { updateClient, deleteClient, restoreClient, createPayment, addClientNote, deleteClientNote,
   fetchBotNotes, addBotNote, deleteBotNote, type BotNote,
-  fetchInstallments, addInstallment, updateInstallment, deleteInstallment, type Installment } from "../../services/crmApi";
+  fetchInstallments, addInstallment, updateInstallment, deleteInstallment, type Installment,
+  openChat, backupBase } from "../../services/crmApi";
 import {
   fullLedger, currentCycle, currentPeriod, rateFor, tasksForClient,
   totalFirmPaid, TEMPLATES, waLink, money, type Client,
@@ -106,6 +107,30 @@ export default function ClientDrawer({ client, onClose }: { client: Client; onCl
             <Btn size="sm" onClick={() => setEditing(true)}>Edit</Btn>
             <Btn size="sm" onClick={onClose}>✕</Btn>
           </div>
+        </div>
+
+        {/* Quick actions — ek jagah se sab */}
+        <div className="flex flex-wrap gap-1.5 mb-4">
+          <button onClick={() => { openChat(c.mobile || ""); onClose(); }}
+            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[12px] font-medium bg-[#E4F2EC] text-[#0E7A52] border border-[#CBE3D8]">💬 Chat</button>
+          <a href={waLink(c.mobile, "")} target="_blank" rel="noreferrer"
+            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[12px] font-medium bg-white text-[#16211D] border border-[#E4E8E6]">📱 WhatsApp</a>
+          {(c.gstin || "").length >= 10 && (
+            <button onClick={() => {
+                const m = cp ? cp.key.match(/(\d{4})-(\d{2})/) : null;
+                const period = m ? (m[2] + m[1]) : "";
+                const u = `/gstr1.html?gstin=${encodeURIComponent(c.gstin || "")}`
+                  + `&name=${encodeURIComponent(c.name || "")}&period=${period}`
+                  + `&api=${encodeURIComponent(backupBase())}&cid=${encodeURIComponent(c.id)}`
+                  + (cp ? `&pkey=${encodeURIComponent(cp.key)}` : "");
+                window.open(u, "_blank");
+              }}
+              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[12px] font-medium bg-white text-[#0E7A52] border border-[#CBE3D8]">📄 GSTR-1</button>
+          )}
+          <button onClick={async () => { await updateClient(c.id, { followup_off: !c.followup_off } as any); await reload(); toast(c.followup_off ? "Followup ON" : "Followup OFF"); }}
+            className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[12px] font-medium border ${c.followup_off ? "bg-[#FBE7E3] text-[#962C1E] border-[#F0C9C2]" : "bg-white text-[#5E6B66] border-[#E4E8E6]"}`}>
+            {c.followup_off ? "🔕 Followup OFF" : "🔔 Followup ON"}
+          </button>
         </div>
 
         <div className="grid grid-cols-2 gap-2.5 my-4">

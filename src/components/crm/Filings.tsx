@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react";
 import { Pencil, ChevronDown } from "lucide-react";
 import { useCrm } from "../../services/crmStore";
-import { upsertFiling, updateClient, confirmFilingAi, backupBase } from "../../services/crmApi";
+import { upsertFiling, updateClient, confirmFilingAi, backupBase, openChat } from "../../services/crmApi";
 import {
   FILING_STATUSES, clientPeriods, currentPeriod, filingEntry, periodFee, isDefaulter,
   globalQuarterPeriods, globalMonthPeriods, findClientPeriod, TEMPLATES, waLink, money,
@@ -160,6 +160,8 @@ export default function Filings() {
                         <Avatar name={c.name} onClick={() => setOpen(c)} />
                         <span className="font-medium cursor-pointer whitespace-nowrap" onClick={() => setOpen(c)}>{c.name}</span>
                         {e.ai_updated && <span className="shrink-0 text-[10px] px-1.5 py-0.5 rounded-full bg-[#F2C879] text-[#412402]" title={e.ai_note || ""}>🤖 AI</span>}
+                        <button onClick={() => openChat(c.mobile)} title="Is client ki chat kholo"
+                          className="shrink-0 text-[10.5px] px-2 py-0.5 rounded-md border border-[#E4E8E6] bg-white text-[#5E6B66] font-medium whitespace-nowrap">💬</button>
                         <button onClick={() => openGstr1(c, cp)} title="GSTR-1 Studio kholo (is client ka)"
                           className="shrink-0 text-[10.5px] px-2 py-0.5 rounded-md border border-[#CBE3D8] bg-[#E4F2EC] text-[#0E7A52] font-medium whitespace-nowrap">📄 GSTR-1</button>
                       </div>

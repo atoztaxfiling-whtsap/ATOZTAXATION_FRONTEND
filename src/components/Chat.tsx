@@ -68,6 +68,13 @@ export default function Chat() {
     return () => navigator.serviceWorker?.removeEventListener('message', h);
   }, []);
 
+  // CRM me kahin se "💬 Chat" -> us client ka thread kholo
+  useEffect(() => {
+    const h = (e: Event) => { const m = (e as CustomEvent).detail?.mobile; if (m) { setSel(m); setUnread(p => ({ ...p, [m]: 0 })); clearNotifs(m); } };
+    window.addEventListener('judwa-open-chat', h);
+    return () => window.removeEventListener('judwa-open-chat', h);
+  }, []);
+
   const notify = useCallback((t: Thread, body: string) => {
     if (!notifRef.current) return;
     try { const n = new Notification(t.name || t.mobile, { body, icon: '/icon-192.png', tag: t.mobile, vibrate: [200, 100, 200] } as NotificationOptions); n.onclick = () => { window.focus(); setSel(t.mobile); setUnread(p => ({ ...p, [t.mobile]: 0 })); clearNotifs(t.mobile); n.close(); }; } catch {}

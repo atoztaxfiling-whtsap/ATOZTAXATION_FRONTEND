@@ -97,6 +97,9 @@ function Shell({ onLogout }: { onLogout: () => void }) {
 
   useEffect(() => { const c = () => setIsMobile(window.innerWidth < 900); c(); window.addEventListener("resize", c); return () => window.removeEventListener("resize", c); }, []);
 
+  // Kahin se bhi "💬 Chat" dabe -> Chat tab pe switch (thread Chat khud select karta)
+  useEffect(() => { const h = () => setTab("chat"); window.addEventListener("judwa-open-chat", h); return () => window.removeEventListener("judwa-open-chat", h); }, []);
+
   const followupCount = clients.filter(c => c.followup_text).length;
   const defaulterCount = clients.filter(c => isDefaulter(c, filingMap)).length;
   /* Pending task ka badge = jo kaam humare paas LATE_DAYS+ din se atka hai.
