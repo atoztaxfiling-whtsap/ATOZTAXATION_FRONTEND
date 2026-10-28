@@ -21,6 +21,10 @@ async function req(path: string, opt: RequestInit = {}): Promise<any> {
 const jsonPost = (path: string, body: any, method = "POST") =>
   req(path, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
 
+/* Intern assistant — customer ke context ke saath Claude se jawab (read-only). */
+export const askAssistant = (mobile: string, model: string, messages: { role: string; content: string }[]): Promise<string> =>
+  jsonPost("/assistant", { mobile, model, messages }).then(r => r.reply || "");
+
 /* Ek client ke SAARE docs ek ZIP me download (token header ke saath). */
 export async function downloadClientDocs(mobile: string): Promise<void> {
   const res = await fetch(`${API_BASE}/api/crm/client-docs/${encodeURIComponent(mobile)}`, { headers: { "X-Console-Token": token() } });

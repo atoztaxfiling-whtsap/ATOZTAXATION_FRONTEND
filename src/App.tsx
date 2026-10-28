@@ -2,10 +2,11 @@ import { useState, useEffect } from "react";
 import {
   LayoutDashboard, MessageCircle, Users, Phone, CreditCard, FileText,
   CheckSquare, UserPlus, Settings as SettingsIcon, BarChart3, Megaphone, MoreHorizontal, LogOut,
-  ClipboardList, Inbox,
+  ClipboardList, Inbox, Bot,
   Sparkles,
 } from "lucide-react";
 import Chat from "./components/Chat";
+import Assistant from "./components/crm/Assistant";
 import CrmDashboard from "./components/crm/CrmDashboard";
 import Clients from "./components/crm/Clients";
 import Followups from "./components/crm/Followups";
@@ -35,7 +36,7 @@ const clearToken = (): void => localStorage.removeItem("console_token");
 
 type Tab =
   | "chat" | "dashboard" | "clients" | "pending" | "followups" | "review" | "payments" | "filings"
-  | "workflow" | "registrations" | "setup" | "returns" | "analytics" | "notifications" | "more";
+  | "workflow" | "registrations" | "assistant" | "setup" | "returns" | "analytics" | "notifications" | "more";
 
 const ICONS: Record<string, JSX.Element> = {
   chat: <MessageCircle className="w-4 h-4" />,
@@ -48,6 +49,7 @@ const ICONS: Record<string, JSX.Element> = {
   filings: <FileText className="w-4 h-4" />,
   workflow: <CheckSquare className="w-4 h-4" />,
   registrations: <UserPlus className="w-4 h-4" />,
+  assistant: <Bot className="w-4 h-4" />,
   setup: <SettingsIcon className="w-4 h-4" />,
   returns: <Megaphone className="w-4 h-4" />,
   analytics: <BarChart3 className="w-4 h-4" />,
@@ -65,6 +67,7 @@ const WORKSPACE: Array<{ key: Tab; label: string }> = [
   { key: "filings", label: "Filings" },
   { key: "workflow", label: "Workflow" },
   { key: "registrations", label: "Registrations" },
+  { key: "assistant", label: "Assistant" },
 ];
 const EXTRAS: Array<{ key: Tab; label: string }> = [
   { key: "setup", label: "Staff & Services" },
@@ -123,6 +126,7 @@ function Shell({ onLogout }: { onLogout: () => void }) {
       case "filings": return <Filings />;
       case "workflow": return <Workflow />;
       case "registrations": return <Registrations />;
+      case "assistant": return <Assistant />;
       case "setup": return <Settings />;
       case "returns": return <ReturnsCampaigns />;
       case "analytics": return <Analytics />;
