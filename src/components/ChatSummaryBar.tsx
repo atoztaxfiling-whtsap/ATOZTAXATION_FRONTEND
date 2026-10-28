@@ -45,7 +45,7 @@ export default function ChatSummaryBar({ mobile }: { mobile: string }) {
   return (
     <div className="flex-shrink-0" style={{ background: "#F4F6F2", borderBottom: "1px solid #E6E7E2" }}>
       <div className="flex items-start gap-2 px-4 py-2">
-        <Sparkles size={14} style={{ color: "#0F6E56", marginTop: 2 }} className="flex-shrink-0" />
+        <Sparkles size={14} style={{ color: "#0E7A52", marginTop: 2 }} className="flex-shrink-0" />
 
         <div className="flex-1 min-w-0">
           {!text ? (

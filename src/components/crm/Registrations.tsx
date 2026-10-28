@@ -21,7 +21,7 @@ export default function Registrations() {
   }
 
   return (
-    <div className="h-full overflow-y-auto bg-[#F6F5F1] p-5 md:p-7">
+    <div className="h-full overflow-y-auto bg-[#F5F7F6] p-5 md:p-7">
       <PageHead title="Registrations" sub="Naye GST registration cases — complete hote hi client bana lo"
         actions={<Btn variant="primary" onClick={() => setAdding(true)}><Plus className="w-3.5 h-3.5" />Add registration</Btn>} />
 
@@ -57,7 +57,7 @@ export default function Registrations() {
         <div className="md:hidden">
           {!registrations.length && <div className="px-4 py-5 text-[12.5px] text-[#9BA098]">Abhi koi registration nahi.</div>}
           {registrations.map(r => (
-            <div key={r.id} className="px-4 py-3 border-b border-[#E6E4DD] last:border-0">
+            <div key={r.id} className="px-4 py-3 border-b border-[#E4E8E6] last:border-0">
               <div className="flex items-center gap-3 mb-2">
                 <Avatar name={r.name} size={36} />
                 <div className="flex-1 min-w-0"><div className="font-medium text-[13.5px] truncate">{r.name}</div>

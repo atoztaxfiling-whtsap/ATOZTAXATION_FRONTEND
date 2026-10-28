@@ -28,13 +28,13 @@ export default function Clients() {
   }, [clients, q, fa, fc, onlyNew]);
 
   return (
-    <div className="h-full overflow-y-auto bg-[#F6F5F1] p-5 md:p-7">
+    <div className="h-full overflow-y-auto bg-[#F5F7F6] p-5 md:p-7">
       <PageHead title="Clients" sub="Master list — sab clients ek jagah"
         actions={<>
           <div className="relative">
             <Search className="absolute left-2.5 top-2.5 w-[15px] h-[15px] text-[#9BA098]" />
             <input value={q} onChange={e => setQ(e.target.value)} placeholder="Search name, GSTIN, username"
-              className="w-full sm:w-56 pl-8 pr-3 py-2 border border-[#E6E4DD] rounded-lg text-[13px] outline-none focus:border-[#0F6E56] bg-white" />
+              className="w-full sm:w-56 pl-8 pr-3 py-2 border border-[#E4E8E6] rounded-lg text-[13px] outline-none focus:border-[#0E7A52] bg-white" />
           </div>
           <Btn variant="primary" onClick={() => setAdding(true)}><Plus className="w-3.5 h-3.5" />Add client</Btn>
         </>} />
@@ -49,7 +49,7 @@ export default function Clients() {
             <option value="">All cycles</option><option value="quarterly">Quarterly now</option><option value="monthly">Monthly now</option>
           </SelectInput>
           <button onClick={() => setOnlyNew(v => !v)}
-            className={`px-2.5 py-1.5 rounded-lg text-[12.5px] font-medium border ${onlyNew ? "bg-[#1C1E1B] text-white border-[#1C1E1B]" : "bg-white text-[#6B6F68] border-[#E6E4DD]"}`}>
+            className={`px-2.5 py-1.5 rounded-lg text-[12.5px] font-medium border ${onlyNew ? "bg-[#1C1E1B] text-white border-[#1C1E1B]" : "bg-white text-[#6B6F68] border-[#E4E8E6]"}`}>
             Naye WhatsApp numbers
           </button>
         </div>
@@ -80,7 +80,7 @@ export default function Clients() {
                     <Td><Pill status={cyc === "quarterly" ? "" : "Completed"}>{cyc === "quarterly" ? "Quarterly" : "Monthly"}</Pill></Td>
                     <Td className="font-mono text-[11.5px] text-[#9BA098] whitespace-nowrap">{money(rateFor(c, cyc, "nil"))} / {money(rateFor(c, cyc, "sales"))}</Td>
                     <Td><span className="text-[12.5px] text-[#6B6F68] whitespace-nowrap">{c.assigned_to || "—"}</span></Td>
-                    <Td className={`font-mono font-semibold ${bal > 0 ? "text-[#A32D2D]" : "text-[#0F6E56]"}`}>{bal > 0 ? money(bal) : "Clear"}</Td>
+                    <Td className={`font-mono font-semibold ${bal > 0 ? "text-[#A32D2D]" : "text-[#0E7A52]"}`}>{bal > 0 ? money(bal) : "Clear"}</Td>
                     <Td><Btn size="sm" onClick={() => setOpen(c)}>View</Btn></Td>
                   </tr>
                 );
@@ -96,13 +96,13 @@ export default function Clients() {
           {rows.map(c => {
             const bal = balanceDue(c, filingMap, payments, tasks); const cyc = currentCycle(c);
             return (
-              <div key={c.id} onClick={() => setOpen(c)} className="flex items-center gap-3 px-4 py-3 border-b border-[#E6E4DD] last:border-0 active:bg-[#FBFAF7]">
+              <div key={c.id} onClick={() => setOpen(c)} className="flex items-center gap-3 px-4 py-3 border-b border-[#E4E8E6] last:border-0 active:bg-[#FBFAF7]">
                 <Avatar name={c.name} size={38} />
                 <div className="flex-1 min-w-0">
                   <div className="font-medium text-[13.5px] truncate">{c.name}</div>
                   <div className="text-[11.5px] text-[#6B6F68] truncate">{c.mobile} · {c.assigned_to || "—"} · {cyc === "quarterly" ? "Qtr" : "Mon"}</div>
                 </div>
-                <div className={`font-mono text-[12px] font-semibold flex-shrink-0 ${bal > 0 ? "text-[#A32D2D]" : "text-[#0F6E56]"}`}>{bal > 0 ? money(bal) : "Clear"}</div>
+                <div className={`font-mono text-[12px] font-semibold flex-shrink-0 ${bal > 0 ? "text-[#A32D2D]" : "text-[#0E7A52]"}`}>{bal > 0 ? money(bal) : "Clear"}</div>
               </div>
             );
           })}

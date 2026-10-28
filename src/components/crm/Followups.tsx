@@ -77,20 +77,20 @@ export default function Followups() {
   const total = botRows.length + manualRows.length;
 
   return (
-    <div className="h-full overflow-y-auto bg-[#F6F5F1] p-5 md:p-7">
+    <div className="h-full overflow-y-auto bg-[#F5F7F6] p-5 md:p-7">
       <PageHead title="Followups" sub="Bot ke apne aap lage hue aur tumhare khud ke, dono yahan"
         actions={<Btn variant="primary" onClick={() => setAdding(true)}><Plus className="w-3.5 h-3.5" />Naya followup</Btn>} />
 
       {!!claims.length && (
         <>
           <h2 className="text-[14.5px] font-semibold mb-3 flex items-center gap-1.5">
-            <IndianRupee className="w-4 h-4 text-[#0F6E56]" />Payment confirm karna hai
+            <IndianRupee className="w-4 h-4 text-[#0E7A52]" />Payment confirm karna hai
           </h2>
           <Panel>
             {claims.map(({ f, c }) => {
               const bal = balanceDue(c!, filingMap, payments, tasks);
               return (
-                <div key={f.id} className="flex items-start gap-3.5 px-4 py-3 border-b border-[#E6E4DD] last:border-0 flex-wrap">
+                <div key={f.id} className="flex items-start gap-3.5 px-4 py-3 border-b border-[#E4E8E6] last:border-0 flex-wrap">
                   <Avatar name={c!.name} onClick={() => setOpen(c!)} />
                   <div className="flex-1 min-w-[180px]">
                     <div className="text-[13.5px] font-medium">{c!.name}</div>
@@ -98,7 +98,7 @@ export default function Followups() {
                       Client ne bola: "{f.note || "payment kar diya"}"
                     </div>
                     <div className="text-[11.5px] text-[#9BA098] mt-0.5">
-                      CRM me balance: <b className={bal > 0 ? "text-[#A32D2D]" : "text-[#0F6E56]"}>{bal > 0 ? money(bal) : "clear"}</b>
+                      CRM me balance: <b className={bal > 0 ? "text-[#A32D2D]" : "text-[#0E7A52]"}>{bal > 0 ? money(bal) : "clear"}</b>
                     </div>
                   </div>
                   <div className="flex gap-1.5">
@@ -121,7 +121,7 @@ export default function Followups() {
           </h2>
           <Panel>
             {escGroups.map(g => (
-              <div key={g.key} className="flex items-start gap-3.5 px-4 py-3 border-b border-[#E6E4DD] last:border-0">
+              <div key={g.key} className="flex items-start gap-3.5 px-4 py-3 border-b border-[#E4E8E6] last:border-0">
                 <Avatar name={g.label} onClick={() => g.c && setOpen(g.c)} />
                 <div className="flex-1 min-w-0">
                   <div className="text-[13.5px] font-medium flex items-center gap-1.5">
@@ -153,9 +153,9 @@ export default function Followups() {
         {!loading && !total && <div className="px-4 py-5 text-[12.5px] text-[#9BA098]">Kuch pending nahi.</div>}
 
         {botRows.map(({ f, c }) => (
-          <div key={f.id} className="flex items-center gap-3.5 px-4 py-3 border-b border-[#E6E4DD] last:border-0">
+          <div key={f.id} className="flex items-center gap-3.5 px-4 py-3 border-b border-[#E4E8E6] last:border-0">
             <button onClick={() => markBotDone(f.id, c!.name)}
-              className="w-6 h-6 rounded-full border-[1.5px] border-[#E6E4DD] hover:border-[#0F6E56] text-transparent hover:text-[#0F6E56] flex items-center justify-center flex-shrink-0">
+              className="w-6 h-6 rounded-full border-[1.5px] border-[#E4E8E6] hover:border-[#0E7A52] text-transparent hover:text-[#0E7A52] flex items-center justify-center flex-shrink-0">
               <Check className="w-3.5 h-3.5" />
             </button>
             <div className="w-28 flex-shrink-0 text-[12px] text-[#6B6F68] font-mono">{whenText(f.planned_at)}</div>
@@ -173,9 +173,9 @@ export default function Followups() {
         ))}
 
         {manualRows.map(c => (
-          <div key={c.id} className="flex items-center gap-3.5 px-4 py-3 border-b border-[#E6E4DD] last:border-0">
+          <div key={c.id} className="flex items-center gap-3.5 px-4 py-3 border-b border-[#E4E8E6] last:border-0">
             <button onClick={() => markManualDone(c)}
-              className="w-6 h-6 rounded-full border-[1.5px] border-[#E6E4DD] hover:border-[#0F6E56] text-transparent hover:text-[#0F6E56] flex items-center justify-center flex-shrink-0">
+              className="w-6 h-6 rounded-full border-[1.5px] border-[#E4E8E6] hover:border-[#0E7A52] text-transparent hover:text-[#0E7A52] flex items-center justify-center flex-shrink-0">
               <Check className="w-3.5 h-3.5" />
             </button>
             <div className="w-28 flex-shrink-0 text-[12px] text-[#6B6F68] font-mono">{c.followup_text}</div>
@@ -264,7 +264,7 @@ function AddFollowup({ onClose }: { onClose: () => void }) {
         <TextInput value={when} onChange={e => setWhen(e.target.value)} />
       </Field>
       <div className="flex gap-1.5 flex-wrap mb-3">
-        {QUICK.map(q => <button key={q} onClick={() => setWhen(q)} className="px-2.5 py-1 rounded-full border border-[#E6E4DD] bg-white text-[12px] text-[#6B6F68] hover:border-[#0F6E56]">{q}</button>)}
+        {QUICK.map(q => <button key={q} onClick={() => setWhen(q)} className="px-2.5 py-1 rounded-full border border-[#E4E8E6] bg-white text-[12px] text-[#6B6F68] hover:border-[#0E7A52]">{q}</button>)}
       </div>
       <div className="flex gap-2 justify-end">
         <Btn onClick={onClose}>Cancel</Btn>

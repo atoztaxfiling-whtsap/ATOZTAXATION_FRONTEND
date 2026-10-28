@@ -9,7 +9,7 @@ function fmtNum(m: string) { const d = (m || '').replace(/\D/g, ''); const n = d
 
 function Chip({ text, tone }: { text: string; tone: 'green' | 'amber' | 'red' | 'muted' }) {
   const map = {
-    green: { background: '#E7F2EC', color: '#0C5C40' },
+    green: { background: '#E4F2EC', color: '#0B5E40' },
     amber: { background: '#FBF1DC', color: '#9A6B12' },
     red: { background: '#F7E4E1', color: '#A6402F' },
     muted: { background: '#EEF0EC', color: '#5A6168' },
@@ -40,7 +40,7 @@ function DocList({ csv, received }: { csv: string; received: boolean }) {
     <div>
       {items.map((d, i) => (
         <div key={i} className="flex items-center gap-2.5 py-1 text-sm" style={{ color: '#15191E' }}>
-          <span className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: received ? '#127A56' : '#e2e5df' }}>
+          <span className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: received ? '#0E7A52' : '#e2e5df' }}>
             {received ? <Check size={12} className="text-white" strokeWidth={3} /> : <span className="w-1.5 h-1.5 rounded-full" style={{ background: '#98a09a' }} />}
           </span>
           <span style={{ color: received ? '#15191E' : '#5A6168' }}>{d}</span>
@@ -95,12 +95,12 @@ export default function ContactPanel({ mobile, onClose, onNameSaved, isMobile }:
             </div>
           ) : (
             <div className="flex items-center justify-center gap-2 px-6">
-              <input autoFocus value={nameVal} onChange={e => setNameVal(e.target.value)} onKeyDown={e => e.key === 'Enter' && saveName()} placeholder="Client ka naam" className="flex-1 text-sm px-3 py-1.5 rounded-lg outline-none" style={{ background: '#F2F5F1', border: '1px solid #E6E7E2', color: '#15191E' }} />
-              <button onClick={saveName} disabled={saving} className="p-1.5 rounded-lg text-white disabled:opacity-50" style={{ background: '#127A56' }}>{saving ? <Loader2 size={15} className="animate-spin" /> : <Check size={15} />}</button>
+              <input autoFocus value={nameVal} onChange={e => setNameVal(e.target.value)} onKeyDown={e => e.key === 'Enter' && saveName()} placeholder="Client ka naam" className="flex-1 text-sm px-3 py-1.5 rounded-lg outline-none" style={{ background: '#F5F7F6', border: '1px solid #E6E7E2', color: '#15191E' }} />
+              <button onClick={saveName} disabled={saving} className="p-1.5 rounded-lg text-white disabled:opacity-50" style={{ background: '#0E7A52' }}>{saving ? <Loader2 size={15} className="animate-spin" /> : <Check size={15} />}</button>
             </div>
           )}
           <div className="text-sm mt-1" style={{ color: '#5A6168' }}>{fmtNum(mobile)}</div>
-          {c?.business ? <div className="text-sm mt-1.5 font-semibold" style={{ color: '#127A56' }}>{c.business}</div> : null}
+          {c?.business ? <div className="text-sm mt-1.5 font-semibold" style={{ color: '#0E7A52' }}>{c.business}</div> : null}
         </div>
 
         {loading && <div className="flex items-center justify-center py-10"><Loader2 size={20} className="animate-spin" style={{ color: '#5A6168' }} /></div>}
@@ -137,7 +137,7 @@ export default function ContactPanel({ mobile, onClose, onNameSaved, isMobile }:
             {c.workflow?.notes ? (
               <div className="mb-3 rounded-xl p-4" style={{ background: '#fff', border: '1px solid #E6E7E2' }}>
                 <h4 className="text-[11px] font-semibold uppercase mb-3" style={{ letterSpacing: '.14em', color: '#5A6168' }}>Office notes</h4>
-                <div className="rounded-lg p-3 text-sm" style={{ background: '#F2F5F1', border: '1px solid #E6E7E2', color: '#2C333B', lineHeight: 1.5 }}>{c.workflow.notes}</div>
+                <div className="rounded-lg p-3 text-sm" style={{ background: '#F5F7F6', border: '1px solid #E6E7E2', color: '#2C333B', lineHeight: 1.5 }}>{c.workflow.notes}</div>
               </div>
             ) : null}
 

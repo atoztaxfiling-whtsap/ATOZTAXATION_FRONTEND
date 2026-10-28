@@ -156,12 +156,12 @@ export default function ClientForm({ client, onClose, onSaved }: Props) {
         <textarea value={f.personal_note}
           onChange={e => setF(p => ({ ...p, personal_note: e.target.value }))}
           rows={3} placeholder="jaise: purana client, sirf ITR karta hai, followup ki zaroorat nahi..."
-          className="w-full px-2.5 py-2 border border-[#E6E4DD] rounded-lg text-[13px] outline-none focus:border-[#0F6E56] bg-white resize-y" />
+          className="w-full px-2.5 py-2 border border-[#E4E8E6] rounded-lg text-[13px] outline-none focus:border-[#0E7A52] bg-white resize-y" />
       </Field>
       <label className="flex items-center gap-2 mb-3 cursor-pointer select-none">
         <input type="checkbox" checked={f.followup_off}
           onChange={e => setF(p => ({ ...p, followup_off: e.target.checked }))}
-          className="w-4 h-4 accent-[#0F6E56]" />
+          className="w-4 h-4 accent-[#0E7A52]" />
         <span className="text-[13px] text-[#30352E]">Followup OFF — is client ko koi automatic followup/reminder mat bhejo</span>
       </label>
 
@@ -169,7 +169,7 @@ export default function ClientForm({ client, onClose, onSaved }: Props) {
         hint="Group me se KISI EK ko select karo — poore group se apne aap link ho jayega.">
         <select multiple size={4} value={linked}
           onChange={e => setLinked([...e.target.selectedOptions].map(o => o.value))}
-          className="w-full px-2.5 py-2 border border-[#E6E4DD] rounded-lg text-[13px] outline-none focus:border-[#0F6E56] bg-white">
+          className="w-full px-2.5 py-2 border border-[#E4E8E6] rounded-lg text-[13px] outline-none focus:border-[#0E7A52] bg-white">
           {clients.filter(o => o.id !== client?.id).map(o => (
             <option key={o.id} value={o.id}>{o.name} — {o.business_name || o.gstin || "—"}</option>
           ))}

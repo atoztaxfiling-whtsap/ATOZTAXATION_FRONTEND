@@ -89,13 +89,13 @@ export default function Filings() {
   const setSel = tab === "quarterly" ? setQPeriod : setMPeriod;
 
   return (
-    <div className="h-full overflow-y-auto bg-[#F6F5F1] p-5 md:p-7">
+    <div className="h-full overflow-y-auto bg-[#F5F7F6] p-5 md:p-7">
       <PageHead title="Filings" sub="Naye periods apne aap 'Yet to Pick' me aa jaate hain" />
 
       <div className="flex gap-1.5 mb-4 flex-wrap">
         {([["quarterly", `Quarterly ${qList.length}`], ["monthly", `Monthly ${mList.length}`], ["defaulters", `Defaulters (3+ qtr) ${defaulters.length}`]] as [Tab, string][]).map(([k, label]) => (
           <button key={k} onClick={() => setTab(k)}
-            className={`px-3.5 py-1.5 rounded-full text-[12.5px] font-medium border ${tab === k ? "bg-[#1C1E1B] text-white border-[#1C1E1B]" : "bg-white text-[#6B6F68] border-[#E6E4DD]"}`}>
+            className={`px-3.5 py-1.5 rounded-full text-[12.5px] font-medium border ${tab === k ? "bg-[#1C1E1B] text-white border-[#1C1E1B]" : "bg-white text-[#6B6F68] border-[#E4E8E6]"}`}>
             {label}
           </button>
         ))}
@@ -112,21 +112,21 @@ export default function Filings() {
 
             <div className="relative">
               <button onClick={() => setMsOpen(v => !v)}
-                className="px-2.5 py-1.5 border border-[#E6E4DD] rounded-lg bg-white text-[12.5px] text-[#6B6F68] flex items-center gap-1.5">
+                className="px-2.5 py-1.5 border border-[#E4E8E6] rounded-lg bg-white text-[12.5px] text-[#6B6F68] flex items-center gap-1.5">
                 {statuses.length === 0 ? "All statuses" : statuses.length === 1 ? statuses[0] : `${statuses.length} statuses`}
                 <ChevronDown className="w-3 h-3" />
               </button>
               {msOpen && (
                 <>
                   <div className="fixed inset-0 z-20" onClick={() => setMsOpen(false)} />
-                  <div className="absolute top-full left-0 mt-1 bg-white border border-[#E6E4DD] rounded-lg shadow-xl p-1.5 z-30 min-w-[210px] max-h-64 overflow-y-auto">
-                    <label className="flex items-center gap-2 px-2 py-1.5 text-[12.5px] rounded-md hover:bg-[#F6F5F1] cursor-pointer border-b border-[#E6E4DD] mb-1 pb-2 font-medium">
-                      <input type="checkbox" checked={statuses.length === 0} onChange={() => setStatuses([])} className="accent-[#0F6E56]" />
+                  <div className="absolute top-full left-0 mt-1 bg-white border border-[#E4E8E6] rounded-lg shadow-xl p-1.5 z-30 min-w-[210px] max-h-64 overflow-y-auto">
+                    <label className="flex items-center gap-2 px-2 py-1.5 text-[12.5px] rounded-md hover:bg-[#F5F7F6] cursor-pointer border-b border-[#E4E8E6] mb-1 pb-2 font-medium">
+                      <input type="checkbox" checked={statuses.length === 0} onChange={() => setStatuses([])} className="accent-[#0E7A52]" />
                       <span>All statuses</span>
                     </label>
                     {FILING_STATUSES.map(s => (
-                      <label key={s} className="flex items-center gap-2 px-2 py-1.5 text-[12.5px] rounded-md hover:bg-[#F6F5F1] cursor-pointer">
-                        <input type="checkbox" checked={statuses.includes(s)} className="accent-[#0F6E56]"
+                      <label key={s} className="flex items-center gap-2 px-2 py-1.5 text-[12.5px] rounded-md hover:bg-[#F5F7F6] cursor-pointer">
+                        <input type="checkbox" checked={statuses.includes(s)} className="accent-[#0E7A52]"
                           onChange={e => setStatuses(p => e.target.checked ? [...p, s] : p.filter(x => x !== s))} />
                         <span>{s}</span>
                       </label>
@@ -161,7 +161,7 @@ export default function Filings() {
                         <span className="font-medium cursor-pointer whitespace-nowrap" onClick={() => setOpen(c)}>{c.name}</span>
                         {e.ai_updated && <span className="shrink-0 text-[10px] px-1.5 py-0.5 rounded-full bg-[#F2C879] text-[#412402]" title={e.ai_note || ""}>🤖 AI</span>}
                         <button onClick={() => openGstr1(c, cp)} title="GSTR-1 Studio kholo (is client ka)"
-                          className="shrink-0 text-[10.5px] px-2 py-0.5 rounded-md border border-[#CBE3D8] bg-[#EDF4F1] text-[#0F6E56] font-medium whitespace-nowrap">📄 GSTR-1</button>
+                          className="shrink-0 text-[10.5px] px-2 py-0.5 rounded-md border border-[#CBE3D8] bg-[#E4F2EC] text-[#0E7A52] font-medium whitespace-nowrap">📄 GSTR-1</button>
                       </div>
                     </Td>
                     <Td className="font-mono text-[11.5px] text-[#6B6F68]">{c.portal_username || "—"}</Td>
@@ -174,7 +174,7 @@ export default function Filings() {
                     <Td className="font-mono text-[11.5px] whitespace-nowrap">
                       {money(amt)}
                       {e.fee_due != null && <span className="ml-1 px-1.5 py-0.5 rounded-full bg-[#FAEEDA] text-[#412402] text-[9.5px]">custom</span>}
-                      <button onClick={() => setAmtEdit({ c, p: cp })} className="ml-1 text-[#9BA098] hover:text-[#0F6E56] align-middle"><Pencil className="w-3 h-3" /></button>
+                      <button onClick={() => setAmtEdit({ c, p: cp })} className="ml-1 text-[#9BA098] hover:text-[#0E7A52] align-middle"><Pencil className="w-3 h-3" /></button>
                     </Td>
                     <Td>
                       <select className={inlineSelect} value={e.status} onChange={ev => patch(c, cp, "status", ev.target.value)}>
@@ -187,7 +187,7 @@ export default function Filings() {
                         {e.status === "Ready to file" && (
                           <button onClick={() => { if (confirm(`${c.name}: portal pe upload + OTP ho gaya? Completed mark karun?`)) patch(c, cp, "status", "Completed"); }}
                             title="Portal pe file ho gaya -> Completed"
-                            className="shrink-0 px-2 py-1 text-[11px] font-medium rounded-md border border-[#0F6E56] bg-[#0F7A54] text-white whitespace-nowrap">✓ Filed</button>
+                            className="shrink-0 px-2 py-1 text-[11px] font-medium rounded-md border border-[#0E7A52] bg-[#0F7A54] text-white whitespace-nowrap">✓ Filed</button>
                         )}
                         {e.ai_updated && (
                           <button onClick={() => confirmAi(e.id)} title="AI update verify/confirm karo"
@@ -230,7 +230,7 @@ export default function Filings() {
                     </Td>
                     <Td>
                       <a href={waLink(c.mobile, TEMPLATES.find(t => t.id === "defaulter")!.text(c, { balance: 0, period: "" }))} target="_blank" rel="noreferrer"
-                        className="inline-flex px-2.5 py-1 text-[12px] font-medium rounded-md border border-[#E6E4DD] bg-white">WhatsApp</a>
+                        className="inline-flex px-2.5 py-1 text-[12px] font-medium rounded-md border border-[#E4E8E6] bg-white">WhatsApp</a>
                     </Td>
                   </tr>
                 );
@@ -245,7 +245,7 @@ export default function Filings() {
         <Modal title="Defaulters ko reminder bhejo" sub="Browser se sach me bulk nahi ja sakta — har ek pe click karo, message pehle se bhara milega." onClose={() => setBulk(false)}>
           <div className="max-h-80 overflow-y-auto">
             {defaulters.length ? defaulters.map(c => (
-              <div key={c.id} className="flex items-center gap-3 py-2 border-b border-[#E6E4DD] last:border-0">
+              <div key={c.id} className="flex items-center gap-3 py-2 border-b border-[#E4E8E6] last:border-0">
                 <Avatar name={c.name} size={28} />
                 <div className="flex-1 min-w-0"><div className="text-[13px] font-medium truncate">{c.name}</div><div className="text-[11.5px] text-[#6B6F68] truncate">{c.business_name || c.mobile}</div></div>
                 <a href={waLink(c.mobile, TEMPLATES.find(t => t.id === "defaulter")!.text(c, { balance: 0, period: "" }))} target="_blank" rel="noreferrer"

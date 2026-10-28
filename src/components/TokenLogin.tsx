@@ -19,11 +19,11 @@ export default function TokenLogin({ onSuccess }: { onSuccess: () => void }) {
   };
 
   return (
-    <div className="h-screen w-full flex items-center justify-center" style={{ background: "linear-gradient(135deg, #127A56, #0C5C40)" }}>
+    <div className="h-screen w-full flex items-center justify-center" style={{ background: "linear-gradient(135deg, #0E7A52, #0B5E40)" }}>
       <div className="w-full max-w-sm mx-4 rounded-2xl shadow-2xl p-8" style={{ background: "#fff" }}>
         <div className="flex justify-center mb-6">
-          <div className="w-16 h-16 rounded-full flex items-center justify-center" style={{ background: "#E7F2EC" }}>
-            <Lock size={28} style={{ color: "#127A56" }} />
+          <div className="w-16 h-16 rounded-full flex items-center justify-center" style={{ background: "#E4F2EC" }}>
+            <Lock size={28} style={{ color: "#0E7A52" }} />
           </div>
         </div>
         <h1 className="text-2xl font-bold text-center mb-1" style={{ color: "#15191E" }}>ATOZ Taxation</h1>
@@ -31,11 +31,11 @@ export default function TokenLogin({ onSuccess }: { onSuccess: () => void }) {
         <input type="password" value={token} onChange={e => { setVal(e.target.value); setError(""); }}
           onKeyDown={e => e.key === "Enter" && handleSubmit()} placeholder="Console token enter karo" disabled={loading} autoFocus
           className="w-full px-4 py-3 rounded-xl text-sm focus:outline-none mb-3"
-          style={{ background: "#F2F5F1", border: error ? "2px solid #e53e3e" : "2px solid transparent", color: "#15191E" }} />
+          style={{ background: "#F5F7F6", border: error ? "2px solid #e53e3e" : "2px solid transparent", color: "#15191E" }} />
         {error && <p className="text-xs mb-3 px-1" style={{ color: "#e53e3e" }}>{error}</p>}
         <button onClick={handleSubmit} disabled={loading || !token.trim()}
           className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-white font-semibold text-sm transition hover:opacity-90 disabled:opacity-50"
-          style={{ background: "#127A56" }}>
+          style={{ background: "#0E7A52" }}>
           {loading ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <>Login <ArrowRight size={16} /></>}
         </button>
         <p className="text-xs text-center mt-4" style={{ color: "#5A6168" }}>Token apne admin se maango</p>

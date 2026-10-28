@@ -35,7 +35,7 @@ export default function NewChatModal({ onClose, onPick }: Props) {
         </div>
 
         <div className="px-4 pt-3 pb-2">
-          <div className="flex items-center gap-2 px-3 py-2.5 rounded-lg" style={{ background: '#F2F5F1', border: '1px solid #E6E7E2' }}>
+          <div className="flex items-center gap-2 px-3 py-2.5 rounded-lg" style={{ background: '#F5F7F6', border: '1px solid #E6E7E2' }}>
             <Search size={16} style={{ color: '#5A6168' }} />
             <input autoFocus value={q} onChange={e => setQ(e.target.value)} placeholder="Search name or type a number…" className="flex-1 bg-transparent text-sm outline-none" style={{ color: '#15191E' }} />
           </div>
@@ -44,7 +44,7 @@ export default function NewChatModal({ onClose, onPick }: Props) {
         <div className="flex-1 overflow-y-auto">
           {canUseNumber && (
             <div onClick={() => onPick(norm(digits))} className="flex items-center gap-3 px-4 py-3 cursor-pointer" style={{ borderBottom: '1px solid #f2f3ef' }}>
-              <div className="w-10 h-10 rounded-full flex items-center justify-center text-white flex-shrink-0" style={{ background: '#127A56' }}><Hash size={18} /></div>
+              <div className="w-10 h-10 rounded-full flex items-center justify-center text-white flex-shrink-0" style={{ background: '#0E7A52' }}><Hash size={18} /></div>
               <div><div className="text-sm font-semibold" style={{ color: '#15191E' }}>Start chat with +91 {digits.slice(-10)}</div><div className="text-xs" style={{ color: '#5A6168' }}>New number</div></div>
             </div>
           )}

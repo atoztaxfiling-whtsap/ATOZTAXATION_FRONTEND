@@ -17,12 +17,12 @@ import { Avatar, Panel, PageHead, Btn, Modal, Field, Row2, TextInput, SelectInpu
 export default function Settings() {
   const [tab, setTab] = useState<"staff" | "services" | "backup" | "sheet" | "prompts" | "incentive">("staff");
   return (
-    <div className="h-full overflow-y-auto bg-[#F6F5F1] p-5 md:p-7">
+    <div className="h-full overflow-y-auto bg-[#F5F7F6] p-5 md:p-7">
       <PageHead title="Setup" sub="Team, services aur backup" />
       <div className="flex gap-1.5 mb-4">
         {(["staff", "services", "backup", "sheet", "prompts", "incentive"] as const).map(k => (
           <button key={k} onClick={() => setTab(k)}
-            className={`px-3.5 py-1.5 rounded-full text-[12.5px] font-medium border capitalize ${tab === k ? "bg-[#1C1E1B] text-white border-[#1C1E1B]" : "bg-white text-[#6B6F68] border-[#E6E4DD]"}`}>{k}</button>
+            className={`px-3.5 py-1.5 rounded-full text-[12.5px] font-medium border capitalize ${tab === k ? "bg-[#1C1E1B] text-white border-[#1C1E1B]" : "bg-white text-[#6B6F68] border-[#E4E8E6]"}`}>{k}</button>
         ))}
       </div>
       {tab === "staff" ? <StaffList /> : tab === "services" ? <ServiceList /> : tab === "backup" ? <BackupPanel /> : tab === "prompts" ? <PromptsPanel /> : tab === "incentive" ? <div className="space-y-4"><EarningsSummary /><IncentivePanel /></div> : <SheetPanel />}
@@ -55,7 +55,7 @@ function PromptsPanel() {
         {text === null ? <div className="text-[12.5px] text-[#9BA098]">Load ho raha hai...</div> : (
           <>
             <textarea value={text} onChange={e => setText(e.target.value)} rows={16}
-              className="w-full border border-[#E6E4DD] rounded-lg p-3 text-[13px] font-mono outline-none focus:border-[#0F6E56] bg-white"
+              className="w-full border border-[#E4E8E6] rounded-lg p-3 text-[13px] font-mono outline-none focus:border-[#0E7A52] bg-white"
               placeholder="Bot ke liye instructions likho..." />
             <div className="flex items-center gap-3 mt-3">
               <Btn variant="primary" onClick={save} disabled={saving}>{saving ? "Saving..." : "Save"}</Btn>
@@ -89,9 +89,9 @@ function EarningsSummary() {
         ) : (
           <div className="flex flex-wrap gap-2 mb-3">
             {totals.map(t => (
-              <div key={t.staff} className="px-3 py-2 rounded-lg border border-[#E6E4DD] bg-white">
+              <div key={t.staff} className="px-3 py-2 rounded-lg border border-[#E4E8E6] bg-white">
                 <div className="text-[12px] text-[#6B6F68]">{t.staff}</div>
-                <div className={`text-[15px] font-semibold ${t.amount >= 0 ? "text-[#0F6E56]" : "text-[#B00020]"}`}>
+                <div className={`text-[15px] font-semibold ${t.amount >= 0 ? "text-[#0E7A52]" : "text-[#B00020]"}`}>
                   {t.amount >= 0 ? "+" : ""}₹{t.amount}
                 </div>
               </div>
@@ -109,7 +109,7 @@ function EarningsSummary() {
                     {r.worked_hours != null && <span className="text-[#9BA098]"> · {r.worked_hours}h</span>}
                     {r.tier && <span className="text-[#9BA098]"> · {r.tier}</span>}
                   </span>
-                  <span className={`font-medium ${r.amount >= 0 ? "text-[#0F6E56]" : "text-[#B00020]"}`}>
+                  <span className={`font-medium ${r.amount >= 0 ? "text-[#0E7A52]" : "text-[#B00020]"}`}>
                     {r.amount >= 0 ? "+" : ""}₹{r.amount}
                   </span>
                 </div>
@@ -155,10 +155,10 @@ function IncentivePanel() {
           Raat 9pm–10am, Sunday, aur client-ka-intezaar (OTP/Clarification/Docs Pending) count nahi hota.
         </p>
         {rows.map((r, ri) => (
-          <div key={ri} className="border border-[#E6E4DD] rounded-lg p-3 bg-white">
+          <div key={ri} className="border border-[#E4E8E6] rounded-lg p-3 bg-white">
             <div className="flex items-center gap-2 mb-2">
               <input value={r.name} onChange={e => upd(c => { c[ri].name = e.target.value; })}
-                className="flex-1 border border-[#E6E4DD] rounded px-2 py-1 text-[13px] font-medium outline-none focus:border-[#0F6E56]" placeholder="Service naam" />
+                className="flex-1 border border-[#E4E8E6] rounded px-2 py-1 text-[13px] font-medium outline-none focus:border-[#0E7A52]" placeholder="Service naam" />
               <button onClick={() => upd(c => { c.splice(ri, 1); })} className="text-[#B00020] p-1"><Trash2 size={15} /></button>
             </div>
             <div className="space-y-1.5">
@@ -169,24 +169,24 @@ function IncentivePanel() {
                   ) : (
                     <span className="flex items-center gap-1">≤
                       <input type="number" value={t[0] ?? 0} onChange={e => upd(c => { c[ri].tiers[ti][0] = e.target.value === "" ? 0 : Number(e.target.value); })}
-                        className="w-14 border border-[#E6E4DD] rounded px-1.5 py-1 outline-none focus:border-[#0F6E56]" /> h
+                        className="w-14 border border-[#E4E8E6] rounded px-1.5 py-1 outline-none focus:border-[#0E7A52]" /> h
                     </span>
                   )}
                   <span>→ ₹</span>
                   <input type="number" value={t[1]} onChange={e => upd(c => { c[ri].tiers[ti][1] = e.target.value === "" ? 0 : Number(e.target.value); })}
-                    className="w-20 border border-[#E6E4DD] rounded px-1.5 py-1 outline-none focus:border-[#0F6E56]" />
+                    className="w-20 border border-[#E4E8E6] rounded px-1.5 py-1 outline-none focus:border-[#0E7A52]" />
                   <button onClick={() => upd(c => { c[ri].tiers.splice(ti, 1); })} className="text-[#9BA098] hover:text-[#B00020] p-0.5"><Trash2 size={13} /></button>
                 </div>
               ))}
               <div className="flex gap-3 pt-1">
-                <button onClick={() => upd(c => { c[ri].tiers.push([1, 0]); })} className="text-[12px] text-[#0F6E56] flex items-center gap-1"><Plus size={12} /> tier</button>
+                <button onClick={() => upd(c => { c[ri].tiers.push([1, 0]); })} className="text-[12px] text-[#0E7A52] flex items-center gap-1"><Plus size={12} /> tier</button>
                 <button onClick={() => upd(c => { c[ri].tiers.push([null, 0]); })} className="text-[12px] text-[#6B6F68] flex items-center gap-1"><Plus size={12} /> "After" tier</button>
               </div>
             </div>
           </div>
         ))}
         <button onClick={() => upd(c => { c.push({ name: "New Service", tiers: [[2, 0], [null, 0]] }); })}
-          className="text-[12.5px] text-[#0F6E56] flex items-center gap-1"><Plus size={14} /> Service add</button>
+          className="text-[12.5px] text-[#0E7A52] flex items-center gap-1"><Plus size={14} /> Service add</button>
         <div className="flex items-center gap-3 pt-1">
           <Btn variant="primary" onClick={save} disabled={saving}>{saving ? "Saving..." : "Save"}</Btn>
           {msg && <span className="text-[12px] text-[#6B6F68]">{msg}</span>}
@@ -238,7 +238,7 @@ function SheetPanel() {
               {res.skipped && <div className="text-[#9BA098]">Chhoda: {res.skipped}</div>}
               {res.error && <div className="text-[#A32D2D]">{res.error}</div>}
               {Object.entries(res).filter(([k]) => L[k]).map(([k, v]) => (
-                <div key={k} className="flex justify-between border-b border-[#E6E4DD] py-1 last:border-0">
+                <div key={k} className="flex justify-between border-b border-[#E4E8E6] py-1 last:border-0">
                   <span className="text-[#6B6F68]">{L[k]}</span><span className="font-mono font-semibold">{String(v)}</span>
                 </div>
               ))}
@@ -287,19 +287,19 @@ function BackupPanel() {
           <Panel head={<h3 className="text-[13.5px] font-semibold">{info.name} · {info.generated_at}</h3>}>
             <div className="px-4 py-3 grid grid-cols-2 sm:grid-cols-3 gap-2 text-[12.5px]">
               {Object.entries(info.counts).map(([k, v]) => (
-                <div key={k} className="flex justify-between gap-2 border-b border-[#E6E4DD] pb-1">
+                <div key={k} className="flex justify-between gap-2 border-b border-[#E4E8E6] pb-1">
                   <span className="text-[#6B6F68] capitalize">{k.replace("_", " ")}</span>
                   <span className="font-mono font-semibold">{v}</span>
                 </div>
               ))}
             </div>
-            <div className="px-4 py-3 flex flex-col sm:flex-row gap-2 border-t border-[#E6E4DD]">
+            <div className="px-4 py-3 flex flex-col sm:flex-row gap-2 border-t border-[#E4E8E6]">
               <a href={backupBase() + info.xlsx_url} target="_blank" rel="noreferrer"
                 className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#1C1E1B] text-white text-[13px] font-medium">
                 <Download className="w-3.5 h-3.5" />Excel ({kb(info.xlsx_size)})
               </a>
               <a href={backupBase() + info.json_url} target="_blank" rel="noreferrer"
-                className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-lg bg-white border border-[#E6E4DD] text-[13px] font-medium">
+                className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-lg bg-white border border-[#E4E8E6] text-[13px] font-medium">
                 <Download className="w-3.5 h-3.5" />Full data / restore file ({kb(info.json_size)})
               </a>
             </div>
@@ -331,7 +331,7 @@ function StaffList() {
       <Panel>
         {!staff.length && <div className="px-4 py-5 text-[12.5px] text-[#9BA098]">Koi staff nahi.</div>}
         {staff.map(s => (
-          <div key={s.id} onClick={() => setEdit(s)} className="flex items-center gap-3 px-4 py-3 border-b border-[#E6E4DD] last:border-0 cursor-pointer hover:bg-[#FBFAF7]">
+          <div key={s.id} onClick={() => setEdit(s)} className="flex items-center gap-3 px-4 py-3 border-b border-[#E4E8E6] last:border-0 cursor-pointer hover:bg-[#FBFAF7]">
             <Avatar name={s.name} size={36} />
             <div className="flex-1 min-w-0"><div className="font-medium text-[13.5px]">{s.name}</div>
               <div className="text-[11.5px] text-[#6B6F68] capitalize">{s.role}{s.phone ? ` · ${s.phone}` : ""}{s.email ? ` · ${s.email}` : ""}</div></div>
@@ -396,12 +396,12 @@ function ServiceList() {
       <Panel>
         {!services.length && <div className="px-4 py-5 text-[12.5px] text-[#9BA098]">Koi service nahi.</div>}
         {services.map(s => (
-          <div key={s.id} onClick={() => setEdit(s)} className="flex items-center gap-3 px-4 py-3 border-b border-[#E6E4DD] last:border-0 cursor-pointer hover:bg-[#FBFAF7]">
+          <div key={s.id} onClick={() => setEdit(s)} className="flex items-center gap-3 px-4 py-3 border-b border-[#E4E8E6] last:border-0 cursor-pointer hover:bg-[#FBFAF7]">
             <div className="flex-1 min-w-0"><div className="font-medium text-[13.5px]">{s.name}</div>
               <div className="text-[11.5px] text-[#6B6F68]">
                 {s.default_fee ? money(Number(s.default_fee)) : "—"}{s.min_fee ? ` (min ${money(Number(s.min_fee))})` : ""}
                 {s.required_docs?.length
-                  ? <span className="text-[#0F6E56]"> · {s.required_docs.length} document</span>
+                  ? <span className="text-[#0E7A52]"> · {s.required_docs.length} document</span>
                   : <span className="text-[#A35A17]"> · documents ki list nahi bani</span>}
               </div></div>
             <button onClick={e => { e.stopPropagation(); remove(s); }} className="text-[#9BA098] hover:text-[#A32D2D]"><Trash2 className="w-4 h-4" /></button>
@@ -446,7 +446,7 @@ function ServiceModal({ item, onClose }: { item: Service | null; onClose: () => 
         <DocsEditor list={docs} onChange={setDocs} />
         {!docs.length && !!f.name.trim() && docsFor(f.name, []).length > 0 && (
           <button onClick={() => setDocs(docsFor(f.name, []))}
-            className="text-[11.5px] text-[#0F6E56] font-medium mt-1.5 hover:underline">
+            className="text-[11.5px] text-[#0E7A52] font-medium mt-1.5 hover:underline">
             + Ready list bhar do ({docsFor(f.name, []).length} document)
           </button>
         )}

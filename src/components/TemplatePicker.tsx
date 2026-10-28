@@ -61,7 +61,7 @@ export default function TemplatePicker({ mobile, onClose, onSent }: Props) {
                 {t.preview ? <div className="text-xs mt-0.5 truncate" style={{ color: '#5A6168' }}>{t.preview}</div> : null}
               </div>
               <button onClick={() => send(t)} disabled={!!sending}
-                className="p-2 rounded-lg text-white disabled:opacity-50 flex-shrink-0" style={{ background: '#127A56' }} title="Bhejo">
+                className="p-2 rounded-lg text-white disabled:opacity-50 flex-shrink-0" style={{ background: '#0E7A52' }} title="Bhejo">
                 {sending === t.sid ? <Loader2 size={15} className="animate-spin" /> : <Send size={15} />}
               </button>
             </div>

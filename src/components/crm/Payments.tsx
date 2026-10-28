@@ -79,7 +79,7 @@ export default function Payments() {
     .reduce((a, p) => a + (Number(p.amount) || 0), 0);
 
   return (
-    <div className="h-full overflow-y-auto bg-[#F6F5F1] p-5 md:p-7">
+    <div className="h-full overflow-y-auto bg-[#F5F7F6] p-5 md:p-7">
       <PageHead title="Payments" sub="Ledger apne aap ban-ta hai — nil/sales rates aur har period se" />
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5 mb-5">
@@ -93,7 +93,7 @@ export default function Payments() {
       <div className="flex gap-1.5 mb-4 flex-wrap">
         {([["pending", `Pending ${recent.length}`], ["call", `Call list · ${CALL_AFTER_DAYS}+ din ${callList.length}`]] as ["pending" | "call", string][]).map(([k, label]) => (
           <button key={k} onClick={() => setTab(k)}
-            className={`px-3.5 py-1.5 rounded-full text-[12.5px] font-medium border ${tab === k ? "bg-[#1C1E1B] text-white border-[#1C1E1B]" : "bg-white text-[#6B6F68] border-[#E6E4DD]"}`}>
+            className={`px-3.5 py-1.5 rounded-full text-[12.5px] font-medium border ${tab === k ? "bg-[#1C1E1B] text-white border-[#1C1E1B]" : "bg-white text-[#6B6F68] border-[#E4E8E6]"}`}>
             {label}
           </button>
         ))}
@@ -119,11 +119,11 @@ export default function Payments() {
                     <Td><div className="flex items-center gap-2.5"><Avatar name={c.name} onClick={() => setOpen(c)} /><span className="font-medium cursor-pointer" onClick={() => setOpen(c)}>{c.name}</span></div></Td>
                     <Td><Pill status={cyc === "quarterly" ? "" : "Completed"}>{cyc === "quarterly" ? "Quarterly" : "Monthly"}</Pill></Td>
                     <Td className="font-mono text-[#9BA098]">{money(totalPaid(c, payments, tasks))}</Td>
-                    <Td className={`font-mono font-semibold ${bal > 0 ? "text-[#A32D2D]" : "text-[#0F6E56]"}`}>{bal > 0 ? money(bal) : "Clear"}</Td>
+                    <Td className={`font-mono font-semibold ${bal > 0 ? "text-[#A32D2D]" : "text-[#0E7A52]"}`}>{bal > 0 ? money(bal) : "Clear"}</Td>
                     <Td className={`text-[12px] whitespace-nowrap ${days >= CALL_AFTER_DAYS ? "text-[#A32D2D] font-semibold" : "text-[#6B6F68]"}`}>{days > 0 ? `${days} din` : "—"}</Td>
                     <Td>
                       {c.mobile
-                        ? <a href={`tel:+91${c.mobile}`} className="inline-flex px-2.5 py-1 text-[12px] font-medium rounded-md border border-[#E6E4DD] bg-white mr-1.5">Call</a>
+                        ? <a href={`tel:+91${c.mobile}`} className="inline-flex px-2.5 py-1 text-[12px] font-medium rounded-md border border-[#E4E8E6] bg-white mr-1.5">Call</a>
                         : null}
                       <Btn size="sm" onClick={() => setOpen(c)}>Record payment</Btn>
                     </Td>
@@ -137,11 +137,11 @@ export default function Payments() {
         <div className="md:hidden">
           {!rows.length && <div className="px-4 py-5 text-[12.5px] text-[#9BA098]">{tab === "call" ? "Koi 14+ din ka pending nahi." : "Koi pending client nahi."}</div>}
           {rows.map(({ c, bal, days }) => (
-            <div key={c.id} onClick={() => setOpen(c)} className="flex items-center gap-3 px-4 py-3 border-b border-[#E6E4DD] last:border-0 active:bg-[#FBFAF7]">
+            <div key={c.id} onClick={() => setOpen(c)} className="flex items-center gap-3 px-4 py-3 border-b border-[#E4E8E6] last:border-0 active:bg-[#FBFAF7]">
               <Avatar name={c.name} size={38} />
               <div className="flex-1 min-w-0"><div className="font-medium text-[13.5px] truncate">{c.name}</div>
                 <div className="text-[11.5px] text-[#6B6F68]">Paid {money(totalPaid(c, payments, tasks))}{days > 0 ? ` · ${days} din se ruka` : ""}</div></div>
-              <div className={`font-mono text-[12px] font-semibold ${bal > 0 ? "text-[#A32D2D]" : "text-[#0F6E56]"}`}>{bal > 0 ? money(bal) : "Clear"}</div>
+              <div className={`font-mono text-[12px] font-semibold ${bal > 0 ? "text-[#A32D2D]" : "text-[#0E7A52]"}`}>{bal > 0 ? money(bal) : "Clear"}</div>
             </div>
           ))}
         </div>
@@ -188,7 +188,7 @@ export default function Payments() {
               {[...linkedTasks, ...looseTasks].map(t => {
                 const c = t.client_id ? clients.find(x => x.id === t.client_id) : null;
                 return (
-                  <div key={t.id} className="px-4 py-3 border-b border-[#E6E4DD] last:border-0">
+                  <div key={t.id} className="px-4 py-3 border-b border-[#E4E8E6] last:border-0">
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
                         <div className="font-medium text-[13.5px] truncate">{t.name}</div>

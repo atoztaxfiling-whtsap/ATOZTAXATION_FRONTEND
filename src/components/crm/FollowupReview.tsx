@@ -74,14 +74,14 @@ export default function FollowupReview() {
   const skippedN = recent.filter(r => r.status === "skipped").length;
 
   return (
-    <div className="h-full overflow-y-auto bg-[#F6F5F1] p-4 sm:p-6">
+    <div className="h-full overflow-y-auto bg-[#F5F7F6] p-4 sm:p-6">
       <PageHead
         title="Followup review"
         sub="Har message pehle yahan — approve karo, edit karo, ya rok do. Tabhi client ko jayega."
         actions={
           <>
             <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11.5px] font-semibold ${data.hold_on ? "bg-[#E1F5EE] text-[#04342C]" : "bg-[#FCEBEB] text-[#A32D2D]"}`}>
-              <span className={`w-1.5 h-1.5 rounded-full ${data.hold_on ? "bg-[#0F6E56]" : "bg-[#A32D2D]"}`} />
+              <span className={`w-1.5 h-1.5 rounded-full ${data.hold_on ? "bg-[#0E7A52]" : "bg-[#A32D2D]"}`} />
               HOLD {data.hold_on ? "ON" : "OFF"}
             </span>
             <Btn size="sm" onClick={load}><RefreshCw className="w-3.5 h-3.5" />Refresh</Btn>
@@ -124,7 +124,7 @@ export default function FollowupReview() {
                 const editing = editId === it.id;
                 const isBusy = busy === it.id;
                 return (
-                  <div key={it.id} className="bg-white border border-[#E6E4DD] rounded-xl p-4">
+                  <div key={it.id} className="bg-white border border-[#E4E8E6] rounded-xl p-4">
                     <div className="flex items-start gap-3">
                       <Avatar name={it.name || it.mobile} />
                       <div className="min-w-0 flex-1">
@@ -145,7 +145,7 @@ export default function FollowupReview() {
                       <div className="mt-3">
                         <textarea
                           value={draftTxt} onChange={e => setDraftTxt(e.target.value)} rows={4}
-                          className="w-full px-3 py-2 border border-[#E6E4DD] rounded-lg text-[13px] outline-none focus:border-[#0F6E56] bg-white resize-y"
+                          className="w-full px-3 py-2 border border-[#E4E8E6] rounded-lg text-[13px] outline-none focus:border-[#0E7A52] bg-white resize-y"
                           placeholder="Message likho jo client ko jayega…" />
                         <div className="flex gap-2 mt-2 flex-wrap">
                           <Btn size="sm" variant="primary" disabled={isBusy || !draftTxt.trim()}
@@ -205,11 +205,11 @@ export default function FollowupReview() {
                 <div className="divide-y divide-[#EFEEE8]">
                   {recent.map(r => (
                     <div key={r.id} className="flex items-center gap-3 px-4 py-2.5">
-                      <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${r.status === "approved" ? "bg-[#0F6E56]" : "bg-[#A32D2D]"}`} />
+                      <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${r.status === "approved" ? "bg-[#0E7A52]" : "bg-[#A32D2D]"}`} />
                       <span className="font-semibold text-[12.5px] text-[#1C1E1B] truncate max-w-[130px]">{r.name || r.mobile}</span>
                       <Pill status={kindLabel(r.kind)} />
                       <span className="text-[12px] text-[#6B6F68] truncate flex-1 hidden sm:block">{r.draft}</span>
-                      <span className={`text-[11.5px] font-semibold ${r.status === "approved" ? "text-[#0F6E56]" : "text-[#A32D2D]"}`}>
+                      <span className={`text-[11.5px] font-semibold ${r.status === "approved" ? "text-[#0E7A52]" : "text-[#A32D2D]"}`}>
                         {r.status === "approved" ? "sent/approved" : "roka"}
                       </span>
                       <span className="text-[11px] text-[#9BA098] flex-shrink-0">{timeAgo(r.updated_at)}</span>

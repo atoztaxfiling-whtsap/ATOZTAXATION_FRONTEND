@@ -25,7 +25,7 @@ const KIND_TAG: Record<WorkKind, { label: string; cls: string }> = {
 };
 
 const TONE_TEXT = { ok: "text-[#6B6F68]", warn: "text-[#A35A17]", bad: "text-[#A32D2D]" };
-const TONE_BAR = { ok: "bg-[#0F6E56]", warn: "bg-[#A35A17]", bad: "bg-[#A32D2D]" };
+const TONE_BAR = { ok: "bg-[#0E7A52]", warn: "bg-[#A35A17]", bad: "bg-[#A32D2D]" };
 
 export default function PendingTasks() {
   const { clients, filings, tasks, registrations, staff, loading, reload, toast } = useCrm();
@@ -96,7 +96,7 @@ export default function PendingTasks() {
     : [{ label: "", items: rows }];
 
   return (
-    <div className="h-full overflow-y-auto bg-[#F6F5F1] p-5 md:p-7">
+    <div className="h-full overflow-y-auto bg-[#F5F7F6] p-5 md:p-7">
       <PageHead title="Pending task"
         sub="Jo kaam abhi humare paas atka hai — filings, workflow aur registrations, sab ek jagah" />
 
@@ -108,7 +108,7 @@ export default function PendingTasks() {
       </div>
 
       {/* employee tabs — jaise Filings me monthly/quarterly hai */}
-      <div className="flex gap-0.5 border-b border-[#E6E4DD] mb-3.5 overflow-x-auto">
+      <div className="flex gap-0.5 border-b border-[#E4E8E6] mb-3.5 overflow-x-auto">
         <EmpTab label="Sab" total={ourWork.length} late={lateCount}
           on={emp === ALL} onClick={() => setEmp(ALL)} />
         {emps.map(e => (
@@ -165,7 +165,7 @@ export default function PendingTasks() {
                 <>
                   {g.label && (
                     <tr key={g.label}><td colSpan={7}
-                      className="bg-[#FBFAF7] text-[11px] text-[#6B6F68] font-semibold uppercase tracking-wide px-3.5 py-1.5 border-b border-[#E6E4DD]">
+                      className="bg-[#FBFAF7] text-[11px] text-[#6B6F68] font-semibold uppercase tracking-wide px-3.5 py-1.5 border-b border-[#E4E8E6]">
                       {g.label}
                     </td></tr>
                   )}
@@ -223,7 +223,7 @@ export default function PendingTasks() {
                                 <div className="text-[10px] text-[#9BA098]">{it.amountNote}</div>
                               )}
                             </>
-                          ) : <span className="font-mono text-[12.5px] text-[#0F6E56]">Clear</span>}
+                          ) : <span className="font-mono text-[12.5px] text-[#0E7A52]">Clear</span>}
                         </Td>
                       </tr>
                     );
@@ -242,7 +242,7 @@ export default function PendingTasks() {
             const tone = ageTone(it.days);
             const tag = KIND_TAG[it.kind];
             return (
-              <div key={it.uid} className={`px-4 py-3 border-b border-[#E6E4DD] last:border-0 ${busy === it.uid ? "opacity-50" : ""}`}>
+              <div key={it.uid} className={`px-4 py-3 border-b border-[#E4E8E6] last:border-0 ${busy === it.uid ? "opacity-50" : ""}`}>
                 <div className="flex items-start justify-between gap-2 mb-2">
                   <div className="min-w-0">
                     <div className="font-medium text-[13.5px] truncate">{it.clientName}</div>
@@ -280,7 +280,7 @@ export default function PendingTasks() {
       </Panel>
 
       <div className="flex gap-4 flex-wrap text-[11px] text-[#9BA098] mt-2.5">
-        <span><i className="inline-block w-2 h-2 rounded-sm bg-[#0F6E56] mr-1.5" />0–{WARN_DAYS - 1} din theek</span>
+        <span><i className="inline-block w-2 h-2 rounded-sm bg-[#0E7A52] mr-1.5" />0–{WARN_DAYS - 1} din theek</span>
         <span><i className="inline-block w-2 h-2 rounded-sm bg-[#A35A17] mr-1.5" />{WARN_DAYS}–{LATE_DAYS - 1} din dhyan do</span>
         <span><i className="inline-block w-2 h-2 rounded-sm bg-[#A32D2D] mr-1.5" />{LATE_DAYS}+ din late</span>
         {rows.some(r => r.approxDays) && <span>* purana record — din ka hisaab approximate hai</span>}
@@ -305,10 +305,10 @@ function EmpTab({ label, total, late, on, onClick }:
   return (
     <button onClick={onClick}
       className={`px-3.5 pt-2 pb-2.5 text-[13px] whitespace-nowrap flex gap-1.5 items-center border-b-2 transition
-        ${on ? "text-[#1C1E1B] font-semibold border-[#0F6E56]" : "text-[#6B6F68] border-transparent hover:text-[#1C1E1B]"}`}>
+        ${on ? "text-[#1C1E1B] font-semibold border-[#0E7A52]" : "text-[#6B6F68] border-transparent hover:text-[#1C1E1B]"}`}>
       {label}
       <span className={`text-[10.5px] rounded-full px-1.5 py-px font-semibold
-        ${on ? "bg-[#E7F2EC] text-[#0F6E56]" : "bg-[#EDEBE4] text-[#6B6F68]"}`}>{total}</span>
+        ${on ? "bg-[#E4F2EC] text-[#0E7A52]" : "bg-[#EDEBE4] text-[#6B6F68]"}`}>{total}</span>
       {late > 0 && (
         <span className="text-[10.5px] rounded-full px-1.5 py-px font-semibold bg-[#FBEDED] text-[#A32D2D]">
           {late} late
@@ -323,7 +323,7 @@ function Chip({ label, n, on, onClick }: { label: string; n: number; on: boolean
     <button onClick={onClick}
       className={`text-[12px] px-2.5 py-1.5 rounded-full border transition
         ${on ? "bg-[#1C1E1B] text-white border-[#1C1E1B] font-medium"
-             : "bg-white text-[#6B6F68] border-[#E6E4DD] hover:bg-[#FBFAF7]"}`}>
+             : "bg-white text-[#6B6F68] border-[#E4E8E6] hover:bg-[#FBFAF7]"}`}>
       {label} <span className="opacity-65">{n}</span>
     </button>
   );

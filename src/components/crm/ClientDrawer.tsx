@@ -113,7 +113,7 @@ export default function ClientDrawer({ client, onClose }: { client: Client; onCl
           <Info label="Username" value={c.portal_username || "—"} />
           <Info label="Phone" value={c.mobile || "—"} />
           <Info label="Assigned to" value={c.assigned_to || "—"} mono={false} />
-          <div className="col-span-2 bg-[#F6F5F1] rounded-lg px-3 py-2.5 flex items-center justify-between">
+          <div className="col-span-2 bg-[#F5F7F6] rounded-lg px-3 py-2.5 flex items-center justify-between">
             <div>
               <div className="text-[10.5px] text-[#6B6F68] uppercase tracking-wide mb-0.5">Password</div>
               <div className="text-[13px] font-medium font-mono break-all">{showPw ? (c.portal_password || "—") : "••••••••"}</div>
@@ -127,7 +127,7 @@ export default function ClientDrawer({ client, onClose }: { client: Client; onCl
         <Section title="Other portal logins" action={<Btn size="sm" onClick={() => setAddLogin(v => !v)}><Plus className="w-3 h-3" />Add</Btn>} />
         {logins.length === 0 && !addLogin && <div className="text-[12.5px] text-[#9BA098]">Koi aur login add nahi kiya.</div>}
         {logins.map((l, i) => (
-          <div key={i} className="bg-[#F6F5F1] rounded-lg px-3 py-2 flex items-center justify-between mb-1.5">
+          <div key={i} className="bg-[#F5F7F6] rounded-lg px-3 py-2 flex items-center justify-between mb-1.5">
             <div className="min-w-0">
               <div className="text-[10.5px] text-[#6B6F68] uppercase tracking-wide">{l.label}</div>
               <div className="text-[12.5px] font-mono break-all">{l.username} · {showOther[i] ? l.password : "••••••••"}</div>
@@ -154,23 +154,23 @@ export default function ClientDrawer({ client, onClose }: { client: Client; onCl
         <Section title="Ledger" />
         <table className="w-full text-[11.5px]">
           <thead><tr className="text-[10px] text-[#6B6F68] uppercase">
-            <th className="text-left py-1 border-b border-[#E6E4DD]">Period</th>
-            <th className="text-left py-1 border-b border-[#E6E4DD]">Type</th>
-            <th className="text-left py-1 border-b border-[#E6E4DD]">Status</th>
-            <th className="text-right py-1 border-b border-[#E6E4DD]">Due</th>
-            <th className="text-right py-1 border-b border-[#E6E4DD]">Balance</th>
+            <th className="text-left py-1 border-b border-[#E4E8E6]">Period</th>
+            <th className="text-left py-1 border-b border-[#E4E8E6]">Type</th>
+            <th className="text-left py-1 border-b border-[#E4E8E6]">Status</th>
+            <th className="text-right py-1 border-b border-[#E4E8E6]">Due</th>
+            <th className="text-right py-1 border-b border-[#E4E8E6]">Balance</th>
           </tr></thead>
           <tbody>
             {rows.map(r => (
               <tr key={r.key} className="font-mono">
-                <td className="py-1.5 border-b border-[#E6E4DD]">{r.period}</td>
-                <td className="py-1.5 border-b border-[#E6E4DD]">{r.type === "sales" ? "Sales" : "Nil"}</td>
-                <td className="py-1.5 border-b border-[#E6E4DD] font-sans text-[11px]">{r.status}</td>
-                <td className={`py-1.5 border-b border-[#E6E4DD] text-right ${r.billable ? "" : "text-[#9BA098]"}`}
+                <td className="py-1.5 border-b border-[#E4E8E6]">{r.period}</td>
+                <td className="py-1.5 border-b border-[#E4E8E6]">{r.type === "sales" ? "Sales" : "Nil"}</td>
+                <td className="py-1.5 border-b border-[#E4E8E6] font-sans text-[11px]">{r.status}</td>
+                <td className={`py-1.5 border-b border-[#E4E8E6] text-right ${r.billable ? "" : "text-[#9BA098]"}`}
                   title={r.billable ? "" : "Kaam poora nahi hua — abhi due nahi"}>
                   {money(r.fullDue)}{r.billable ? "" : "*"}
                 </td>
-                <td className={`py-1.5 border-b border-[#E6E4DD] text-right ${r.balance > 0 ? "text-[#A32D2D]" : "text-[#0F6E56]"}`}>{money(r.balance)}</td>
+                <td className={`py-1.5 border-b border-[#E4E8E6] text-right ${r.balance > 0 ? "text-[#A32D2D]" : "text-[#0E7A52]"}`}>{money(r.balance)}</td>
               </tr>
             ))}
             {!rows.length && <tr><td colSpan={5} className="py-3 text-[#9BA098]">Abhi koi period nahi bana.</td></tr>}
@@ -189,18 +189,18 @@ export default function ClientDrawer({ client, onClose }: { client: Client; onCl
             <Section title="Humne client ke liye bhara" />
             <table className="w-full text-[11.5px]">
               <thead><tr className="text-[10px] text-[#6B6F68] uppercase">
-                <th className="text-left py-1 border-b border-[#E6E4DD]">Date</th>
-                <th className="text-left py-1 border-b border-[#E6E4DD]">Kis liye</th>
-                <th className="text-right py-1 border-b border-[#E6E4DD]">Bhara</th>
-                <th className="text-right py-1 border-b border-[#E6E4DD]">Baaki</th>
+                <th className="text-left py-1 border-b border-[#E4E8E6]">Date</th>
+                <th className="text-left py-1 border-b border-[#E4E8E6]">Kis liye</th>
+                <th className="text-right py-1 border-b border-[#E4E8E6]">Bhara</th>
+                <th className="text-right py-1 border-b border-[#E4E8E6]">Baaki</th>
               </tr></thead>
               <tbody>
                 {led.advances.map(a => (
                   <tr key={a.id} className="font-mono">
-                    <td className="py-1.5 border-b border-[#E6E4DD]">{a.on || "—"}</td>
-                    <td className="py-1.5 border-b border-[#E6E4DD] font-sans">{a.note || "—"}</td>
-                    <td className="py-1.5 border-b border-[#E6E4DD] text-right">{money(a.due)}</td>
-                    <td className={`py-1.5 border-b border-[#E6E4DD] text-right ${a.balance > 0 ? "text-[#A32D2D]" : "text-[#0F6E56]"}`}>{money(a.balance)}</td>
+                    <td className="py-1.5 border-b border-[#E4E8E6]">{a.on || "—"}</td>
+                    <td className="py-1.5 border-b border-[#E4E8E6] font-sans">{a.note || "—"}</td>
+                    <td className="py-1.5 border-b border-[#E4E8E6] text-right">{money(a.due)}</td>
+                    <td className={`py-1.5 border-b border-[#E4E8E6] text-right ${a.balance > 0 ? "text-[#A32D2D]" : "text-[#0E7A52]"}`}>{money(a.balance)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -211,22 +211,22 @@ export default function ClientDrawer({ client, onClose }: { client: Client; onCl
           </>
         )}
 
-        <div className="flex items-center justify-between bg-[#F6F5F1] rounded-lg px-3 py-2.5 mt-2.5">
+        <div className="flex items-center justify-between bg-[#F5F7F6] rounded-lg px-3 py-2.5 mt-2.5">
           <span className="text-[12px] text-[#6B6F68]">Total balance due</span>
-          <span className={`font-mono font-semibold text-[15px] ${bal > 0 ? "text-[#A32D2D]" : "text-[#0F6E56]"}`}>{bal > 0 ? money(bal) : "Clear"}</span>
+          <span className={`font-mono font-semibold text-[15px] ${bal > 0 ? "text-[#A32D2D]" : "text-[#0E7A52]"}`}>{bal > 0 ? money(bal) : "Clear"}</span>
         </div>
 
         <div className="flex gap-1 mt-2.5 mb-1.5">
           <button onClick={() => setPayKind("client")}
             className={`flex-1 px-2 py-1.5 rounded-lg text-[11.5px] font-medium border transition ${payKind === "client"
-              ? "bg-[#0F6E56] text-white border-[#0F6E56]"
-              : "bg-white text-[#6B6F68] border-[#E6E4DD] hover:bg-[#FBFAF7]"}`}>
+              ? "bg-[#0E7A52] text-white border-[#0E7A52]"
+              : "bg-white text-[#6B6F68] border-[#E4E8E6] hover:bg-[#FBFAF7]"}`}>
             Client ne diya
           </button>
           <button onClick={() => setPayKind("firm_paid")}
             className={`flex-1 px-2 py-1.5 rounded-lg text-[11.5px] font-medium border transition ${payKind === "firm_paid"
               ? "bg-[#A35A17] text-white border-[#A35A17]"
-              : "bg-white text-[#6B6F68] border-[#E6E4DD] hover:bg-[#FBFAF7]"}`}>
+              : "bg-white text-[#6B6F68] border-[#E4E8E6] hover:bg-[#FBFAF7]"}`}>
             Humne bhara
           </button>
         </div>
@@ -256,7 +256,7 @@ export default function ClientDrawer({ client, onClose }: { client: Client; onCl
         {!!myPayments.length && (
           <div className="mt-2 max-h-32 overflow-y-auto">
             {myPayments.slice().reverse().map(p => (
-              <div key={p.id} className="flex items-center justify-between text-[11.5px] py-1 border-b border-[#E6E4DD]">
+              <div key={p.id} className="flex items-center justify-between text-[11.5px] py-1 border-b border-[#E4E8E6]">
                 <span className="font-mono">{money(Number(p.amount))} · {p.method || "—"} · {p.paid_on}</span>
                 {(p.kind || "client") === "firm_paid" && (
                   <span className="text-[10px] font-medium text-[#A35A17] bg-[#FFF6E8] border border-[#F2DFBE] rounded px-1.5 py-0.5">
@@ -273,20 +273,20 @@ export default function ClientDrawer({ client, onClose }: { client: Client; onCl
             <Section title="One-off work (Workflow se)" />
             <table className="w-full text-[11.5px]">
               <thead><tr className="text-[10px] text-[#6B6F68] uppercase">
-                <th className="text-left py-1 border-b border-[#E6E4DD]">Task</th>
-                <th className="text-right py-1 border-b border-[#E6E4DD]">Agreed</th>
-                <th className="text-right py-1 border-b border-[#E6E4DD]">Paid</th>
-                <th className="text-right py-1 border-b border-[#E6E4DD]">Balance</th>
+                <th className="text-left py-1 border-b border-[#E4E8E6]">Task</th>
+                <th className="text-right py-1 border-b border-[#E4E8E6]">Agreed</th>
+                <th className="text-right py-1 border-b border-[#E4E8E6]">Paid</th>
+                <th className="text-right py-1 border-b border-[#E4E8E6]">Balance</th>
               </tr></thead>
               <tbody>
                 {myTasks.map(t => {
                   const b = (Number(t.fee_agreed) || 0) - (Number(t.amount_paid) || 0);
                   return (
                     <tr key={t.id} className="font-mono">
-                      <td className="py-1.5 border-b border-[#E6E4DD] font-sans">{t.name}</td>
-                      <td className="py-1.5 border-b border-[#E6E4DD] text-right">{money(Number(t.fee_agreed) || 0)}</td>
-                      <td className="py-1.5 border-b border-[#E6E4DD] text-right">{money(Number(t.amount_paid) || 0)}</td>
-                      <td className={`py-1.5 border-b border-[#E6E4DD] text-right ${b > 0 ? "text-[#A32D2D]" : "text-[#0F6E56]"}`}>{money(b)}</td>
+                      <td className="py-1.5 border-b border-[#E4E8E6] font-sans">{t.name}</td>
+                      <td className="py-1.5 border-b border-[#E4E8E6] text-right">{money(Number(t.fee_agreed) || 0)}</td>
+                      <td className="py-1.5 border-b border-[#E4E8E6] text-right">{money(Number(t.amount_paid) || 0)}</td>
+                      <td className={`py-1.5 border-b border-[#E4E8E6] text-right ${b > 0 ? "text-[#A32D2D]" : "text-[#0E7A52]"}`}>{money(b)}</td>
                     </tr>
                   );
                 })}
@@ -327,8 +327,8 @@ export default function ClientDrawer({ client, onClose }: { client: Client; onCl
         </div>
         <div className="mt-2 max-h-44 overflow-y-auto">
           {myNotes.length ? myNotes.map(n => (
-            <div key={n.id} className="flex items-start gap-2 py-1.5 border-b border-[#E6E4DD] group">
-              <div className="w-1.5 h-1.5 rounded-full bg-[#0F6E56] mt-1.5 flex-shrink-0" />
+            <div key={n.id} className="flex items-start gap-2 py-1.5 border-b border-[#E4E8E6] group">
+              <div className="w-1.5 h-1.5 rounded-full bg-[#0E7A52] mt-1.5 flex-shrink-0" />
               <div className="flex-1 min-w-0">
                 <div className="text-[12.5px]">{n.text}</div>
                 <div className="text-[11px] text-[#9BA098]">{new Date(n.created_at).toLocaleString("en-IN", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</div>
@@ -365,22 +365,22 @@ function InstallmentsSection({ clientId, mobile }: { clientId: string; mobile: s
   const del = async (id: string) => { await deleteInstallment(id); load(); };
   return (
     <div className="mt-5">
-      <div className="text-[11px] font-semibold uppercase tracking-wide text-[#0F6E56] mb-2 flex items-center gap-1.5">
+      <div className="text-[11px] font-semibold uppercase tracking-wide text-[#0E7A52] mb-2 flex items-center gap-1.5">
         💸 Installments <span className="text-[#9BA098] font-normal normal-case">(annual / part payment — date pe reminder khud jayega)</span>
       </div>
       <div className="flex flex-wrap gap-1.5 items-center">
-        <input value={label} onChange={e => setLabel(e.target.value)} placeholder="1st 50%" className="border border-[#E6E4DD] rounded px-2 py-1.5 text-[12.5px] w-24 outline-none focus:border-[#0F6E56]" />
-        <input type="number" value={amount} onChange={e => setAmount(e.target.value)} placeholder="₹ amount" className="border border-[#E6E4DD] rounded px-2 py-1.5 text-[12.5px] w-28 outline-none focus:border-[#0F6E56]" />
-        <input type="date" value={due} onChange={e => setDue(e.target.value)} className="border border-[#E6E4DD] rounded px-2 py-1.5 text-[12.5px] outline-none focus:border-[#0F6E56]" />
+        <input value={label} onChange={e => setLabel(e.target.value)} placeholder="1st 50%" className="border border-[#E4E8E6] rounded px-2 py-1.5 text-[12.5px] w-24 outline-none focus:border-[#0E7A52]" />
+        <input type="number" value={amount} onChange={e => setAmount(e.target.value)} placeholder="₹ amount" className="border border-[#E4E8E6] rounded px-2 py-1.5 text-[12.5px] w-28 outline-none focus:border-[#0E7A52]" />
+        <input type="date" value={due} onChange={e => setDue(e.target.value)} className="border border-[#E4E8E6] rounded px-2 py-1.5 text-[12.5px] outline-none focus:border-[#0E7A52]" />
         <Btn size="sm" onClick={add}>Add</Btn>
       </div>
       <div className="mt-2">
         {items.length ? items.map(it => (
-          <div key={it.id} className="flex items-center gap-2 py-1.5 border-b border-[#E6E4DD] text-[12.5px] group">
+          <div key={it.id} className="flex items-center gap-2 py-1.5 border-b border-[#E4E8E6] text-[12.5px] group">
             <span className={`flex-1 min-w-0 ${it.paid ? "line-through text-[#9BA098]" : ""}`}>
               {it.label} · ₹{Math.round(Number(it.amount || 0))} · {it.due_date ? new Date(it.due_date).toLocaleDateString("en-IN", { day: "numeric", month: "short" }) : "—"}
             </span>
-            <button onClick={() => togglePaid(it)} className={`text-[11px] px-2 py-0.5 rounded border whitespace-nowrap ${it.paid ? "bg-[#E1F5EE] text-[#04342C] border-[#B7E3D5]" : "bg-white text-[#0F6E56] border-[#B7E3D5]"}`}>{it.paid ? "Paid ✓" : "Mark paid"}</button>
+            <button onClick={() => togglePaid(it)} className={`text-[11px] px-2 py-0.5 rounded border whitespace-nowrap ${it.paid ? "bg-[#E1F5EE] text-[#04342C] border-[#B7E3D5]" : "bg-white text-[#0E7A52] border-[#B7E3D5]"}`}>{it.paid ? "Paid ✓" : "Mark paid"}</button>
             <button onClick={() => del(it.id)} className="opacity-0 group-hover:opacity-100 text-[#9BA098] hover:text-[#A32D2D]"><Trash2 className="w-3.5 h-3.5" /></button>
           </div>
         )) : <div className="text-[12.5px] text-[#9BA098] py-1">Koi installment nahi. Jaise: 50% aaj, 50% 2 mahine baad — us date pe payment reminder khud jayega.</div>}
@@ -403,7 +403,7 @@ function BotNotesSection({ mobile }: { mobile: string }) {
   const del = async (id: string) => { await deleteBotNote(mobile, id); load(); };
   return (
     <>
-      <div className="text-[11px] font-semibold uppercase tracking-wide text-[#0F6E56] mt-5 mb-2 flex items-center gap-1.5">
+      <div className="text-[11px] font-semibold uppercase tracking-wide text-[#0E7A52] mt-5 mb-2 flex items-center gap-1.5">
         🤖 Bot Note <span className="text-[#9BA098] font-normal normal-case">(bot ise padhega — call pe suni baat likho)</span>
       </div>
       <div className="flex gap-1.5">
@@ -414,8 +414,8 @@ function BotNotesSection({ mobile }: { mobile: string }) {
       </div>
       <div className="mt-2 max-h-40 overflow-y-auto">
         {notes.length ? notes.map(n => (
-          <div key={n.id} className="flex items-start gap-2 py-1.5 border-b border-[#E6E4DD] group">
-            <div className="w-1.5 h-1.5 rounded-full bg-[#0F6E56] mt-1.5 flex-shrink-0" />
+          <div key={n.id} className="flex items-start gap-2 py-1.5 border-b border-[#E4E8E6] group">
+            <div className="w-1.5 h-1.5 rounded-full bg-[#0E7A52] mt-1.5 flex-shrink-0" />
             <div className="flex-1 min-w-0">
               <div className="text-[12.5px]">{n.note}</div>
               <div className="text-[11px] text-[#9BA098]">
@@ -433,7 +433,7 @@ function BotNotesSection({ mobile }: { mobile: string }) {
 
 function Info({ label, value, mono = true }: { label: string; value: string; mono?: boolean }) {
   return (
-    <div className="bg-[#F6F5F1] rounded-lg px-3 py-2.5">
+    <div className="bg-[#F5F7F6] rounded-lg px-3 py-2.5">
       <div className="text-[10.5px] text-[#6B6F68] uppercase tracking-wide mb-0.5">{label}</div>
       <div className={`text-[13px] font-medium break-all ${mono ? "font-mono" : ""}`}>{value}</div>
     </div>

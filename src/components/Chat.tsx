@@ -112,7 +112,7 @@ export default function Chat() {
   }, [sel, loadThread]);
 
   return (
-    <div className="h-full w-full flex overflow-hidden" style={{ background: '#F2F5F1' }}>
+    <div className="h-full w-full flex overflow-hidden" style={{ background: '#F5F7F6' }}>
       <ChatSidebar threads={threads} selectedMobile={sel} onSelectThread={m => { setSel(m); setUnread(p => ({ ...p, [m]: 0 })); clearNotifs(m); }} isMobile={mobile} unreadCounts={unread} onNewChat={() => setShowNewChat(true)} />
       <ChatWindow selectedMobile={sel} threads={threads} messages={msgs} messagesLoading={loading} isMobile={mobile} onBack={() => setSel(null)} onSendMessage={handleSend} onSendDocument={handleDoc} onContactChanged={loadThreads} />
       {showNewChat && <NewChatModal onClose={() => setShowNewChat(false)} onPick={m => { setSel(m); setUnread(p => ({ ...p, [m]: 0 })); clearNotifs(m); setShowNewChat(false); }} />}

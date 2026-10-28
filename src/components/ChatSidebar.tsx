@@ -27,7 +27,7 @@ export default function ChatSidebar({ threads, selectedMobile, onSelectThread, i
 
   return (
     <div className={`${isMobile ? 'w-full' : 'w-[360px]'} flex flex-col flex-shrink-0`} style={{ background: '#fff', borderRight: '1px solid #E6E7E2' }}>
-      <div className="flex items-center justify-between px-4 py-3 flex-shrink-0" style={{ background: '#0F6E56' }}>
+      <div className="flex items-center justify-between px-4 py-3 flex-shrink-0" style={{ background: '#0E7A52' }}>
         <div className="flex items-center gap-2.5">
           <div className="w-9 h-9 rounded-lg bg-white flex items-center justify-center overflow-hidden flex-shrink-0">
             <img src="/icon-192.png" alt="ATOZ" className="w-8 h-8 object-contain" />
@@ -43,7 +43,7 @@ export default function ChatSidebar({ threads, selectedMobile, onSelectThread, i
         </div>
       </div>
       <div className="px-3 py-2 flex-shrink-0">
-        <div className="flex items-center gap-2 px-3 py-2 rounded-lg" style={{ background: '#F2F5F1' }}>
+        <div className="flex items-center gap-2 px-3 py-2 rounded-lg" style={{ background: '#F5F7F6' }}>
           <Search size={16} style={{ color: '#5A6168' }} />
           <input type="text" placeholder="Search or start new chat" value={q} onChange={e => setQ(e.target.value)} className="flex-1 bg-transparent text-sm focus:outline-none" style={{ color: '#15191E' }} />
         </div>
@@ -54,18 +54,18 @@ export default function ChatSidebar({ threads, selectedMobile, onSelectThread, i
           const label = t.name || t.mobile, ini = getInitials(label), col = getAvatarColor(label), ur = unreadCounts[t.mobile] ?? t.unread ?? 0, active = selectedMobile === t.mobile;
           return (
             <div key={t.mobile} onClick={() => onSelectThread(t.mobile)} className="flex items-center gap-3 px-3 py-3 cursor-pointer transition-colors"
-              style={{ background: active ? '#F2F5F1' : undefined, borderBottom: '1px solid #F2F5F1' }}
+              style={{ background: active ? '#F5F7F6' : undefined, borderBottom: '1px solid #F5F7F6' }}
               onMouseEnter={e => { if (!active) (e.currentTarget).style.background = '#FAFBF8'; }}
               onMouseLeave={e => { if (!active) (e.currentTarget).style.background = ''; }}>
               <div className="w-12 h-12 rounded-full flex items-center justify-center text-white font-semibold text-sm flex-shrink-0" style={{ background: col }}>{ini}</div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between mb-0.5">
                   <span className="font-semibold text-sm truncate" style={{ color: '#15191E' }}>{label}</span>
-                  <span className="text-xs ml-2 flex-shrink-0" style={{ color: ur > 0 ? '#0F6E56' : '#5A6168' }}>{fmtTime(t.timestamp)}</span>
+                  <span className="text-xs ml-2 flex-shrink-0" style={{ color: ur > 0 ? '#0E7A52' : '#5A6168' }}>{fmtTime(t.timestamp)}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <p className="text-sm truncate" style={{ color: '#5A6168' }}>{t.lastMessage || ''}</p>
-                  {ur > 0 && <div className="w-5 h-5 rounded-full flex items-center justify-center text-white font-bold ml-2 flex-shrink-0" style={{ background: '#0F6E56', fontSize: '11px' }}>{ur > 99 ? '99+' : ur}</div>}
+                  {ur > 0 && <div className="w-5 h-5 rounded-full flex items-center justify-center text-white font-bold ml-2 flex-shrink-0" style={{ background: '#0E7A52', fontSize: '11px' }}>{ur > 99 ? '99+' : ur}</div>}
                 </div>
               </div>
             </div>

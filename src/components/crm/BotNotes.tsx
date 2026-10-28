@@ -21,7 +21,7 @@ export default function BotNotes({ mobile }: { mobile: string }) {
 
   return (
     <div className="mt-4">
-      <div className="text-[11px] font-semibold uppercase tracking-wide text-[#0F6E56] mb-2 flex items-center gap-1.5">
+      <div className="text-[11px] font-semibold uppercase tracking-wide text-[#0E7A52] mb-2 flex items-center gap-1.5">
         🤖 Bot Note
         <span className="text-[#9BA098] font-normal normal-case">(bot ise padhega — call pe suni baat likho)</span>
       </div>
@@ -37,8 +37,8 @@ export default function BotNotes({ mobile }: { mobile: string }) {
           </div>
           <div className="mt-2 max-h-40 overflow-y-auto">
             {notes.length ? notes.map(n => (
-              <div key={n.id} className="flex items-start gap-2 py-1.5 border-b border-[#E6E4DD] group">
-                <div className="w-1.5 h-1.5 rounded-full bg-[#0F6E56] mt-1.5 flex-shrink-0" />
+              <div key={n.id} className="flex items-start gap-2 py-1.5 border-b border-[#E4E8E6] group">
+                <div className="w-1.5 h-1.5 rounded-full bg-[#0E7A52] mt-1.5 flex-shrink-0" />
                 <div className="flex-1 min-w-0">
                   <div className="text-[12.5px]">{n.note}</div>
                   <div className="text-[11px] text-[#9BA098]">

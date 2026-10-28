@@ -31,17 +31,17 @@ export function PageHead({ title, sub, actions }: { title: string; sub?: string;
 
 export function Panel({ children, head }: { children: ReactNode; head?: ReactNode }) {
   return (
-    <div className="bg-white border border-[#E6E4DD] rounded-xl overflow-hidden">
-      {head && <div className="flex items-center justify-between gap-2.5 flex-wrap px-4 py-3 border-b border-[#E6E4DD]">{head}</div>}
+    <div className="bg-white border border-[#E4E8E6] rounded-xl overflow-hidden">
+      {head && <div className="flex items-center justify-between gap-2.5 flex-wrap px-4 py-3 border-b border-[#E4E8E6]">{head}</div>}
       {children}
     </div>
   );
 }
 
 export function Metric({ label, value, sub, tone }: { label: string; value: ReactNode; sub?: string; tone?: "good" | "warn" | "danger" }) {
-  const color = tone === "good" ? "text-[#0F6E56]" : tone === "warn" ? "text-[#BA7517]" : tone === "danger" ? "text-[#A32D2D]" : "text-[#1C1E1B]";
+  const color = tone === "good" ? "text-[#0E7A52]" : tone === "warn" ? "text-[#BA7517]" : tone === "danger" ? "text-[#A32D2D]" : "text-[#1C1E1B]";
   return (
-    <div className="bg-white border border-[#E6E4DD] rounded-xl px-4 py-4">
+    <div className="bg-white border border-[#E4E8E6] rounded-xl px-4 py-4">
       <div className="text-[12px] text-[#6B6F68] mb-1.5">{label}</div>
       <div className={`text-[24px] font-semibold font-mono leading-none ${color}`}>{value}</div>
       {sub && <div className="text-[11.5px] text-[#9BA098] mt-1.5">{sub}</div>}
@@ -56,7 +56,7 @@ export function Btn({ children, onClick, variant = "default", size = "md", disab
   const sz = size === "sm" ? "px-2.5 py-1 text-[12px]" : "px-3.5 py-2 text-[13px]";
   const v = variant === "primary" ? "bg-[#1C1E1B] text-white border-[#1C1E1B] hover:bg-black"
     : variant === "danger" ? "bg-white text-[#A32D2D] border-[#FCEBEB] hover:bg-[#FCEBEB]"
-    : "bg-white text-[#1C1E1B] border-[#E6E4DD] hover:border-[#c9c7bd]";
+    : "bg-white text-[#1C1E1B] border-[#E4E8E6] hover:border-[#c9c7bd]";
   return <button type={type} onClick={onClick} disabled={disabled} className={`${base} ${sz} ${v} ${className}`}>{children}</button>;
 }
 
@@ -100,7 +100,7 @@ export function Field({ label, children, hint }: { label: string; children: Reac
   );
 }
 
-const INPUT = "w-full px-2.5 py-2 border border-[#E6E4DD] rounded-lg text-[13px] outline-none focus:border-[#0F6E56] bg-white";
+const INPUT = "w-full px-2.5 py-2 border border-[#E4E8E6] rounded-lg text-[13px] outline-none focus:border-[#0E7A52] bg-white";
 export function TextInput(p: React.InputHTMLAttributes<HTMLInputElement>) {
   return <input {...p} className={`${INPUT} ${p.className || ""}`} />;
 }
@@ -115,18 +115,18 @@ export function FieldsetLabel({ children }: { children: ReactNode }) {
 }
 
 /* Inline table controls */
-export const inlineSelect = "px-1.5 py-1 text-[11.5px] border border-[#E6E4DD] rounded-md bg-white outline-none focus:border-[#0F6E56] max-w-[150px]";
-export const inlineInput = "px-2 py-1 text-[11.5px] border border-[#E6E4DD] rounded-md outline-none focus:border-[#0F6E56] w-full min-w-[90px]";
+export const inlineSelect = "px-1.5 py-1 text-[11.5px] border border-[#E4E8E6] rounded-md bg-white outline-none focus:border-[#0E7A52] max-w-[150px]";
+export const inlineInput = "px-2 py-1 text-[11.5px] border border-[#E4E8E6] rounded-md outline-none focus:border-[#0E7A52] w-full min-w-[90px]";
 
 export function EmptyRow({ colSpan, children }: { colSpan: number; children: ReactNode }) {
   return <tr><td colSpan={colSpan} className="px-4 py-6 text-[#9BA098] text-[12.5px]">{children}</td></tr>;
 }
 
 export function Th({ children, className = "" }: { children?: ReactNode; className?: string }) {
-  return <th className={`text-left px-3.5 py-2.5 text-[11.5px] font-semibold text-[#6B6F68] uppercase tracking-wide border-b border-[#E6E4DD] bg-[#FBFAF7] whitespace-nowrap ${className}`}>{children}</th>;
+  return <th className={`text-left px-3.5 py-2.5 text-[11.5px] font-semibold text-[#6B6F68] uppercase tracking-wide border-b border-[#E4E8E6] bg-[#FBFAF7] whitespace-nowrap ${className}`}>{children}</th>;
 }
 export function Td({ children, className = "" }: { children?: ReactNode; className?: string }) {
-  return <td className={`px-3.5 py-2.5 border-b border-[#E6E4DD] text-[13px] align-middle ${className}`}>{children}</td>;
+  return <td className={`px-3.5 py-2.5 border-b border-[#E4E8E6] text-[13px] align-middle ${className}`}>{children}</td>;
 }
 
 export function Scroller({ children }: { children: ReactNode }) {

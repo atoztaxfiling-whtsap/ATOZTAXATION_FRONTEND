@@ -96,8 +96,8 @@ export default function ChatWindow({ selectedMobile, threads, messages, messages
   if (!selectedMobile || !thread) {
     if (isMobile) return null;
     return (
-      <div className="flex-1 flex items-center justify-center flex-col gap-4 select-none" style={{ background: '#F2F5F1' }}>
-        <div className="w-24 h-24 rounded-full flex items-center justify-center" style={{ background: '#E7F2EC' }}><span className="text-5xl">💬</span></div>
+      <div className="flex-1 flex items-center justify-center flex-col gap-4 select-none" style={{ background: '#F5F7F6' }}>
+        <div className="w-24 h-24 rounded-full flex items-center justify-center" style={{ background: '#E4F2EC' }}><span className="text-5xl">💬</span></div>
         <h2 className="serif text-2xl" style={{ color: '#15191E' }}>ATOZ Taxation</h2>
         <p className="text-sm text-center max-w-xs" style={{ color: '#5A6168' }}>Console — select a chat to start messaging</p>
       </div>
@@ -110,7 +110,7 @@ export default function ChatWindow({ selectedMobile, threads, messages, messages
 
   const chatCol = (
     <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-      <div className="flex items-center gap-3 px-4 py-3 flex-shrink-0 shadow-sm" style={{ background: '#0F6E56' }}>
+      <div className="flex items-center gap-3 px-4 py-3 flex-shrink-0 shadow-sm" style={{ background: '#0E7A52' }}>
         {isMobile && <button onClick={onBack} className="p-1.5 rounded-full hover:bg-white/20 transition"><ArrowLeft size={20} className="text-white" /></button>}
         <div onClick={() => setShowInfo(v => !v)} className="w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold text-sm flex-shrink-0 cursor-pointer" style={{ background: col }}>{ini}</div>
         <div onClick={() => setShowInfo(v => !v)} className="flex-1 min-w-0 cursor-pointer"><h2 className="serif text-white font-semibold text-base truncate">{label}</h2><p className="text-xs" style={{ color: 'rgba(255,255,255,0.8)' }}>{thread.mobile}</p></div>
@@ -142,17 +142,17 @@ export default function ChatWindow({ selectedMobile, threads, messages, messages
         <div className="flex items-center gap-2 px-4 py-2 text-sm" style={{ background: '#FBF6E7', color: '#8A6D1A', borderBottom: '1px solid #EFE4C4' }}>
           <PowerOff size={15} className="flex-shrink-0" />
           <span className="flex-1">Bot is chat me chup hai, aap khud handle kar rahe ho{pausedUntil ? ` (${pausedUntil.slice(11, 16)} tak)` : ''}.</span>
-          <button onClick={toggleBot} disabled={pauseBusy} className="font-semibold underline disabled:opacity-50" style={{ color: '#0C5C40' }}>Bot chalu karo</button>
+          <button onClick={toggleBot} disabled={pauseBusy} className="font-semibold underline disabled:opacity-50" style={{ color: '#0B5E40' }}>Bot chalu karo</button>
         </div>
       )}
 
-      {toast && <div className="px-4 py-2 text-sm text-center" style={{ background: '#E7F2EC', color: '#0C5C40', borderBottom: '1px solid #d3e6dc' }}>{toast}</div>}
+      {toast && <div className="px-4 py-2 text-sm text-center" style={{ background: '#E4F2EC', color: '#0B5E40', borderBottom: '1px solid #d3e6dc' }}>{toast}</div>}
 
       {sendErr && <div className="px-4 py-2 text-sm font-medium text-center" style={{ background: '#fef2f2', color: '#dc2626', borderBottom: '1px solid #fecaca' }}>{sendErr}</div>}
 
       <div className="flex-1 relative overflow-hidden">
         <div ref={scrollRef} onScroll={() => { const el = scrollRef.current; if (el) setShowScroll(el.scrollHeight - el.scrollTop - el.clientHeight > 120); }}
-          className="h-full overflow-y-auto py-4" style={{ backgroundColor: '#F2F5F1', backgroundImage: WALLPAPER, backgroundSize: '80px 80px' }}>
+          className="h-full overflow-y-auto py-4" style={{ backgroundColor: '#F5F7F6', backgroundImage: WALLPAPER, backgroundSize: '80px 80px' }}>
           {messagesLoading && messages.length === 0 && <div className="flex items-center justify-center py-8"><div className="px-4 py-2 rounded-full text-sm shadow-sm" style={{ background: '#fff', color: '#5A6168' }}>Loading messages…</div></div>}
           {q && shown.length === 0 && <div className="flex items-center justify-center py-8"><div className="px-4 py-2 rounded-full text-sm shadow-sm" style={{ background: '#fff', color: '#5A6168' }}>Koi match nahi mila</div></div>}
           <div className="pb-2">
@@ -177,7 +177,7 @@ export default function ChatWindow({ selectedMobile, threads, messages, messages
       ) : (
         <div className="flex items-center gap-3 px-4 py-3" style={{ borderTop: '1px solid #E6E7E2', background: '#FCF6E9' }}>
           <span className="flex-1 text-xs" style={{ color: '#8A6D1F' }}>24 ghante ka window band hai (client ne 24h me reply nahi kiya). Ab sirf approved template ja sakta hai. Client reply karega to normal message wapas chalu.</span>
-          <button onClick={() => setShowTemplates(true)} className="px-4 py-2 rounded-lg text-sm font-semibold text-white flex-shrink-0" style={{ background: '#0F6E56' }}>Template bhejo</button>
+          <button onClick={() => setShowTemplates(true)} className="px-4 py-2 rounded-lg text-sm font-semibold text-white flex-shrink-0" style={{ background: '#0E7A52' }}>Template bhejo</button>
         </div>
       )}
 

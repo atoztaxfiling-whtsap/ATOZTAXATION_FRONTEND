@@ -41,7 +41,7 @@ export default function Workflow() {
   }
 
   return (
-    <div className="h-full overflow-y-auto bg-[#F6F5F1] p-5 md:p-7">
+    <div className="h-full overflow-y-auto bg-[#F5F7F6] p-5 md:p-7">
       <PageHead title="Workflow" sub="Non-GST kaam — income tax, TDS, registration, misc"
         actions={<Btn variant="primary" onClick={() => setAdding(true)}><Plus className="w-3.5 h-3.5" />New task</Btn>} />
 
@@ -73,7 +73,7 @@ export default function Workflow() {
                   <tr key={t.id} className="hover:bg-[#FBFAF7]">
                     <Td className="font-mono text-[11.5px] text-[#9BA098] whitespace-nowrap">{t.received_date || "—"}</Td>
                     <Td className="font-medium whitespace-nowrap">{t.name}</Td>
-                    <Td className="font-mono text-[11.5px] whitespace-nowrap">{t.mobile ? <a href={waLink(t.mobile, "")} target="_blank" rel="noreferrer" className="text-[#0F6E56] hover:underline">{t.mobile}</a> : "—"}</Td>
+                    <Td className="font-mono text-[11.5px] whitespace-nowrap">{t.mobile ? <a href={waLink(t.mobile, "")} target="_blank" rel="noreferrer" className="text-[#0E7A52] hover:underline">{t.mobile}</a> : "—"}</Td>
                     <Td className="text-[12.5px] text-[#9BA098] whitespace-nowrap">{linked ? linked.name : "—"}</Td>
                     <Td><Pill status="">{t.category || "Other"}</Pill></Td>
                     <Td>
@@ -109,12 +109,12 @@ export default function Workflow() {
           {rows.map(t => {
             const bal = (Number(t.fee_agreed) || 0) - (Number(t.amount_paid) || 0);
             return (
-              <div key={t.id} className="px-4 py-3 border-b border-[#E6E4DD] last:border-0">
+              <div key={t.id} className="px-4 py-3 border-b border-[#E4E8E6] last:border-0">
                 <div className="flex items-start justify-between gap-2 mb-1.5">
                   <div className="min-w-0"><div className="font-medium text-[13.5px] truncate">{t.name}</div>
                     {t.mobile && <div className="text-[11.5px] text-[#6B6F68] font-mono">{t.mobile}</div>}
                     <div className="text-[11.5px] text-[#6B6F68]">{t.category} · {t.assigned_to || "—"} · {t.received_date}</div></div>
-                  <span className={`font-mono text-[12px] font-semibold ${bal > 0 ? "text-[#A32D2D]" : "text-[#0F6E56]"}`}>{bal > 0 ? money(bal) : "Clear"}</span>
+                  <span className={`font-mono text-[12px] font-semibold ${bal > 0 ? "text-[#A32D2D]" : "text-[#0E7A52]"}`}>{bal > 0 ? money(bal) : "Clear"}</span>
                 </div>
                 <div className="flex gap-1.5 items-center">
                   <select className={inlineSelect} value={t.status} onChange={e => patch(t, "status", e.target.value)}>
@@ -282,7 +282,7 @@ function DocsCell({ t, onSave }: { t: Task; onSave: (req: string[], rec: string[
   const req = t.docs_required || [];
   const rec = t.docs_received || [];
   const done = req.filter(d => rec.some(r => r.toLowerCase() === d.toLowerCase())).length;
-  const tone = !req.length ? "text-[#9BA098]" : done === req.length ? "text-[#0F6E56]" : "text-[#A35A17]";
+  const tone = !req.length ? "text-[#9BA098]" : done === req.length ? "text-[#0E7A52]" : "text-[#A35A17]";
   return (
     <>
       <button onClick={() => setOpen(true)}
@@ -306,7 +306,7 @@ export function DocsEditor({ list, onChange }: { list: string[]; onChange: (l: s
     <div>
       <div className="flex flex-wrap gap-1.5 mb-1.5">
         {list.map(d => (
-          <span key={d} className="inline-flex items-center gap-1 text-[11.5px] bg-[#F2F1EC] border border-[#E6E4DD] rounded-full pl-2.5 pr-1 py-1">
+          <span key={d} className="inline-flex items-center gap-1 text-[11.5px] bg-[#F2F1EC] border border-[#E4E8E6] rounded-full pl-2.5 pr-1 py-1">
             {d}
             <button onClick={() => onChange(list.filter(x => x !== d))}
               className="text-[#9BA098] hover:text-[#A32D2D] p-0.5"><X className="w-3 h-3" /></button>

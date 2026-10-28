@@ -25,7 +25,7 @@ type Hooks = { reload?: () => void | Promise<void>; toast?: (m: string) => void 
 function Btn({ children, onClick, variant }: { children: React.ReactNode; onClick?: () => void; variant?: "primary" }) {
   const base = "px-3 py-1.5 rounded-lg text-[13px] font-medium border transition active:scale-95";
   const cls = variant === "primary"
-    ? `${base} bg-[#0F6E56] text-white border-[#0F6E56] hover:bg-[#0d5f4a]`
+    ? `${base} bg-[#0E7A52] text-white border-[#0E7A52] hover:bg-[#0d5f4a]`
     : `${base} bg-white text-[#3A3F38] border-[#DDE2D8] hover:bg-[#F4F6F2]`;
   return <button type="button" onClick={onClick} className={cls}>{children}</button>;
 }
@@ -114,11 +114,11 @@ export default function AiBox({ onClose, reload: reloadProp, toast: toastProp }:
     <div className="fixed inset-0 z-[80] bg-[rgba(20,22,18,.5)] flex items-end sm:items-center justify-center sm:p-5"
       onClick={onClose}>
       <div onClick={e => e.stopPropagation()}
-        className="bg-[#F6F5F1] w-full sm:max-w-2xl h-[92vh] sm:h-[86vh] rounded-t-2xl sm:rounded-2xl flex flex-col overflow-hidden">
+        className="bg-[#F5F7F6] w-full sm:max-w-2xl h-[92vh] sm:h-[86vh] rounded-t-2xl sm:rounded-2xl flex flex-col overflow-hidden">
 
         {/* ---- top ---- */}
-        <div className="flex items-center gap-2.5 px-4 py-3 bg-white border-b border-[#E6E4DD] flex-shrink-0">
-          <div className="w-8 h-8 rounded-lg bg-[#E1F5EE] text-[#0F6E56] flex items-center justify-center">
+        <div className="flex items-center gap-2.5 px-4 py-3 bg-white border-b border-[#E4E8E6] flex-shrink-0">
+          <div className="w-8 h-8 rounded-lg bg-[#E1F5EE] text-[#0E7A52] flex items-center justify-center">
             <Sparkles className="w-4 h-4" />
           </div>
           <div className="flex-1 min-w-0">
@@ -136,7 +136,7 @@ export default function AiBox({ onClose, reload: reloadProp, toast: toastProp }:
               <div className="flex flex-col gap-2">
                 {SUGGESTIONS.map(s => (
                   <button key={s} onClick={() => ask(s)}
-                    className="text-left bg-white border border-[#E6E4DD] rounded-xl px-3.5 py-2.5 text-[13px] hover:border-[#0F6E56] active:bg-[#FBFAF7]">
+                    className="text-left bg-white border border-[#E4E8E6] rounded-xl px-3.5 py-2.5 text-[13px] hover:border-[#0E7A52] active:bg-[#FBFAF7]">
                     {s}
                   </button>
                 ))}
@@ -160,7 +160,7 @@ export default function AiBox({ onClose, reload: reloadProp, toast: toastProp }:
         </div>
 
         {/* ---- likhne ki jagah ---- */}
-        <div className="border-t border-[#E6E4DD] bg-white px-3 py-2.5 flex items-end gap-2 flex-shrink-0 pb-[max(env(safe-area-inset-bottom),10px)]">
+        <div className="border-t border-[#E4E8E6] bg-white px-3 py-2.5 flex items-end gap-2 flex-shrink-0 pb-[max(env(safe-area-inset-bottom),10px)]">
           <textarea
             ref={inputRef}
             value={text}
@@ -169,10 +169,10 @@ export default function AiBox({ onClose, reload: reloadProp, toast: toastProp }:
             rows={1}
             placeholder={pending ? "Upar confirm karo ya rehne do…" : "Likho… jaise: Zareena ka status completed"}
             disabled={!!pending}
-            className="flex-1 resize-none max-h-28 px-3 py-2.5 border border-[#E6E4DD] rounded-xl text-[14px] outline-none focus:border-[#0F6E56] disabled:bg-[#F6F5F1]"
+            className="flex-1 resize-none max-h-28 px-3 py-2.5 border border-[#E4E8E6] rounded-xl text-[14px] outline-none focus:border-[#0E7A52] disabled:bg-[#F5F7F6]"
           />
           <button onClick={() => ask()} disabled={busy || !text.trim() || !!pending}
-            className="w-10 h-10 rounded-xl bg-[#0F6E56] text-white flex items-center justify-center disabled:opacity-40 flex-shrink-0">
+            className="w-10 h-10 rounded-xl bg-[#0E7A52] text-white flex items-center justify-center disabled:opacity-40 flex-shrink-0">
             <Send className="w-4 h-4" />
           </button>
         </div>
@@ -229,7 +229,7 @@ function EntryView({ e, onConfirm, onCancel, onUndo }: {
   if (r.kind === "done") {
     return (
       <Card tone="good">
-        <div className="flex items-center gap-1.5 text-[13.5px] font-medium text-[#0F6E56] mb-2">
+        <div className="flex items-center gap-1.5 text-[13.5px] font-medium text-[#0E7A52] mb-2">
           <Check className="w-4 h-4" /> Ho gaya
         </div>
         {(r.done || []).map((d, i) => (
@@ -276,7 +276,7 @@ function ConfirmView({ res, onConfirm, onCancel }: {
       {p.writes.length > 0 && (
         <div className="mb-3">
           <SectionHead n={p.counts.writes} what="record badlega" />
-          <div className="border border-[#E6E4DD] rounded-lg overflow-hidden bg-white">
+          <div className="border border-[#E4E8E6] rounded-lg overflow-hidden bg-white">
             {p.writes.map((w, i) => <PlanRow key={i} w={w} />)}
           </div>
         </div>
@@ -346,7 +346,7 @@ function ConfirmView({ res, onConfirm, onCancel }: {
 function RanView({ run, onUndo }: { run: AiRunResult; onUndo: (id: string) => void }) {
   return (
     <Card tone="good">
-      <div className="flex items-center gap-1.5 text-[13.5px] font-medium text-[#0F6E56] mb-2">
+      <div className="flex items-center gap-1.5 text-[13.5px] font-medium text-[#0E7A52] mb-2">
         <Check className="w-4 h-4" /> {run.done.length} kaam ho gaya
       </div>
       {run.done.slice(0, 25).map((d, i) => (
@@ -378,7 +378,7 @@ function ReadView({ rd }: { rd: AiRead }) {
     <div className="mb-2 last:mb-0">
       <div className="text-[13.5px] font-medium mb-1.5">{rd.answer}</div>
       {rd.rows.length > 0 && (
-        <div className="bg-white border border-[#E6E4DD] rounded-lg overflow-hidden">
+        <div className="bg-white border border-[#E4E8E6] rounded-lg overflow-hidden">
           {rd.rows.map((r, i) => (
             <div key={i} className="flex items-center justify-between gap-3 px-3 py-2 border-b border-[#F3F1EA] last:border-0">
               <div className="min-w-0">
@@ -421,7 +421,7 @@ function Problems({ list }: { list?: string[] }) {
 }
 
 function Card({ children, tone }: { children: React.ReactNode; tone?: "good" | "warn" }) {
-  const border = tone === "good" ? "border-[#CBE9DD]" : tone === "warn" ? "border-[#F2DFBE]" : "border-[#E6E4DD]";
+  const border = tone === "good" ? "border-[#CBE9DD]" : tone === "warn" ? "border-[#F2DFBE]" : "border-[#E4E8E6]";
   const bg = tone === "warn" ? "bg-[#FFF6E8]" : "bg-white";
   return <div className={`${bg} border ${border} rounded-xl px-3.5 py-3 max-w-[95%]`}>{children}</div>;
 }

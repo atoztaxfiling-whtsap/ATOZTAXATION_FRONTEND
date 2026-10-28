@@ -57,14 +57,14 @@ export default function Dashboard() {
           <div>Server key set: <b className={push?.vapid_key_set ? "text-green-700" : "text-red-600"}>{push ? (push.vapid_key_set ? "haan" : "nahi") : "…"}</b></div>
         </div>
         <div className="flex flex-wrap gap-2">
-          <button onClick={doRegister} disabled={!!busy} className="px-4 py-2 rounded-lg text-white text-sm font-semibold disabled:opacity-50 flex items-center gap-2" style={{ background: "#127A56" }}>
+          <button onClick={doRegister} disabled={!!busy} className="px-4 py-2 rounded-lg text-white text-sm font-semibold disabled:opacity-50 flex items-center gap-2" style={{ background: "#0E7A52" }}>
             {busy === "reg" ? <Loader2 className="w-4 h-4 animate-spin" /> : null} Is device ko register karo
           </button>
           <button onClick={doTest} disabled={!!busy} className="px-4 py-2 rounded-lg text-sm font-semibold border disabled:opacity-50 flex items-center gap-2" style={{ borderColor: "#E6E7E2", color: "#15191E" }}>
             {busy === "test" ? <Loader2 className="w-4 h-4 animate-spin" /> : null} Test notification bhejo
           </button>
         </div>
-        {pushMsg && <p className="text-sm mt-3" style={{ color: "#0C5C40" }}>{pushMsg}</p>}
+        {pushMsg && <p className="text-sm mt-3" style={{ color: "#0B5E40" }}>{pushMsg}</p>}
       </div>
 
       <div className="bg-gradient-to-br from-green-600 to-emerald-600 rounded-xl p-8 text-white"><div className="flex items-center justify-between"><div><h3 className="text-2xl font-bold mb-2">ATOZ Taxation</h3><p className="text-green-100">WhatsApp AI Assistant — Live</p></div><TrendingUp className="w-12 h-12 text-green-200" /></div></div>

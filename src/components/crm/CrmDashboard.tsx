@@ -169,10 +169,10 @@ export default function CrmDashboard({ onGoto }: { onGoto?: (tab: Tab) => void }
   const t = todayIndex();
 
   return (
-    <div className="h-full overflow-y-auto bg-[#F6F5F1] p-5 md:p-7">
+    <div className="h-full overflow-y-auto bg-[#F5F7F6] p-5 md:p-7">
       <PageHead title="Dashboard" sub={`Current period: ${quarterLabel(quarterStartIndex(t))} · ${monthLabel(t)}`} />
 
-      {loading ? <div className="flex justify-center py-16"><div className="animate-spin rounded-full h-9 w-9 border-b-2 border-[#0F6E56]" /></div> : (
+      {loading ? <div className="flex justify-center py-16"><div className="animate-spin rounded-full h-9 w-9 border-b-2 border-[#0E7A52]" /></div> : (
         <>
           {/* KPI row — paisa */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5 mb-3.5">
@@ -194,7 +194,7 @@ export default function CrmDashboard({ onGoto }: { onGoto?: (tab: Tab) => void }
             <div className="flex flex-wrap gap-2 p-3">
               {fStatusList.length ? fStatusList.map(([st, n]) => (
                 <button key={st} onClick={() => go("filings")}
-                  className="flex items-center gap-2 px-3 py-2 rounded-lg border border-[#E6E4DD] bg-white hover:border-[#0F6E56]">
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg border border-[#E4E8E6] bg-white hover:border-[#0E7A52]">
                   <span className="text-[12.5px] text-[#6B6F68]">{st}</span>
                   <span className="text-[14px] font-semibold text-[#1C1E1B]">{n}</span>
                 </button>
@@ -204,13 +204,13 @@ export default function CrmDashboard({ onGoto }: { onGoto?: (tab: Tab) => void }
 
           {/* GST reminder calendar — bot kin dino pe followup bhejega */}
           <SectionTitle onClick={() => go("review")} linkLabel="Review">
-            <span className="inline-flex items-center gap-1.5"><CalendarClock className="w-4 h-4 text-[#0F6E56]" />GST reminder calendar — kab kya jayega</span>
+            <span className="inline-flex items-center gap-1.5"><CalendarClock className="w-4 h-4 text-[#0E7A52]" />GST reminder calendar — kab kya jayega</span>
           </SectionTitle>
           <Panel>
             {remCal.length ? remCal.map((r, i) => {
               const parts = Object.entries(r.types).map(([bt, n]) => `${n} ${BT_LABEL[bt] || bt}`).join(" · ");
               return (
-                <div key={i} className="flex items-center gap-3.5 px-4 py-3 border-b border-[#E6E4DD] last:border-0">
+                <div key={i} className="flex items-center gap-3.5 px-4 py-3 border-b border-[#E4E8E6] last:border-0">
                   <div className="w-16 flex-shrink-0 text-[12.5px] font-semibold font-mono text-[#1C1E1B]">{fmtDate(r.date)}</div>
                   <div className="flex-1 min-w-0">
                     <div className="text-[13.5px] font-medium">{r.deadline ? "Last date (GST return)" : `${r.count} client ko reminder`}</div>
@@ -231,7 +231,7 @@ export default function CrmDashboard({ onGoto }: { onGoto?: (tab: Tab) => void }
           </SectionTitle>
           <Panel>
             {compliance.length ? compliance.map((e, i) => (
-              <div key={i} className="flex items-center gap-3.5 px-4 py-3 border-b border-[#E6E4DD] last:border-0">
+              <div key={i} className="flex items-center gap-3.5 px-4 py-3 border-b border-[#E4E8E6] last:border-0">
                 <div className="flex-1 min-w-0">
                   <div className="text-[13.5px] font-medium truncate">{e.label} — {e.period}</div>
                   <div className="text-[12.5px] text-[#6B6F68]">Due {fmtDate(e.date)} · {e.pending}/{e.total} pending</div>
@@ -249,7 +249,7 @@ export default function CrmDashboard({ onGoto }: { onGoto?: (tab: Tab) => void }
               <SectionTitle onClick={() => go("payments")} linkLabel="Payments">Bakaya — sabse zyada upar</SectionTitle>
               <Panel>
                 {bakaya.length ? bakaya.slice(0, 8).map(({ c, bal }) => (
-                  <div key={c.id} className="flex items-center gap-3 px-4 py-3 border-b border-[#E6E4DD] last:border-0">
+                  <div key={c.id} className="flex items-center gap-3 px-4 py-3 border-b border-[#E4E8E6] last:border-0">
                     <Avatar name={c.name} onClick={() => setOpen(c)} />
                     <div className="flex-1 min-w-0 cursor-pointer" onClick={() => setOpen(c)}>
                       <div className="text-[13.5px] font-medium truncate">{c.name}</div>
@@ -259,7 +259,7 @@ export default function CrmDashboard({ onGoto }: { onGoto?: (tab: Tab) => void }
                     {c.mobile && <a href={waLink(c.mobile, `Namaste ${c.name}, aapka ${money(bal)} payment pending hai.`)} target="_blank" rel="noreferrer"><Btn size="sm">WA</Btn></a>}
                   </div>
                 )) : <Empty>Koi bakaya nahi 🎉</Empty>}
-                {bakaya.length > 8 && <button onClick={() => go("payments")} className="w-full text-left px-4 py-2.5 text-[12px] text-[#0F6E56] font-medium hover:bg-[#FBFAF7]">+ {bakaya.length - 8} aur bakaya — sab dekho →</button>}
+                {bakaya.length > 8 && <button onClick={() => go("payments")} className="w-full text-left px-4 py-2.5 text-[12px] text-[#0E7A52] font-medium hover:bg-[#FBFAF7]">+ {bakaya.length - 8} aur bakaya — sab dekho →</button>}
               </Panel>
             </div>
 
@@ -272,13 +272,13 @@ export default function CrmDashboard({ onGoto }: { onGoto?: (tab: Tab) => void }
                     <div key={p.s} className="flex items-center gap-3 mb-2.5 last:mb-0">
                       <div className="w-32 text-[12px] text-[#6B6F68] truncate">{p.s}</div>
                       <div className="flex-1 h-4 bg-[#F0EEE8] rounded-md overflow-hidden">
-                        <div className={`h-full rounded-md ${p.s === "Payment Pending" ? "bg-[#A32D2D]" : "bg-[#0F6E56]"}`} style={{ width: `${Math.round(p.n / pipeMax * 100)}%` }} />
+                        <div className={`h-full rounded-md ${p.s === "Payment Pending" ? "bg-[#A32D2D]" : "bg-[#0E7A52]"}`} style={{ width: `${Math.round(p.n / pipeMax * 100)}%` }} />
                       </div>
                       <div className="w-7 text-right text-[13px] font-semibold font-mono">{p.n}</div>
                     </div>
                   ))}
                 </div>
-                <button onClick={() => go("workflow")} className="w-full text-left px-4 py-2.5 border-t border-[#E6E4DD] text-[12.5px] text-[#0F6E56] font-medium hover:bg-[#FBFAF7]">{inProgress} abhi In progress — Workflow kholo →</button>
+                <button onClick={() => go("workflow")} className="w-full text-left px-4 py-2.5 border-t border-[#E4E8E6] text-[12.5px] text-[#0E7A52] font-medium hover:bg-[#FBFAF7]">{inProgress} abhi In progress — Workflow kholo →</button>
               </Panel>
             </div>
           </div>
@@ -289,7 +289,7 @@ export default function CrmDashboard({ onGoto }: { onGoto?: (tab: Tab) => void }
               <SectionTitle onClick={() => go("workflow")} linkLabel="Workflow">Documents ka wait</SectionTitle>
               <Panel>
                 {docsWait.length ? docsWait.map(({ t: tk, days }) => (
-                  <div key={tk.id} className="flex items-center gap-3 px-4 py-3 border-b border-[#E6E4DD] last:border-0 cursor-pointer hover:bg-[#FBFAF7]" onClick={() => go("workflow")}>
+                  <div key={tk.id} className="flex items-center gap-3 px-4 py-3 border-b border-[#E4E8E6] last:border-0 cursor-pointer hover:bg-[#FBFAF7]" onClick={() => go("workflow")}>
                     <div className="flex-1 min-w-0">
                       <div className="text-[13.5px] font-medium truncate">{tk.name} {tk.category ? <span className="text-[#6B6F68]">— {tk.category}</span> : null}</div>
                     </div>
@@ -302,9 +302,9 @@ export default function CrmDashboard({ onGoto }: { onGoto?: (tab: Tab) => void }
             <div>
               <SectionTitle onClick={() => go("pending")} linkLabel="Pending task">Team workload — sab kaam</SectionTitle>
               <Panel>
-                <div className="px-4 py-2 text-[11.5px] text-[#9BA098] border-b border-[#E6E4DD]">GST returns + workflow + registration — teeno milake har staff ka bojh.</div>
+                <div className="px-4 py-2 text-[11.5px] text-[#9BA098] border-b border-[#E4E8E6]">GST returns + workflow + registration — teeno milake har staff ka bojh.</div>
                 {teamList.length ? teamList.map(r => (
-                  <div key={r.name} className="flex items-center gap-3 px-4 py-3 border-b border-[#E6E4DD] last:border-0 cursor-pointer hover:bg-[#FBFAF7]" onClick={() => go("pending")}>
+                  <div key={r.name} className="flex items-center gap-3 px-4 py-3 border-b border-[#E4E8E6] last:border-0 cursor-pointer hover:bg-[#FBFAF7]" onClick={() => go("pending")}>
                     <Avatar name={r.name} />
                     <div className="flex-1 min-w-0">
                       <div className="text-[13.5px] font-medium truncate">{r.name}</div>
@@ -326,7 +326,7 @@ export default function CrmDashboard({ onGoto }: { onGoto?: (tab: Tab) => void }
           <SectionTitle>Alerts — tumhara jawab chahiye {openEsc.length > 0 && <span className="text-[12px] text-[#A32D2D] font-semibold">({openEsc.length})</span>}</SectionTitle>
           <Panel>
             {openEsc.length ? openEsc.slice(0, 10).map(e => (
-              <div key={e.id} className="flex items-start gap-3 px-4 py-3 border-b border-[#E6E4DD] last:border-0">
+              <div key={e.id} className="flex items-start gap-3 px-4 py-3 border-b border-[#E4E8E6] last:border-0">
                 <span className="text-[14px] mt-0.5">🔔</span>
                 <div className="flex-1 min-w-0">
                   <div className="text-[13px]">{e.question || e.reason || "—"}</div>
@@ -343,10 +343,10 @@ export default function CrmDashboard({ onGoto }: { onGoto?: (tab: Tab) => void }
           {/* Followup notes (manual) — ye bot wale auto-followup NAHI hain */}
           <SectionTitle onClick={() => go("followups")} linkLabel="Followups">Followup notes (manual)</SectionTitle>
           <Panel>
-            <div className="px-4 py-2 text-[11.5px] text-[#9BA098] border-b border-[#E6E4DD]">Ye CRM me haath se lagaye followup note hain — bot ke auto-followup Review tab me hote hain.</div>
+            <div className="px-4 py-2 text-[11.5px] text-[#9BA098] border-b border-[#E4E8E6]">Ye CRM me haath se lagaye followup note hain — bot ke auto-followup Review tab me hote hain.</div>
             {followups.length ? followups.map(c => (
-              <div key={c.id} className="flex items-center gap-3.5 px-4 py-3 border-b border-[#E6E4DD] last:border-0">
-                <button onClick={() => markDone(c)} className="w-6 h-6 rounded-full border-[1.5px] border-[#E6E4DD] hover:border-[#0F6E56] text-transparent hover:text-[#0F6E56] flex items-center justify-center flex-shrink-0">
+              <div key={c.id} className="flex items-center gap-3.5 px-4 py-3 border-b border-[#E4E8E6] last:border-0">
+                <button onClick={() => markDone(c)} className="w-6 h-6 rounded-full border-[1.5px] border-[#E4E8E6] hover:border-[#0E7A52] text-transparent hover:text-[#0E7A52] flex items-center justify-center flex-shrink-0">
                   <Check className="w-3.5 h-3.5" />
                 </button>
                 <div className="w-24 flex-shrink-0 text-[12px] text-[#6B6F68] font-mono">{c.followup_text}</div>
@@ -360,7 +360,7 @@ export default function CrmDashboard({ onGoto }: { onGoto?: (tab: Tab) => void }
           <SectionTitle onClick={() => go("filings")} linkLabel="Filings">Needs attention — quarterly defaulters</SectionTitle>
           <Panel>
             {defaulters.length ? defaulters.map(c => (
-              <div key={c.id} className="flex items-center gap-3.5 px-4 py-3 border-b border-[#E6E4DD] last:border-0">
+              <div key={c.id} className="flex items-center gap-3.5 px-4 py-3 border-b border-[#E4E8E6] last:border-0">
                 <Avatar name={c.name} onClick={() => setOpen(c)} />
                 <div className="flex-1 min-w-0 cursor-pointer" onClick={() => setOpen(c)}><div className="text-[13.5px] font-medium truncate">{c.name}</div><div className="text-[12.5px] text-[#6B6F68]">Pichle 3 quarters file nahi hue</div></div>
                 <Pill status="Not Responding">Defaulter</Pill>
@@ -381,7 +381,7 @@ function SectionTitle({ children, onClick, linkLabel }: { children: React.ReactN
     <div className="flex items-center justify-between mt-6 mb-3 first:mt-0">
       <h2 className="text-[14.5px] font-semibold">{children}</h2>
       {onClick && (
-        <button onClick={onClick} className="inline-flex items-center gap-0.5 text-[12px] font-medium text-[#0F6E56] hover:underline flex-shrink-0">
+        <button onClick={onClick} className="inline-flex items-center gap-0.5 text-[12px] font-medium text-[#0E7A52] hover:underline flex-shrink-0">
           {linkLabel || "Dekho"}<ChevronRight className="w-3.5 h-3.5" />
         </button>
       )}
