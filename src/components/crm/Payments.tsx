@@ -3,15 +3,35 @@ import { useState } from "react";
 import { useCrm } from "../../services/crmStore";
 import { balanceDue, totalPaid, currentCycle, money, isTaskBillable, isFilingBillable, type Client } from "../../services/crmLogic";
 import { Avatar, Pill, Panel, PageHead, Metric, Btn, Scroller, Th, Td, EmptyRow } from "./ui";
+import { confirmPaymentClaim, rejectPaymentClaim } from "../../services/crmApi";
 import ClientDrawer from "./ClientDrawer";
 
 /* 14+ din se ruka payment -> "Call list" (direct call karo). Badalna ho to yahan. */
 const CALL_AFTER_DAYS = 14;
 
 export default function Payments() {
-  const { clients, filingMap, filings, payments, tasks, loading } = useCrm();
+  const { clients, filingMap, filings, payments, tasks, loading, followups, reload, toast } = useCrm();
   const [open, setOpen] = useState<Client | null>(null);
-  const [tab, setTab] = useState<"pending" | "call">("pending");
+  const [tab, setTab] = useState<"pending" | "call" | "confirm">("pending");
+
+  /* Payment claims — client ne bola/screenshot bheja "paisa de diya".
+     Docs-jaisा: amber me dikhe, tu ek-tap confirm/reject kar. */
+  const claims = followups
+    .filter(f => f.kind === "payment_claim" && f.status === "active")
+    .map(f => ({ f, c: clients.find(x => x.id === f.client_id) }))
+    .filter((x): x is { f: typeof followups[number]; c: Client } => !!x.c);
+
+  async function doConfirm(c: Client) {
+    const amt = prompt(`${c.name}: kitna paisa aaya? (khaali chhodo = pura balance)`);
+    if (amt === null) return;
+    try { await confirmPaymentClaim(c.mobile, amt.trim() === "" ? null : Number(amt)); await reload(); toast("Payment confirm ho gaya"); }
+    catch (e) { alert((e as Error).message); }
+  }
+  async function doReject(c: Client) {
+    if (!confirm(`${c.name}: payment nahi aaya? Claim hata du?`)) return;
+    try { await rejectPaymentClaim(c.mobile); await reload(); toast("Claim hata diya"); }
+    catch (e) { alert((e as Error).message); }
+  }
 
   const collected = clients.reduce((a, c) => a + totalPaid(c, payments, tasks), 0);
   const clientPending = clients.reduce((a, c) => a + balanceDue(c, filingMap, payments, tasks), 0);
@@ -91,13 +111,31 @@ export default function Payments() {
       </div>
 
       <div className="flex gap-1.5 mb-4 flex-wrap">
-        {([["pending", `Pending ${recent.length}`], ["call", `Call list · ${CALL_AFTER_DAYS}+ din ${callList.length}`]] as ["pending" | "call", string][]).map(([k, label]) => (
+        {([["pending", `Pending ${recent.length}`], ["call", `Call list · ${CALL_AFTER_DAYS}+ din ${callList.length}`], ["confirm", `Confirm · ${claims.length}`]] as ["pending" | "call" | "confirm", string][]).map(([k, label]) => (
           <button key={k} onClick={() => setTab(k)}
-            className={`px-3.5 py-1.5 rounded-full text-[12.5px] font-medium border ${tab === k ? "bg-[#1C1E1B] text-white border-[#1C1E1B]" : "bg-white text-[#6B6F68] border-[#E4E8E6]"}`}>
+            className={`px-3.5 py-1.5 rounded-full text-[12.5px] font-medium border ${tab === k ? "bg-[#1C1E1B] text-white border-[#1C1E1B]" : k === "confirm" && claims.length ? "bg-[#FBEFD9] text-[#8A5606] border-[#EAD6AE]" : "bg-white text-[#6B6F68] border-[#E4E8E6]"}`}>
             {label}
           </button>
         ))}
       </div>
+
+      {tab === "confirm" && (
+        <Panel head={<h3 className="text-[13.5px] font-semibold">Payment claims — confirm karo <span className="text-[#9BA098] font-normal">({claims.length})</span></h3>}>
+          {!claims.length && <div className="px-4 py-5 text-[12.5px] text-[#9BA098]">Koi payment claim pending nahi. (Client "paisa de diya" bole ya payment screenshot bheje to yahan amber me aayega.)</div>}
+          {claims.map(({ f, c }) => (
+            <div key={f.id} className="flex items-center gap-3 px-4 py-3 border-b border-[#E4E8E6] last:border-0" style={{ background: "#FBEFD9" }}>
+              <Avatar name={c.name} onClick={() => setOpen(c)} />
+              <div className="flex-1 min-w-0">
+                <div className="font-medium text-[13.5px] cursor-pointer" onClick={() => setOpen(c)}>{c.name}</div>
+                <div className="text-[11.5px] text-[#8A5606] truncate">{f.note || "Client ne bola payment kar diya"}</div>
+                <div className="text-[11px] text-[#5E6B66]">Balance: {money(balanceDue(c, filingMap, payments, tasks))}</div>
+              </div>
+              <button onClick={() => doConfirm(c)} className="shrink-0 px-2.5 py-1.5 text-[12px] font-medium rounded-md bg-[#0E7A52] text-white whitespace-nowrap">✓ Confirm</button>
+              <button onClick={() => doReject(c)} title="Claim hata do" className="shrink-0 px-2 py-1.5 text-[12px] font-medium rounded-md border border-[#E4E8E6] bg-white text-[#962C1E]">✗</button>
+            </div>
+          ))}
+        </Panel>
+      )}
 
       {tab === "call" && (
         <div className="text-[12px] text-[#7A4A12] bg-[#FFF6E8] border border-[#F2DFBE] rounded-lg px-3.5 py-2.5 mb-3">
@@ -105,6 +143,7 @@ export default function Payments() {
         </div>
       )}
 
+      {tab !== "confirm" && (
       <Panel>
         <div className="hidden md:block">
           <Scroller>
@@ -146,8 +185,9 @@ export default function Payments() {
           ))}
         </div>
       </Panel>
+      )}
 
-      {!!billableTasks.length && (
+      {tab !== "confirm" && !!billableTasks.length && (
         <div className="mt-5">
           <Panel head={<>
             <h3 className="text-[13.5px] font-semibold">
