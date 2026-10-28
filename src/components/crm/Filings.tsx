@@ -64,7 +64,8 @@ export default function Filings() {
     const period = m ? (m[2] + m[1]) : "";   // tool ko MMYYYY chahiye (sirf filename)
     const u = `/gstr1.html?gstin=${encodeURIComponent(c.gstin || "")}`
       + `&name=${encodeURIComponent(c.name || "")}`
-      + `&period=${period}&api=${encodeURIComponent(backupBase())}`;
+      + `&period=${period}&api=${encodeURIComponent(backupBase())}`
+      + `&cid=${encodeURIComponent(c.id)}&pkey=${encodeURIComponent(cp.key)}`;
     window.open(u, "_blank");
   }
 

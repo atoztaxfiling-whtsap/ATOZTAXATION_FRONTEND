@@ -11,7 +11,7 @@ export const QUARTER_NAMES = ["JFM", "AMJ", "JAS", "OND"];
 
 export const FILING_STATUSES = [
   "Yet to Pick", "Documents Pending", "Documents Received", "OTP Pending",
-  "Query Raised", "GSTR1 Done", "In Progress", "Completed", "Not Responding",
+  "Query Raised", "GSTR1 Done", "In Progress", "Ready to file", "Completed", "Not Responding",
 ];
 export const REG_STATUSES = [
   "Documents Pending", "Documents Received", "OTP Pending", "Query", "Waiting for Reply",

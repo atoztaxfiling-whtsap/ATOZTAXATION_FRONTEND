@@ -1697,6 +1697,8 @@ function doExportJSON(){
   setTimeout(()=>{document.body.removeChild(a);URL.revokeObjectURL(url);},1500);
   if(typeof wsSaveOutput==="function") wsSaveOutput(name, blob); // folder me bhi save
   logLine("Portal JSON exported (beta) — test-import into the GST offline tool before filing.");
+  // CRM ko batao: JSON ready (abhi filed nahi) -> status "Ready to file"
+  if(typeof crmMarkStatus==="function") crmMarkStatus("Ready to file");
 }
 
 /* ============================ offline spreadsheet import (no AI) ============================ */
@@ -3110,11 +3112,30 @@ function showTcsMismatch(list){
 }
 
 /* ===== Judwa CRM integration bootstrap =====
-   CRM ke "File GSTR-1" button se khulta hai:
-   /gstr1.html?gstin=..&name=..&period=..&api=<backend base>
+   CRM ke "📄 GSTR-1" button se khulta hai:
+   /gstr1.html?gstin=..&name=..&period=..&api=<backend base>&cid=<client id>&pkey=<period_key>
    - gstin/name/period apne aap bhar deta hai
-   - api diya ho to AI-extract office server se (key browser me nahi);
-     console token same-origin localStorage se uthata hai. */
+   - api diya ho to AI-extract office server se (key browser me nahi); token same-origin localStorage se.
+   - cid+pkey ho to: JSON export pe CRM filing "Ready to file", aur "✓ Filed" dabane pe "Completed". */
+function crmMarkStatus(status){
+  try{
+    if(!(window.CRM_PROXY && window.CRM_PROXY.base && window.CRM_CTX && window.CRM_CTX.cid && window.CRM_CTX.pkey)) return;
+    fetch(window.CRM_PROXY.base+"/api/crm/filings/upsert",{
+      method:"POST",
+      headers:{"content-type":"application/json","X-Console-Token":window.CRM_PROXY.token||""},
+      body:JSON.stringify({client_id:window.CRM_CTX.cid, period_key:window.CRM_CTX.pkey, status:status})
+    }).then(function(r){
+      if(r.ok){ if(typeof logLine==="function") logLine("CRM updated: filing status = "+status); }
+      else { if(typeof logLine==="function") logLine("CRM update fail ("+r.status+") — CRM me haath se badal dena."); }
+    }).catch(function(){ if(typeof logLine==="function") logLine("CRM update nahi pahuncha — CRM me haath se badal dena."); });
+  }catch(_){}
+}
+function crmMarkFiled(){
+  if(!(window.CRM_CTX && window.CRM_CTX.cid)) { alert("Ye CRM se nahi khula — status CRM me haath se badlo."); return; }
+  if(!confirm("Portal pe upload + OTP ho gaya? 'Haan' dabao to CRM me is return ko Completed mark kar dunga (fee + followup band ho jayega).")) return;
+  crmMarkStatus("Completed");
+  var b=document.getElementById("crmFiledBtn"); if(b){ b.textContent="✓ Filed (CRM me Completed)"; b.disabled=true; b.style.opacity=".6"; }
+}
 (function(){
   try{
     var q = new URLSearchParams(location.search);
@@ -3123,6 +3144,8 @@ function showTcsMismatch(list){
       var tok=""; try{ tok = localStorage.getItem("console_token")||""; }catch(_){}
       window.CRM_PROXY = { base: api.replace(/\/+$/,""), token: tok };
     }
+    var cid=q.get("cid"), pkey=q.get("pkey");
+    if(cid && pkey){ window.CRM_CTX = { cid:cid, pkey:pkey, name:q.get("name")||"", period:q.get("period")||"" }; }
     function fill(){
       try{
         var g=q.get("gstin"), nm=q.get("name"), per=q.get("period");
@@ -3134,6 +3157,18 @@ function showTcsMismatch(list){
         if(window.CRM_PROXY){
           var ak=document.getElementById("apikey");
           if(ak){ ak.placeholder="Office server se — key ki zaroorat nahi"; }
+        }
+        // CRM se khula -> upar ek banner + "✓ Filed" button
+        if(window.CRM_CTX){
+          var bar=document.createElement("div");
+          bar.style.cssText="display:flex;flex-wrap:wrap;align-items:center;gap:10px;background:#EDF4F1;border:1px solid #CBE3D8;border-radius:12px;padding:10px 14px;margin:0 20px 14px;max-width:1100px;margin-left:auto;margin-right:auto;font-size:13px";
+          bar.innerHTML='<b>Judwa CRM</b> &nbsp;'+ (window.CRM_CTX.name? ('<span>'+window.CRM_CTX.name+'</span>') : '')
+            +'<span style="color:#5C6670">· '+(window.CRM_CTX.pkey||'')+'</span>'
+            +'<span style="flex:1"></span>'
+            +'<span style="color:#5C6670;font-size:11.5px">JSON export → "Ready to file". Portal pe upload+OTP ke baad ↓</span>'
+            +'<button id="crmFiledBtn" style="background:#0F7A54;color:#fff;border:none;border-radius:8px;padding:8px 14px;font-weight:600;cursor:pointer">✓ Filed — portal pe ho gaya</button>';
+          document.body.insertBefore(bar, document.body.firstChild);
+          var fb=document.getElementById("crmFiledBtn"); if(fb) fb.onclick=crmMarkFiled;
         }
       }catch(_){}
     }
