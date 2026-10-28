@@ -876,7 +876,7 @@ function rememberParty(g,nm){ g=(g||"").trim().toUpperCase(); nm=(nm||"").trim()
   if(g.length>=10 && nm && PARTIES[g]!==nm){ PARTIES[g]=nm; lsSet("gstr1_parties",PARTIES); } }
 function learnParties(){ rows.forEach(r=>{ if(r.gstin && r.rname) rememberParty(r.gstin,r.rname); }); }
 function fillParties(){ rows.forEach(r=>{ const g=(r.gstin||"").trim().toUpperCase(); if(g && !r.rname && PARTIES[g]) r.rname=PARTIES[g]; }); }
-function applyParties(){ normalizeCats(); fillParties(); learnParties(); }
+function applyParties(){ normalizeCats(); fillParties(); learnParties(); if(typeof crmPushParties==="function") crmPushParties(); }
 function normalizeCats(){
   rows.forEach(r=>{ if(r.cat==="b2b"){ const g=(r.gstin||"").trim().toUpperCase();
     // GSTIN 15-char + valid state-code + Z 14th char + PAN-jaisा pattern = valid (government/PSU
@@ -3130,6 +3130,31 @@ function crmMarkStatus(status){
     }).catch(function(){ if(typeof logLine==="function") logLine("CRM update nahi pahuncha — CRM me haath se badal dena."); });
   }catch(_){}
 }
+/* Party-memory (GSTIN->naam) saare staff me shared — CRM se load + wapas push */
+function crmLoadParties(){
+  try{
+    if(!(window.CRM_PROXY && window.CRM_PROXY.base)) return;
+    fetch(window.CRM_PROXY.base+"/api/crm/gstr1-parties",{headers:{"X-Console-Token":window.CRM_PROXY.token||""}})
+      .then(function(r){ return r.ok?r.json():null; })
+      .then(function(j){ if(j && j.data){
+        var cur = (typeof lsGet==="function") ? lsGet("gstr1_parties") : {};
+        Object.assign(cur, j.data);
+        if(typeof lsSet==="function") lsSet("gstr1_parties", cur);
+        if(typeof PARTIES!=="undefined" && PARTIES) Object.assign(PARTIES, j.data);
+      } }).catch(function(){});
+  }catch(_){}
+}
+function crmPushParties(){
+  try{
+    if(!(window.CRM_PROXY && window.CRM_PROXY.base)) return;
+    if(typeof rows==="undefined") return;
+    var m={}; rows.forEach(function(r){ var g=(r.gstin||"").trim().toUpperCase(); if(g.length>=10 && r.rname) m[g]=r.rname; });
+    if(!Object.keys(m).length) return;
+    fetch(window.CRM_PROXY.base+"/api/crm/gstr1-parties",{method:"POST",
+      headers:{"content-type":"application/json","X-Console-Token":window.CRM_PROXY.token||""},
+      body:JSON.stringify({parties:m})}).catch(function(){});
+  }catch(_){}
+}
 function crmMarkFiled(){
   if(!(window.CRM_CTX && window.CRM_CTX.cid)) { alert("Ye CRM se nahi khula — status CRM me haath se badlo."); return; }
   if(!confirm("Portal pe upload + OTP ho gaya? 'Haan' dabao to CRM me is return ko Completed mark kar dunga (fee + followup band ho jayega).")) return;
@@ -3157,6 +3182,7 @@ function crmMarkFiled(){
         if(window.CRM_PROXY){
           var ak=document.getElementById("apikey");
           if(ak){ ak.placeholder="Office server se — key ki zaroorat nahi"; }
+          crmLoadParties();   // shared party-memory CRM se le aao
         }
         // CRM se khula -> upar ek banner + "✓ Filed" button
         if(window.CRM_CTX){
