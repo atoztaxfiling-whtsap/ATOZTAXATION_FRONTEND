@@ -184,6 +184,11 @@ export default function Filings() {
                     <Td>
                       <div className="flex items-center gap-1.5">
                         <input className={inlineInput} defaultValue={e.comment} placeholder="Add note" onBlur={ev => { if (ev.target.value !== e.comment) patch(c, cp, "comment", ev.target.value); }} />
+                        {e.status === "Ready to file" && (
+                          <button onClick={() => { if (confirm(`${c.name}: portal pe upload + OTP ho gaya? Completed mark karun?`)) patch(c, cp, "status", "Completed"); }}
+                            title="Portal pe file ho gaya -> Completed"
+                            className="shrink-0 px-2 py-1 text-[11px] font-medium rounded-md border border-[#0F6E56] bg-[#0F7A54] text-white whitespace-nowrap">✓ Filed</button>
+                        )}
                         {e.ai_updated && (
                           <button onClick={() => confirmAi(e.id)} title="AI update verify/confirm karo"
                             className="shrink-0 px-2 py-1 text-[11px] font-medium rounded-md border border-[#C9933A] bg-[#F2C879] text-[#412402] whitespace-nowrap">✓ Confirm</button>
