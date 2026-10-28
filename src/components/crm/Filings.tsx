@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react";
 import { Pencil, ChevronDown } from "lucide-react";
 import { useCrm } from "../../services/crmStore";
-import { upsertFiling, updateClient, confirmFilingAi } from "../../services/crmApi";
+import { upsertFiling, updateClient, confirmFilingAi, backupBase } from "../../services/crmApi";
 import {
   FILING_STATUSES, clientPeriods, currentPeriod, filingEntry, periodFee, isDefaulter,
   globalQuarterPeriods, globalMonthPeriods, findClientPeriod, TEMPLATES, waLink, money,
@@ -55,6 +55,17 @@ export default function Filings() {
   async function patch(c: Client, p: Period, field: string, value: any) {
     try { await upsertFiling({ client_id: c.id, period_key: p.key, [field]: value } as any); await reload(); }
     catch (e) { alert((e as Error).message); }
+  }
+
+  /* GSTR-1 Studio naye tab me kholo — client GSTIN/naam/period pehle se bhara,
+     AI-extract office server se (staff ko API key nahi daalni). */
+  function openGstr1(c: Client, cp: Period) {
+    const m = cp.key.match(/(\d{4})-(\d{2})/);
+    const period = m ? (m[2] + m[1]) : "";   // tool ko MMYYYY chahiye (sirf filename)
+    const u = `/gstr1.html?gstin=${encodeURIComponent(c.gstin || "")}`
+      + `&name=${encodeURIComponent(c.name || "")}`
+      + `&period=${period}&api=${encodeURIComponent(backupBase())}`;
+    window.open(u, "_blank");
   }
 
   /* CRM Bot (AI) ne jo filing update ki (amber) — verify karke flag hatao */
@@ -148,6 +159,8 @@ export default function Filings() {
                         <Avatar name={c.name} onClick={() => setOpen(c)} />
                         <span className="font-medium cursor-pointer whitespace-nowrap" onClick={() => setOpen(c)}>{c.name}</span>
                         {e.ai_updated && <span className="shrink-0 text-[10px] px-1.5 py-0.5 rounded-full bg-[#F2C879] text-[#412402]" title={e.ai_note || ""}>🤖 AI</span>}
+                        <button onClick={() => openGstr1(c, cp)} title="GSTR-1 Studio kholo (is client ka)"
+                          className="shrink-0 text-[10.5px] px-2 py-0.5 rounded-md border border-[#CBE3D8] bg-[#EDF4F1] text-[#0F6E56] font-medium whitespace-nowrap">📄 GSTR-1</button>
                       </div>
                     </Td>
                     <Td className="font-mono text-[11.5px] text-[#6B6F68]">{c.portal_username || "—"}</Td>
