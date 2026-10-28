@@ -158,7 +158,15 @@ export default function CrmDashboard({ onGoto }: { onGoto?: (tab: Tab) => void }
     const st = filingEntry(filingMap, c.id, cp.key).status || "Yet to Pick";
     fStatusCounts[st] = (fStatusCounts[st] || 0) + 1;
   });
-  const fStatusList = Object.entries(fStatusCounts).sort((a, b) => b[1] - a[1]);
+  // Pipeline-hero ke 5 stage (current period)
+  const _sum = (...ks: string[]) => ks.reduce((n, k) => n + (fStatusCounts[k] || 0), 0);
+  const pipeline = [
+    { label: "Yet to pick", n: _sum("Yet to Pick"), sub: "shuru nahi" },
+    { label: "Docs", n: _sum("Documents Pending", "Documents Received", "OTP Pending"), sub: "docs stage" },
+    { label: "Ready to file", n: _sum("Ready to file"), sub: "JSON ready" },
+    { label: "Filed", n: _sum("Completed", "GSTR1 Done", "In Progress"), sub: "ho gaya" },
+    { label: "Dhyaan do", n: _sum("Query Raised", "Not Responding"), sub: "atka / query" },
+  ];
 
   async function markDone(c: Client) { await updateClient(c.id, { followup_text: null }); await reload(); }
   async function dismissAlert(id: string) {
@@ -188,19 +196,24 @@ export default function CrmDashboard({ onGoto }: { onGoto?: (tab: Tab) => void }
             <button onClick={() => go("workflow")} className="text-left"><Metric label="Workflow baaki" value={money(wfOutstanding)} sub={`${wfBillableOpen} kaam pe pending →`} tone={wfOutstanding > 0 ? "danger" : undefined} /></button>
           </div>
 
-          {/* Filing status counts — abhi ke period ka haal (click -> Filings) */}
-          <SectionTitle onClick={() => go("filings")} linkLabel="Filings">Filing status — current period</SectionTitle>
-          <Panel>
-            <div className="flex flex-wrap gap-2 p-3">
-              {fStatusList.length ? fStatusList.map(([st, n]) => (
-                <button key={st} onClick={() => go("filings")}
-                  className="flex items-center gap-2 px-3 py-2 rounded-lg border border-[#E4E8E6] bg-white hover:border-[#0E7A52]">
-                  <span className="text-[12.5px] text-[#6B6F68]">{st}</span>
-                  <span className="text-[14px] font-semibold text-[#1C1E1B]">{n}</span>
-                </button>
-              )) : <Empty>Koi filing nahi.</Empty>}
+          {/* GST filing pipeline — current period (Complisure hero) */}
+          <div className="relative overflow-hidden rounded-2xl mb-6 p-5 md:p-6" style={{ background: "#13211C" }}>
+            <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(420px 180px at 90% 0%, rgba(31,160,107,.22), transparent 70%)" }} />
+            <div className="relative flex items-center justify-between mb-4">
+              <div className="serif text-white text-[15px] font-semibold">GST filing pipeline <span className="text-[#7FA090] font-normal text-[12.5px]">· current period</span></div>
+              <button onClick={() => go("filings")} className="text-[12px] font-medium text-[#8FE3BE]">Filings →</button>
             </div>
-          </Panel>
+            <div className="relative grid grid-cols-2 md:grid-cols-5 gap-y-4">
+              {pipeline.map((p, i) => (
+                <button key={p.label} onClick={() => go("filings")}
+                  className={`text-left px-3 md:px-4 ${i > 0 ? "md:border-l md:border-[#2B4639]" : ""}`}>
+                  <div className="serif text-white text-[30px] md:text-[34px] font-semibold leading-none tabular-nums">{p.n}</div>
+                  <div className="text-[#CDE5DA] text-[12.5px] font-medium mt-1.5">{p.label}</div>
+                  <div className="text-[#7FA090] text-[11px]">{p.sub}</div>
+                </button>
+              ))}
+            </div>
+          </div>
 
           {/* GST reminder calendar — bot kin dino pe followup bhejega */}
           <SectionTitle onClick={() => go("review")} linkLabel="Review">
