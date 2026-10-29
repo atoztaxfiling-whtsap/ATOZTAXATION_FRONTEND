@@ -90,7 +90,9 @@ export default function Filings() {
 
   return (
     <div className="h-full overflow-y-auto bg-[#F5F7F6] p-5 md:p-7">
-      <PageHead title="Filings" sub="Naye periods apne aap 'Yet to Pick' me aa jaate hain" />
+      <PageHead title="Filings" sub="Naye periods apne aap 'Yet to Pick' me aa jaate hain"
+        actions={<button onClick={() => window.open(`/gstr1.html?api=${encodeURIComponent(backupBase())}`, "_blank")}
+          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-[13px] font-medium bg-[#0E7A52] text-white">📄 GSTR-1 Studio</button>} />
 
       <div className="flex gap-1.5 mb-4 flex-wrap">
         {([["quarterly", `Quarterly ${qList.length}`], ["monthly", `Monthly ${mList.length}`], ["defaulters", `Defaulters (3+ qtr) ${defaulters.length}`]] as [Tab, string][]).map(([k, label]) => (
