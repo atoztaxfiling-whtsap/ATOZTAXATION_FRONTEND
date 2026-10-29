@@ -107,6 +107,9 @@ export const upsertFiling = (d: { client_id: string; period_key: string; status?
 /* AI (CRM Bot) ne jo filing update ki (amber) — use verify/confirm karo, flag hato */
 export const confirmFilingAi = (id: string): Promise<Filing> =>
   jsonPost(`/filings/${id}/confirm-ai`, {}).then(r => r.data);
+/* Filing Autopilot: draft queue se hatao (galat laga / ho gaya) */
+export const clearAutopilot = (id: string): Promise<Filing> =>
+  jsonPost(`/filings/${id}/autopilot-clear`, {}).then(r => r.data);
 
 /* ---------- Payments ---------- */
 /* kind: "client" = client ne diya | "firm_paid" = humne uski taraf se bhara */

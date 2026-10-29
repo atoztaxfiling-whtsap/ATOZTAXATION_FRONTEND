@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react";
 import { Pencil, ChevronDown } from "lucide-react";
 import { useCrm } from "../../services/crmStore";
-import { upsertFiling, updateClient, confirmFilingAi, backupBase, openChat } from "../../services/crmApi";
+import { upsertFiling, updateClient, confirmFilingAi, clearAutopilot, backupBase, openChat } from "../../services/crmApi";
 import {
   FILING_STATUSES, clientPeriods, currentPeriod, filingEntry, periodFee, isDefaulter,
   globalQuarterPeriods, globalMonthPeriods, findClientPeriod, TEMPLATES, waLink, money,
@@ -14,8 +14,10 @@ import ClientDrawer from "./ClientDrawer";
 
 type Tab = "quarterly" | "monthly" | "defaulters";
 
+const AP_DONE = ["Completed", "Filed", "Closed", "GSTR1 Done"];
+
 export default function Filings() {
-  const { clients, filingMap, staff, reload, loading, toast, patchLocal } = useCrm();
+  const { clients, filings, filingMap, staff, reload, loading, toast, patchLocal } = useCrm();
   const [tab, setTab] = useState<Tab>("quarterly");
   const [qPeriod, setQPeriod] = useState("current");
   const [mPeriod, setMPeriod] = useState("current");
@@ -29,6 +31,17 @@ export default function Filings() {
 
   const qPeriods = useMemo(() => globalQuarterPeriods(clients), [clients]);
   const mPeriods = useMemo(() => globalMonthPeriods(clients), [clients]);
+
+  // Filing Autopilot: jin filings pe client ne sales report bheja (draft ready
+  // to build) aur abhi file nahi hui — sab periods me se.
+  const autopilotQueue = useMemo(() => {
+    const byId: Record<string, Client> = {};
+    clients.forEach(c => { byId[c.id] = c; });
+    return (filings || [])
+      .filter(f => (f.autopilot_doc_url || "") && !AP_DONE.includes(f.status || "") && byId[f.client_id])
+      .map(f => ({ f, c: byId[f.client_id] }))
+      .sort((a, b) => String(b.f.autopilot_queued_at || "").localeCompare(String(a.f.autopilot_queued_at || "")));
+  }, [filings, clients]);
 
   function resolve(c: Client, sel: string, cycle: string): Period | null {
     if (sel === "current") { const p = currentPeriod(c); return p && p.cycle === cycle ? p : null; }
@@ -69,6 +82,24 @@ export default function Filings() {
     window.open(u, "_blank");
   }
 
+  /* Autopilot: Studio us client ka queued sales-report apne aap load + extract
+     karega (docfid = filing id). Staff sirf review + file. */
+  function openGstr1Draft(c: Client, f: { id: string; period_key: string; autopilot_doc_name?: string | null }) {
+    const m = f.period_key.match(/(\d{4})-(\d{2})/);
+    const period = m ? (m[2] + m[1]) : "";
+    const u = `/gstr1.html?gstin=${encodeURIComponent(c.gstin || "")}`
+      + `&name=${encodeURIComponent(c.name || "")}`
+      + `&period=${period}&api=${encodeURIComponent(backupBase())}`
+      + `&cid=${encodeURIComponent(c.id)}&pkey=${encodeURIComponent(f.period_key)}`
+      + `&docfid=${encodeURIComponent(f.id)}&docname=${encodeURIComponent(f.autopilot_doc_name || "sales-report.xlsx")}`;
+    window.open(u, "_blank");
+  }
+
+  async function removeFromQueue(id: string) {
+    try { await clearAutopilot(id); await reload(); toast("Queue se hata diya"); }
+    catch (e) { alert((e as Error).message); }
+  }
+
   /* CRM Bot (AI) ne jo filing update ki (amber) — verify karke flag hatao */
   async function confirmAi(id?: string) {
     if (!id) return;
@@ -93,6 +124,34 @@ export default function Filings() {
       <PageHead title="Filings" sub="Naye periods apne aap 'Yet to Pick' me aa jaate hain"
         actions={<button onClick={() => window.open(`/gstr1.html?api=${encodeURIComponent(backupBase())}`, "_blank")}
           className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-[13px] font-medium bg-[#0E7A52] text-white">📄 GSTR-1 Studio</button>} />
+
+      {autopilotQueue.length > 0 && (
+        <div className="mb-5 rounded-xl border border-[#CBE3D8] bg-[#E9F5EF] p-3.5 md:p-4">
+          <div className="flex items-center gap-2 mb-2.5 flex-wrap">
+            <span className="text-[15px]">⚡</span>
+            <h3 className="text-[13.5px] font-semibold text-[#0B5E40]">Filing Autopilot — {autopilotQueue.length} draft ready to build</h3>
+            <span className="text-[11.5px] text-[#5E6B66]">client ne sales report bheja · ek click me Studio khul ke extract</span>
+          </div>
+          <div className="space-y-1.5">
+            {autopilotQueue.map(({ f, c }) => {
+              const per = findClientPeriod(c, f.period_key);
+              return (
+                <div key={f.id} className="flex items-center gap-2.5 flex-wrap bg-white rounded-lg border border-[#D9E8E1] px-3 py-2">
+                  <Avatar name={c.name} size={26} onClick={() => setOpen(c)} />
+                  <span className="font-medium text-[13px] cursor-pointer whitespace-nowrap" onClick={() => setOpen(c)}>{c.name}</span>
+                  <span className="text-[11.5px] text-[#9BA098] whitespace-nowrap">{per?.label || f.period_key}</span>
+                  <span className="text-[11px] text-[#5E6B66] bg-[#F2F7F5] rounded px-1.5 py-0.5 whitespace-nowrap">📄 {f.autopilot_doc_name || "sales-report"}</span>
+                  <span className="flex-1" />
+                  <button onClick={() => openGstr1Draft(c, f)}
+                    className="px-3 py-1.5 text-[12px] font-semibold rounded-md bg-[#0E7A52] text-white whitespace-nowrap">⚡ Draft banao</button>
+                  <button onClick={() => removeFromQueue(f.id)} title="Queue se hatao"
+                    className="px-2 py-1.5 text-[12px] font-medium rounded-md border border-[#E4E8E6] bg-white text-[#9A3B3B]">✗</button>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       <div className="flex gap-1.5 mb-4 flex-wrap">
         {([["quarterly", `Quarterly ${qList.length}`], ["monthly", `Monthly ${mList.length}`], ["defaulters", `Defaulters (3+ qtr) ${defaulters.length}`]] as [Tab, string][]).map(([k, label]) => (

@@ -74,6 +74,7 @@ export interface Filing {
   type?: string | null; status: string; fee_due?: number | null; comment?: string | null;
   assigned_to?: string | null;
   ai_updated?: boolean | null; ai_note?: string | null;
+  autopilot_doc_url?: string | null; autopilot_doc_name?: string | null; autopilot_queued_at?: string | null;
   status_changed_at?: string | null; updated_at?: string | null; created_at?: string | null;
 }
 export interface Payment { id: string; client_id: string; amount: number; paid_on: string; method?: string | null; note?: string | null; kind?: string | null; }

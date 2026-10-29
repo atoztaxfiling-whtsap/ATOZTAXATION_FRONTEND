@@ -3196,6 +3196,28 @@ function crmMarkFiled(){
           document.body.insertBefore(bar, document.body.firstChild);
           var fb=document.getElementById("crmFiledBtn"); if(fb) fb.onclick=crmMarkFiled;
         }
+        // ===== Filing Autopilot: queued sales-report apne aap load + extract =====
+        // CRM "⚡ Draft banao" se docfid aata hai -> backend se file le ke
+        // seedha extract pipeline me daal do. Fail ho to manual par chhod do.
+        var docfid=q.get("docfid");
+        if(docfid && window.CRM_PROXY && window.CRM_PROXY.base){
+          var docname=q.get("docname")||"sales-report.xlsx";
+          try{ if(typeof logLine==="function") logLine("Autopilot: client ka sales report laa rahe… ("+docname+")"); }catch(_){}
+          try{ var pr=document.getElementById("progress"); if(pr) pr.textContent="Autopilot: file laa rahe…"; }catch(_){}
+          fetch(window.CRM_PROXY.base+"/api/crm/autopilot-doc/"+encodeURIComponent(docfid),
+                {headers:{"X-Console-Token":window.CRM_PROXY.token||""}})
+            .then(function(r){ if(!r.ok) throw new Error("server "+r.status); return r.blob(); })
+            .then(function(blob){
+              var f=new File([blob], docname, {type: blob.type||"application/octet-stream"});
+              if(typeof addFiles==="function") addFiles([f]);
+              if(typeof logLine==="function") logLine("Autopilot: file mil gayi — extract shuru…");
+              if(typeof runExtract==="function") setTimeout(function(){ try{ runExtract(); }catch(e){} }, 350);
+            })
+            .catch(function(e){
+              try{ if(typeof logLine==="function") logLine("Autopilot load fail — neeche se file khud daal ke Extract dabao. ("+((e&&e.message)||e)+")"); }catch(_){}
+              try{ if(typeof showErr==="function") showErr("Autopilot: sales report apne aap load nahi hua. Neeche se file daal ke 'Extract invoices' dabao."); }catch(_){}
+            });
+        }
       }catch(_){}
     }
     if(document.readyState==="loading") window.addEventListener("DOMContentLoaded", fill);
