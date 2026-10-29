@@ -117,11 +117,15 @@ export interface AdvanceRow { id: string; on: string; note: string; method: stri
 export interface TaskDueRow { id: string; name: string; status: string; due: number; paid: number; balance: number; }
 export interface FullLedger { periods: LedgerRow[]; advances: AdvanceRow[]; tasks: TaskDueRow[]; balance: number; leftover: number; }
 
+export interface AutopilotPending {
+  id: string; mobile: string; media_url: string; doc_name?: string | null; created_at?: string | null;
+}
 export interface Bootstrap {
   clients: Client[]; filings: Filing[]; payments: Payment[];
   registrations: Registration[]; tasks: Task[]; staff: Staff[];
   services: Service[]; notes: ClientNote[];
   followups: Followup[]; escalations: Escalation[];
+  autopilot_pending: AutopilotPending[];
 }
 
 /* ---------- Period math (reg_month 1-12) ---------- */

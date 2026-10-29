@@ -55,6 +55,7 @@ export async function fetchBootstrap(): Promise<Bootstrap> {
     registrations: d.registrations || [], tasks: d.tasks || [], staff: d.staff || [],
     services: d.services || [], notes: d.notes || [],
     followups: d.followups || [], escalations: d.escalations || [],
+    autopilot_pending: d.autopilot_pending || [],
   };
 }
 
@@ -110,6 +111,12 @@ export const confirmFilingAi = (id: string): Promise<Filing> =>
 /* Filing Autopilot: draft queue se hatao (galat laga / ho gaya) */
 export const clearAutopilot = (id: string): Promise<Filing> =>
   jsonPost(`/filings/${id}/autopilot-clear`, {}).then(r => r.data);
+/* Multi-GST: pending sales-report ke liye sahi client chun ke draft attach */
+export const assignAutopilot = (pending_id: string, client_id: string): Promise<void> =>
+  jsonPost("/autopilot/assign", { pending_id, client_id }).then(() => undefined);
+/* Pending sales-report hatao (sales report nahi tha / galat) */
+export const dismissAutopilotPending = (id: string): Promise<void> =>
+  jsonPost(`/autopilot/pending/${id}/dismiss`, {}).then(() => undefined);
 
 /* ---------- Payments ---------- */
 /* kind: "client" = client ne diya | "firm_paid" = humne uski taraf se bhara */

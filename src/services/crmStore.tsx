@@ -20,7 +20,7 @@ interface CrmCtx extends Bootstrap {
   removeLocal: (table: keyof Bootstrap, id: string) => void;
 }
 
-const EMPTY: Bootstrap = { clients: [], filings: [], payments: [], registrations: [], tasks: [], staff: [], services: [], notes: [], followups: [], escalations: [] };
+const EMPTY: Bootstrap = { clients: [], filings: [], payments: [], registrations: [], tasks: [], staff: [], services: [], notes: [], followups: [], escalations: [], autopilot_pending: [] };
 const Ctx = createContext<CrmCtx | null>(null);
 
 export function useCrm() {

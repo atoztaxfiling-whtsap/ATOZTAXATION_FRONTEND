@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react";
 import { Pencil, ChevronDown } from "lucide-react";
 import { useCrm } from "../../services/crmStore";
-import { upsertFiling, updateClient, confirmFilingAi, clearAutopilot, backupBase, openChat } from "../../services/crmApi";
+import { upsertFiling, updateClient, confirmFilingAi, clearAutopilot, assignAutopilot, dismissAutopilotPending, backupBase, openChat } from "../../services/crmApi";
 import {
   FILING_STATUSES, clientPeriods, currentPeriod, filingEntry, periodFee, isDefaulter,
   globalQuarterPeriods, globalMonthPeriods, findClientPeriod, TEMPLATES, waLink, money,
@@ -17,7 +17,8 @@ type Tab = "quarterly" | "monthly" | "defaulters";
 const AP_DONE = ["Completed", "Filed", "Closed", "GSTR1 Done"];
 
 export default function Filings() {
-  const { clients, filings, filingMap, staff, reload, loading, toast, patchLocal } = useCrm();
+  const { clients, filings, filingMap, staff, autopilot_pending, reload, loading, toast, patchLocal } = useCrm();
+  const [pickSel, setPickSel] = useState<Record<string, string>>({});
   const [tab, setTab] = useState<Tab>("quarterly");
   const [qPeriod, setQPeriod] = useState("current");
   const [mPeriod, setMPeriod] = useState("current");
@@ -42,6 +43,14 @@ export default function Filings() {
       .map(f => ({ f, c: byId[f.client_id] }))
       .sort((a, b) => String(b.f.autopilot_queued_at || "").localeCompare(String(a.f.autopilot_queued_at || "")));
   }, [filings, clients]);
+
+  // Multi-GST: pending sales-report jinke liye client pakka nahi — staff chune.
+  const pendingList = useMemo(() => {
+    const norm = (m: string) => String(m || "").replace(/\D/g, "").slice(-10);
+    return (autopilot_pending || []).map(p => ({
+      p, candidates: clients.filter(c => norm(c.mobile) === norm(p.mobile)),
+    }));
+  }, [autopilot_pending, clients]);
 
   function resolve(c: Client, sel: string, cycle: string): Period | null {
     if (sel === "current") { const p = currentPeriod(c); return p && p.cycle === cycle ? p : null; }
@@ -100,6 +109,17 @@ export default function Filings() {
     catch (e) { alert((e as Error).message); }
   }
 
+  async function assignPending(pendingId: string) {
+    const cid = pickSel[pendingId];
+    if (!cid) { alert("Pehle GST/client chuno"); return; }
+    try { await assignAutopilot(pendingId, cid); await reload(); toast("Draft us GST pe laga diya"); }
+    catch (e) { alert((e as Error).message); }
+  }
+  async function dismissPending(pendingId: string) {
+    try { await dismissAutopilotPending(pendingId); await reload(); toast("Hata diya"); }
+    catch (e) { alert((e as Error).message); }
+  }
+
   /* CRM Bot (AI) ne jo filing update ki (amber) — verify karke flag hatao */
   async function confirmAi(id?: string) {
     if (!id) return;
@@ -125,11 +145,11 @@ export default function Filings() {
         actions={<button onClick={() => window.open(`/gstr1.html?api=${encodeURIComponent(backupBase())}`, "_blank")}
           className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-[13px] font-medium bg-[#0E7A52] text-white">📄 GSTR-1 Studio</button>} />
 
-      {autopilotQueue.length > 0 && (
+      {(autopilotQueue.length > 0 || pendingList.length > 0) && (
         <div className="mb-5 rounded-xl border border-[#CBE3D8] bg-[#E9F5EF] p-3.5 md:p-4">
           <div className="flex items-center gap-2 mb-2.5 flex-wrap">
             <span className="text-[15px]">⚡</span>
-            <h3 className="text-[13.5px] font-semibold text-[#0B5E40]">Filing Autopilot — {autopilotQueue.length} draft ready to build</h3>
+            <h3 className="text-[13.5px] font-semibold text-[#0B5E40]">Filing Autopilot — {autopilotQueue.length + pendingList.length} draft{(autopilotQueue.length + pendingList.length) > 1 ? "s" : ""}</h3>
             <span className="text-[11.5px] text-[#5E6B66]">client ne sales report bheja · ek click me Studio khul ke extract</span>
           </div>
           <div className="space-y-1.5">
@@ -149,6 +169,22 @@ export default function Filings() {
                 </div>
               );
             })}
+            {pendingList.map(({ p, candidates }) => (
+              <div key={p.id} className="flex items-center gap-2.5 flex-wrap bg-[#FDF6E9] rounded-lg border border-[#EADFC4] px-3 py-2">
+                <span className="text-[12.5px]">📊</span>
+                <span className="text-[12.5px] text-[#5E6B66] whitespace-nowrap">…{String(p.mobile).slice(-4)} · {candidates.length} GST — <b className="text-[#7A5A12]">kis GST ka?</b></span>
+                <select value={pickSel[p.id] || ""} onChange={e => setPickSel(s => ({ ...s, [p.id]: e.target.value }))}
+                  className="px-2 py-1 border border-[#E4E8E6] rounded-md text-[12px] bg-white min-w-[160px]">
+                  <option value="">— GST / client chuno —</option>
+                  {candidates.map(c => <option key={c.id} value={c.id}>{c.business_name || c.name}{c.gstin ? ` · ${c.gstin}` : ""}</option>)}
+                </select>
+                <span className="flex-1" />
+                <button onClick={() => assignPending(p.id)} disabled={!pickSel[p.id]}
+                  className="px-3 py-1.5 text-[12px] font-semibold rounded-md bg-[#0E7A52] text-white disabled:opacity-40 whitespace-nowrap">⚡ Draft banao</button>
+                <button onClick={() => dismissPending(p.id)} title="Sales report nahi tha / hatao"
+                  className="px-2 py-1.5 text-[12px] font-medium rounded-md border border-[#E4E8E6] bg-white text-[#9A3B3B]">✗</button>
+              </div>
+            ))}
           </div>
         </div>
       )}
