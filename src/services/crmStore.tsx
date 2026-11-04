@@ -66,7 +66,11 @@ export function CrmProvider({ children }: { children: ReactNode }) {
 
   const toast = useCallback((msg: string, undo?: () => Promise<void>) => setToastMsg({ msg, undo }), []);
 
-  const me: Me = data.me || NOBODY;
+  // Console token = owner ki master key. Wo localStorage me hai to owner maano —
+  // chahe bootstrap me `me` kisi wajah se na aaye. (Backend bhi token verify karta.)
+  const hasConsole = (() => { try { return !!localStorage.getItem("console_token"); } catch { return false; } })();
+  const baseMe: Me = data.me || NOBODY;
+  const me: Me = { ...baseMe, owner: baseMe.owner || hasConsole };
   const can = useCallback((perm: Perm | string) => {
     if (me.owner) return true;
     return !!me.permissions?.[perm];

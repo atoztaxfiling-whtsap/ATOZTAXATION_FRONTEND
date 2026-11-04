@@ -72,6 +72,7 @@ export async function fetchBootstrap(): Promise<Bootstrap> {
     services: d.services || [], notes: d.notes || [],
     followups: d.followups || [], escalations: d.escalations || [],
     autopilot_pending: d.autopilot_pending || [],
+    me: d.me,   // kaun logged-in + permissions (owner detection) — ye zaroori hai
   };
 }
 
