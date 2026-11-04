@@ -32,7 +32,7 @@ import { isDefaulter, buildWorkItems, LATE_DAYS, type Client } from "./services/
    tumhare repo me wo file nahi hai, isliye Netlify pe build fail ho rahi thi.
    localStorage key wahi purani hai ("console_token") — login pe koi asar nahi. */
 const hasToken = (): boolean => !!localStorage.getItem("console_token");
-const clearToken = (): void => localStorage.removeItem("console_token");
+const clearToken = (): void => { ["console_token", "actor_token", "staff_name", "staff_role"].forEach(k => localStorage.removeItem(k)); };
 
 type Tab =
   | "chat" | "dashboard" | "clients" | "pending" | "followups" | "review" | "payments" | "filings"

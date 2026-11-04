@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
 import { useCrm } from "../../services/crmStore";
 import { createRegistration, updateRegistration, deleteRegistration, convertRegistration } from "../../services/crmApi";
-import { REG_STATUSES, FILING_MODES, type Registration, type Client } from "../../services/crmLogic";
+import { REG_STATUSES, FILING_MODES, turnaround, type Registration, type Client } from "../../services/crmLogic";
 import { Avatar, Pill, Panel, PageHead, Btn, Scroller, Th, Td, EmptyRow, Modal, Field, Row2, TextInput, SelectInput, FieldsetLabel, inlineSelect } from "./ui";
 
 export default function Registrations() {
@@ -13,7 +13,18 @@ export default function Registrations() {
 
   async function setStatus(r: Registration, status: string) {
     try { await updateRegistration(r.id, { status }); await reload(); }
-    catch (e) { alert((e as Error).message); }
+    catch (e) {
+      const msg = (e as Error).message || "";
+      if (/approval/i.test(msg)) {
+        const reason = prompt(`${r.name}: status peeche "${status}" pe le ja rahe ho — Arshad ki approval se. Reason likho (kyun):`);
+        if (reason && reason.trim()) {
+          try { await updateRegistration(r.id, { status, allow_regress: true, regress_reason: reason.trim() }); await reload(); return; }
+          catch (e2) { alert((e2 as Error).message); }
+        }
+        await reload(); return;
+      }
+      alert(msg);
+    }
   }
   async function remove(r: Registration) {
     if (!confirm(`${r.name} ki registration delete karni hai?`)) return;
@@ -44,6 +55,8 @@ export default function Registrations() {
                       : <select className={inlineSelect} value={r.status} onChange={e => setStatus(r, e.target.value)}>
                         {REG_STATUSES.map(s => <option key={s}>{s}</option>)}
                       </select>}
+                    {(r.converted_client_id || ["Completed", "Converted"].includes(r.status)) && turnaround(r.created_at, r.status_changed_at) &&
+                      <div className="text-[10px] text-[#0B5E40] mt-0.5" title="Registration itne der me complete hua">✓ {turnaround(r.created_at, r.status_changed_at)}</div>}
                   </Td>
                   <Td>{r.converted_client_id ? <Pill status="Completed">Client created</Pill>
                     : <Btn size="sm" variant="primary" onClick={() => setConverting(r)}>Convert to client</Btn>}</Td>

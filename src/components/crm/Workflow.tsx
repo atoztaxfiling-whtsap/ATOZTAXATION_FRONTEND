@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Plus, Trash2, X, Check, Pencil } from "lucide-react";
 import { useCrm } from "../../services/crmStore";
 import { createTask, updateTask, deleteTask, restoreTask } from "../../services/crmApi";
-import { TASK_CATEGORIES, TASK_STATUSES, money, waLink, type Task } from "../../services/crmLogic";
+import { TASK_CATEGORIES, TASK_STATUSES, money, waLink, turnaround, type Task } from "../../services/crmLogic";
 import DocsBox, { docsFor } from "./DocsBox";
 import BotNotes from "./BotNotes";
 import { Panel, PageHead, Btn, Scroller, Th, Td, EmptyRow, SelectInput, Modal, Field, Row2, TextInput, Pill, inlineSelect, inlineInput } from "./ui";
@@ -42,7 +42,18 @@ export default function Workflow() {
   async function patch(t: Task, field: string, value: any) {
     patchLocal("tasks", t.id, { [field]: value });   // instant — reload ka intezaar nahi
     try { await updateTask(t.id, { [field]: value } as any); }
-    catch (e) { alert((e as Error).message); await reload(); }
+    catch (e) {
+      const msg = (e as Error).message || "";
+      // Backward-lock: "Documents Received" ke baad peeche -> Arshad approval + reason
+      if (field === "status" && /approval/i.test(msg)) {
+        const reason = prompt(`${t.name}: status peeche "${value}" pe le ja rahe ho — Arshad ki approval se. Reason likho (kyun):`);
+        if (reason && reason.trim()) {
+          try { await updateTask(t.id, { status: value, allow_regress: true, regress_reason: reason.trim() } as any); await reload(); return; }
+          catch (e2) { alert((e2 as Error).message); }
+        }
+      } else { alert(msg); }
+      await reload();
+    }
   }
   async function remove(t: Task) {
     if (!confirm(`"${t.name}" delete karna hai?`)) return;
@@ -112,6 +123,8 @@ export default function Workflow() {
                       <select className={inlineSelect} value={t.status} onChange={e => patch(t, "status", e.target.value)}>
                         {TASK_STATUSES.map(s => <option key={s}>{s}</option>)}
                       </select>
+                      {["Completed", "Closed"].includes(t.status) && turnaround(t.received_date || t.created_at, t.status_changed_at) &&
+                        <div className="text-[10px] text-[#0B5E40] mt-0.5" title="Order itne der me complete hua">✓ {turnaround(t.received_date || t.created_at, t.status_changed_at)}</div>}
                     </Td>
                     <Td><input className={inlineInput} style={{ width: 70, minWidth: 70 }} type="number" defaultValue={t.fee_agreed || 0}
                       onBlur={e => { if (Number(e.target.value) !== Number(t.fee_agreed)) patch(t, "fee_agreed", Number(e.target.value) || 0); }} /></Td>

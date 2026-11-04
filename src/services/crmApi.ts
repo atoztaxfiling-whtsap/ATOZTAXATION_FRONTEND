@@ -9,6 +9,8 @@ function token() { return localStorage.getItem("console_token") || ""; }
 
 async function req(path: string, opt: RequestInit = {}): Promise<any> {
   const headers: Record<string, string> = { "X-Console-Token": token(), ...(opt.headers as Record<string, string> || {}) };
+  const actor = localStorage.getItem("actor_token");   // kaun logged-in — audit ke liye
+  if (actor) headers["X-Actor-Token"] = actor;
   const res = await fetch(`${API_BASE}/api/crm${path}`, { ...opt, headers });
   if (res.status === 403) { localStorage.removeItem("console_token"); window.dispatchEvent(new Event("auth-failed")); throw new Error("UNAUTHORIZED"); }
   const txt = await res.text();
@@ -103,7 +105,7 @@ export const addClientNote = (id: string, text: string) => jsonPost(`/clients/${
 export const deleteClientNote = (cid: string, nid: string) => req(`/clients/${cid}/notes/${nid}`, { method: "DELETE" });
 
 /* ---------- Filings ---------- */
-export const upsertFiling = (d: { client_id: string; period_key: string; status?: string; type?: string; comment?: string; fee_due?: number | null; assigned_to?: string }): Promise<Filing> =>
+export const upsertFiling = (d: { client_id: string; period_key: string; status?: string; type?: string; comment?: string; fee_due?: number | null; assigned_to?: string; allow_regress?: boolean; regress_reason?: string }): Promise<Filing> =>
   jsonPost("/filings/upsert", d).then(r => r.data);
 /* AI (CRM Bot) ne jo filing update ki (amber) — use verify/confirm karo, flag hato */
 export const confirmFilingAi = (id: string): Promise<Filing> =>
@@ -127,13 +129,32 @@ export const restorePayment = (id: string) => req(`/payments/${id}/restore`, { m
 
 /* ---------- Registrations ---------- */
 export const createRegistration = (d: Partial<Registration>): Promise<Registration> => jsonPost("/registrations", d).then(r => r.data);
-export const updateRegistration = (id: string, d: Partial<Registration>): Promise<Registration> => jsonPost(`/registrations/${id}`, d, "PUT").then(r => r.data);
+export const updateRegistration = (id: string, d: Partial<Registration> & { allow_regress?: boolean; regress_reason?: string }): Promise<Registration> => jsonPost(`/registrations/${id}`, d, "PUT").then(r => r.data);
 export const deleteRegistration = (id: string) => req(`/registrations/${id}`, { method: "DELETE" }).then(r => r.data);
 export const convertRegistration = (id: string, d: Partial<Client>): Promise<Client> => jsonPost(`/registrations/${id}/convert`, d).then(r => r.data);
 
 /* ---------- Tasks (Workflow) ---------- */
 export const createTask = (d: Partial<Task>): Promise<Task> => jsonPost("/tasks", d).then(r => r.data);
-export const updateTask = (id: string, d: Partial<Task>): Promise<Task> => jsonPost(`/tasks/${id}`, d, "PUT").then(r => r.data);
+export const updateTask = (id: string, d: Partial<Task> & { allow_regress?: boolean; regress_reason?: string }): Promise<Task> => jsonPost(`/tasks/${id}`, d, "PUT").then(r => r.data);
+
+/* ---------- Staff login (username+password) ---------- */
+export async function staffLogin(username: string, password: string): Promise<{ name?: string; role?: string }> {
+  const res = await fetch(`${API_BASE}/api/crm/staff-login`, {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ username, password }),
+  });
+  const txt = await res.text(); let j: any = {}; try { j = txt ? JSON.parse(txt) : {}; } catch { /* noop */ }
+  if (!res.ok) throw new Error(j?.error || "Login fail");
+  const d = j?.data || {};
+  localStorage.setItem("console_token", d.console_token || "");
+  localStorage.setItem("actor_token", d.actor_token || "");
+  localStorage.setItem("staff_name", d.name || "");
+  localStorage.setItem("staff_role", d.role || "");
+  return d;
+}
+/* Owner ek staff ka login (username+password) set kare */
+export const setStaffLogin = (id: string, username: string, password: string, login_enabled?: boolean): Promise<void> =>
+  jsonPost(`/staff/${id}/set-login`, { username, password, login_enabled }).then(() => undefined);
 export const deleteTask = (id: string) => req(`/tasks/${id}`, { method: "DELETE" }).then(r => r.data);
 export const restoreTask = (id: string) => req(`/tasks/${id}/restore`, { method: "POST" }).then(r => r.data);
 

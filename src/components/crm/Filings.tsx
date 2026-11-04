@@ -6,7 +6,7 @@ import { useCrm } from "../../services/crmStore";
 import { upsertFiling, updateClient, confirmFilingAi, clearAutopilot, assignAutopilot, dismissAutopilotPending, backupBase, openChat } from "../../services/crmApi";
 import {
   FILING_STATUSES, clientPeriods, currentPeriod, filingEntry, periodFee, isDefaulter,
-  globalQuarterPeriods, globalMonthPeriods, findClientPeriod, TEMPLATES, waLink, money,
+  globalQuarterPeriods, globalMonthPeriods, findClientPeriod, TEMPLATES, waLink, money, turnaround,
   type Client, type Period,
 } from "../../services/crmLogic";
 import { Avatar, Panel, PageHead, Btn, Scroller, Th, Td, EmptyRow, SelectInput, Modal, Field, TextInput, inlineSelect, inlineInput } from "./ui";
@@ -76,7 +76,20 @@ export default function Filings() {
 
   async function patch(c: Client, p: Period, field: string, value: any) {
     try { await upsertFiling({ client_id: c.id, period_key: p.key, [field]: value } as any); await reload(); }
-    catch (e) { alert((e as Error).message); }
+    catch (e) {
+      const msg = (e as Error).message || "";
+      // Backward-lock: "Documents Received" ke baad peeche -> Arshad ki approval
+      if (field === "status" && /approval/i.test(msg)) {
+        const reason = prompt(`${c.name}: ye filing peeche "${value}" pe le ja rahe ho — ye Arshad ki approval se hi. Reason likho (kyun peeche le ja rahe):`);
+        if (reason && reason.trim()) {
+          try { await upsertFiling({ client_id: c.id, period_key: p.key, status: value, allow_regress: true, regress_reason: reason.trim() } as any); await reload(); return; }
+          catch (e2) { alert((e2 as Error).message); return; }
+        }
+        await reload();   // reason nahi diya -> dropdown wapas sahi dikhe
+        return;
+      }
+      alert(msg);
+    }
   }
 
   /* GSTR-1 Studio naye tab me kholo — client GSTIN/naam/period pehle se bhara,
@@ -249,6 +262,8 @@ export default function Filings() {
               {shown.map(({ c, cp }) => {
                 const e = filingEntry(filingMap, c.id, cp.key);
                 const amt = e.fee_due != null ? e.fee_due : periodFee(c, cp, e.type);
+                const rawF = filings.find(f => f.client_id === c.id && f.period_key === cp.key);
+                const doneIn = e.status === "Completed" ? turnaround(rawF?.created_at, rawF?.filed_at) : "";
                 return (
                   <tr key={c.id} className={e.ai_updated ? "bg-[#FDF3E3] hover:bg-[#FBEBD2]" : "hover:bg-[#FBFAF7]"}
                     title={e.ai_updated ? (e.ai_note || "CRM Bot ne update kiya — verify karo") : undefined}>
@@ -283,6 +298,7 @@ export default function Filings() {
                     <Td>
                       <div className="flex items-center gap-1.5">
                         <input className={inlineInput} defaultValue={e.comment} placeholder="Add note" onBlur={ev => { if (ev.target.value !== e.comment) patch(c, cp, "comment", ev.target.value); }} />
+                        {doneIn && <span className="shrink-0 text-[10px] px-1.5 py-0.5 rounded-full bg-[#E4F2EC] text-[#0B5E40] whitespace-nowrap" title="Order itne der me complete hua">✓ {doneIn}</span>}
                         {e.status === "Ready to file" && (
                           <button onClick={() => { if (confirm(`${c.name}: portal pe upload + OTP ho gaya? Completed mark karun?`)) patch(c, cp, "status", "Completed"); }}
                             title="Portal pe file ho gaya -> Completed"

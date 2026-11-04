@@ -75,6 +75,7 @@ export interface Filing {
   assigned_to?: string | null;
   ai_updated?: boolean | null; ai_note?: string | null;
   autopilot_doc_url?: string | null; autopilot_doc_name?: string | null; autopilot_queued_at?: string | null;
+  filed_at?: string | null;
   status_changed_at?: string | null; updated_at?: string | null; created_at?: string | null;
 }
 export interface Payment { id: string; client_id: string; amount: number; paid_on: string; method?: string | null; note?: string | null; kind?: string | null; }
@@ -116,6 +117,20 @@ export interface AdvanceRow { id: string; on: string; note: string; method: stri
 /* Workflow ka poora ho chuka one-off kaam */
 export interface TaskDueRow { id: string; name: string; status: string; due: number; paid: number; balance: number; }
 export interface FullLedger { periods: LedgerRow[]; advances: AdvanceRow[]; tasks: TaskDueRow[]; balance: number; leftover: number; }
+
+/* Order/filing kitne der me complete hua — do timestamp se human text.
+   Jaise: "2 din 3 ghante me", "5 ghante me", "40 min me". Khali -> "". */
+export function turnaround(startIso?: string | null, endIso?: string | null): string {
+  if (!startIso || !endIso) return "";
+  const s = new Date(startIso).getTime(), e = new Date(endIso).getTime();
+  if (!s || !e || e < s) return "";
+  const mins = Math.round((e - s) / 60000);
+  if (mins < 60) return `${mins} min me`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs} ghante me`;
+  const days = Math.floor(hrs / 24), remH = hrs % 24;
+  return remH ? `${days} din ${remH} gh me` : `${days} din me`;
+}
 
 export interface AutopilotPending {
   id: string; mobile: string; media_url: string; doc_name?: string | null; created_at?: string | null;

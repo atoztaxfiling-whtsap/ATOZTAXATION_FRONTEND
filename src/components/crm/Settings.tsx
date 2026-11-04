@@ -4,7 +4,7 @@ import { fetchBotSettings, saveBotSettings, fetchIncentive, type SlabTier, type 
 import { Plus, Trash2, Download, RefreshCw } from "lucide-react";
 import { useCrm } from "../../services/crmStore";
 import {
-  createStaff, updateStaff, deleteStaff, restoreStaff,
+  createStaff, updateStaff, deleteStaff, restoreStaff, setStaffLogin,
   createService, updateService, deleteService, restoreService,
   runBackup, backupBase, type BackupInfo,
   runSheetSync, importFromSheets, type SyncStats,
@@ -319,6 +319,7 @@ function StaffList() {
   const { staff, reload, toast } = useCrm();
   const [edit, setEdit] = useState<Staff | null>(null);
   const [adding, setAdding] = useState(false);
+  const [loginFor, setLoginFor] = useState<Staff | null>(null);
 
   async function remove(s: Staff) {
     if (!confirm(`${s.name} ko hatana hai?`)) return;
@@ -335,12 +336,37 @@ function StaffList() {
             <Avatar name={s.name} size={36} />
             <div className="flex-1 min-w-0"><div className="font-medium text-[13.5px]">{s.name}</div>
               <div className="text-[11.5px] text-[#6B6F68] capitalize">{s.role}{s.phone ? ` · ${s.phone}` : ""}{s.email ? ` · ${s.email}` : ""}</div></div>
+            <button onClick={e => { e.stopPropagation(); setLoginFor(s); }} title="Login (username/password) set karo"
+              className="shrink-0 text-[11px] px-2 py-1 rounded-md border border-[#CBE3D8] bg-[#E4F2EC] text-[#0E7A52] font-medium">🔑 Login</button>
             <button onClick={e => { e.stopPropagation(); remove(s); }} className="text-[#9BA098] hover:text-[#A32D2D]"><Trash2 className="w-4 h-4" /></button>
           </div>
         ))}
       </Panel>
       {(adding || edit) && <StaffModal item={edit} onClose={() => { setAdding(false); setEdit(null); }} />}
+      {loginFor && <StaffLoginModal item={loginFor} onClose={() => setLoginFor(null)} onSaved={async () => { setLoginFor(null); await reload(); toast("Login set ho gaya"); }} />}
     </>
+  );
+}
+
+function StaffLoginModal({ item, onClose, onSaved }: { item: Staff; onClose: () => void; onSaved: () => void }) {
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [saving, setSaving] = useState(false);
+  async function save() {
+    if (!username.trim() || !password) { alert("Username aur password dono do"); return; }
+    setSaving(true);
+    try { await setStaffLogin(item.id, username.trim(), password); onSaved(); }
+    catch (e) { alert((e as Error).message); setSaving(false); }
+  }
+  return (
+    <Modal title={`${item.name} — login set karo`} sub="Ye username/password staff ko do. Isi se wo login karega aur har edit uske naam pe record hoga." onClose={onClose}>
+      <Field label="Username"><TextInput value={username} onChange={e => setUsername(e.target.value)} placeholder="jaise: deeksha" /></Field>
+      <Field label="Password" hint="Kam se kam 4 characters. Baad me yahीं se badal sakte ho."><TextInput type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="naya password" /></Field>
+      <div className="flex gap-2 justify-end mt-4">
+        <Btn onClick={onClose}>Cancel</Btn>
+        <Btn variant="primary" onClick={save} disabled={saving}>{saving ? "Saving..." : "Set login"}</Btn>
+      </div>
+    </Modal>
   );
 }
 
