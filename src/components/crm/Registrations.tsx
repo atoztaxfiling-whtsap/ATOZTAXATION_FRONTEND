@@ -7,7 +7,8 @@ import { REG_STATUSES, FILING_MODES, turnaround, type Registration, type Client 
 import { Avatar, Pill, Panel, PageHead, Btn, Scroller, Th, Td, EmptyRow, Modal, Field, Row2, TextInput, SelectInput, FieldsetLabel, inlineSelect } from "./ui";
 
 export default function Registrations() {
-  const { registrations, staff, reload, loading, toast } = useCrm();
+  const { registrations, staff, reload, loading, toast, can } = useCrm();
+  const canDelete = can("delete_records");
   const [adding, setAdding] = useState(false);
   const [converting, setConverting] = useState<Registration | null>(null);
 
@@ -60,7 +61,7 @@ export default function Registrations() {
                   </Td>
                   <Td>{r.converted_client_id ? <Pill status="Completed">Client created</Pill>
                     : <Btn size="sm" variant="primary" onClick={() => setConverting(r)}>Convert to client</Btn>}</Td>
-                  <Td><button onClick={() => remove(r)} className="text-[#9BA098] hover:text-[#A32D2D]"><Trash2 className="w-3.5 h-3.5" /></button></Td>
+                  <Td>{canDelete && <button onClick={() => remove(r)} className="text-[#9BA098] hover:text-[#A32D2D]"><Trash2 className="w-3.5 h-3.5" /></button>}</Td>
                 </tr>
               ))}
             </tbody>
@@ -75,7 +76,7 @@ export default function Registrations() {
                 <Avatar name={r.name} size={36} />
                 <div className="flex-1 min-w-0"><div className="font-medium text-[13.5px] truncate">{r.name}</div>
                   <div className="text-[11.5px] text-[#6B6F68] truncate">{r.trn || r.mobile || "—"} · {r.assigned_to || "—"}</div></div>
-                <button onClick={() => remove(r)} className="text-[#9BA098]"><Trash2 className="w-4 h-4" /></button>
+                {canDelete && <button onClick={() => remove(r)} className="text-[#9BA098]"><Trash2 className="w-4 h-4" /></button>}
               </div>
               <div className="flex gap-2 items-center">
                 {r.converted_client_id ? <Pill status="Completed">Client bana</Pill> : <>

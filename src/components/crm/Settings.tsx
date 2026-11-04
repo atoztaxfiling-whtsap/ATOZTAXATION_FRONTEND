@@ -1,33 +1,80 @@
 /* Staff + Services — dono ek hi screen pe, tabs me */
 import { useState, useEffect } from "react";
 import { fetchBotSettings, saveBotSettings, fetchIncentive, type SlabTier, type IncentiveRow } from "../../services/crmApi";
-import { Plus, Trash2, Download, RefreshCw } from "lucide-react";
+import { Plus, Trash2, Download, RefreshCw, Shield } from "lucide-react";
 import { useCrm } from "../../services/crmStore";
 import {
   createStaff, updateStaff, deleteStaff, restoreStaff, setStaffLogin,
+  setStaffPerms,
   createService, updateService, deleteService, restoreService,
   runBackup, backupBase, type BackupInfo,
   runSheetSync, importFromSheets, type SyncStats,
 } from "../../services/crmApi";
-import { money, type Staff, type Service } from "../../services/crmLogic";
+import { money, ALL_PERMS, PERM_LABELS, type Staff, type Service } from "../../services/crmLogic";
 import { DocsEditor } from "./Workflow";
 import { docsFor } from "./DocsBox";
 import { Avatar, Panel, PageHead, Btn, Modal, Field, Row2, TextInput, SelectInput } from "./ui";
 
 export default function Settings() {
-  const [tab, setTab] = useState<"staff" | "services" | "backup" | "sheet" | "prompts" | "incentive">("staff");
+  const [tab, setTab] = useState<"staff" | "services" | "targets" | "backup" | "sheet" | "prompts" | "incentive">("staff");
   return (
     <div className="h-full overflow-y-auto bg-[#F5F7F6] p-5 md:p-7">
       <PageHead title="Setup" sub="Team, services aur backup" />
-      <div className="flex gap-1.5 mb-4">
-        {(["staff", "services", "backup", "sheet", "prompts", "incentive"] as const).map(k => (
+      <div className="flex gap-1.5 mb-4 flex-wrap">
+        {(["staff", "services", "targets", "backup", "sheet", "prompts", "incentive"] as const).map(k => (
           <button key={k} onClick={() => setTab(k)}
-            className={`px-3.5 py-1.5 rounded-full text-[12.5px] font-medium border capitalize ${tab === k ? "bg-[#1C1E1B] text-white border-[#1C1E1B]" : "bg-white text-[#6B6F68] border-[#E4E8E6]"}`}>{k}</button>
+            className={`px-3.5 py-1.5 rounded-full text-[12.5px] font-medium border capitalize ${tab === k ? "bg-[#1C1E1B] text-white border-[#1C1E1B]" : "bg-white text-[#6B6F68] border-[#E4E8E6]"}`}>{k === "targets" ? "Time targets" : k}</button>
         ))}
       </div>
-      {tab === "staff" ? <StaffList /> : tab === "services" ? <ServiceList /> : tab === "backup" ? <BackupPanel /> : tab === "prompts" ? <PromptsPanel /> : tab === "incentive" ? <div className="space-y-4"><EarningsSummary /><IncentivePanel /></div> : <SheetPanel />}
+      {tab === "staff" ? <StaffList /> : tab === "services" ? <ServiceList /> : tab === "targets" ? <TargetsPanel /> : tab === "backup" ? <BackupPanel /> : tab === "prompts" ? <PromptsPanel /> : tab === "incentive" ? <div className="space-y-4"><EarningsSummary /><IncentivePanel /></div> : <SheetPanel />}
       <div className="h-8" />
     </div>
+  );
+}
+
+/* SLA time targets — har service kitne OFFICE-ghante me honi chahiye. Appraisal
+   ka factor. Performance screen isi target se hara/laal dikhata. 0/khali = koi limit nahi. */
+function TargetsPanel() {
+  const { toast } = useCrm();
+  const [rows, setRows] = useState<Array<{ service: string; hours: string }>>([]);
+  const [saving, setSaving] = useState(false);
+  useEffect(() => {
+    fetchBotSettings().then(v => {
+      const t = v.sla_targets || {};
+      const list = Object.entries(t).map(([service, h]) => ({ service, hours: String(h) }));
+      setRows(list.length ? list : [{ service: "", hours: "" }]);
+    }).catch(() => setRows([{ service: "", hours: "" }]));
+  }, []);
+  const setRow = (i: number, k: "service" | "hours", v: string) => setRows(r => r.map((x, j) => j === i ? { ...x, [k]: v } : x));
+  const addRow = () => setRows(r => [...r, { service: "", hours: "" }]);
+  const delRow = (i: number) => setRows(r => r.filter((_, j) => j !== i));
+  async function save() {
+    const out: Record<string, number> = {};
+    for (const r of rows) { const s = r.service.trim(); const n = Number(r.hours); if (s && n > 0) out[s] = n; }
+    setSaving(true);
+    try { await saveBotSettings({ sla_targets: out }); toast("Time targets save ho gaye"); }
+    catch (e) { alert((e as Error).message); }
+    finally { setSaving(false); }
+  }
+  return (
+    <Panel head={<h3 className="text-[13.5px] font-semibold">Time targets (office hours)</h3>}>
+      <div className="p-4 space-y-3">
+        <div className="text-[11.5px] text-[#6B6F68]">
+          Service ka naam bilkul wahi ho jo workflow category / "GST Returns" / "GST Registration" me hai — tabhi match hoga. Ghante = office hours (Mon–Sat 10–7).
+        </div>
+        {rows.map((r, i) => (
+          <div key={i} className="flex gap-2 items-center">
+            <TextInput value={r.service} onChange={e => setRow(i, "service", e.target.value)} placeholder="Service (jaise: GST Returns)" />
+            <div className="w-24 shrink-0"><TextInput type="number" value={r.hours} onChange={e => setRow(i, "hours", e.target.value)} placeholder="ghante" /></div>
+            <button onClick={() => delRow(i)} className="text-[#9BA098] hover:text-[#A32D2D] shrink-0"><Trash2 className="w-4 h-4" /></button>
+          </div>
+        ))}
+        <div className="flex justify-between items-center pt-1">
+          <Btn size="sm" onClick={addRow}><Plus className="w-3.5 h-3.5" />Service add</Btn>
+          <Btn variant="primary" onClick={save} disabled={saving}>{saving ? "Saving..." : "Save targets"}</Btn>
+        </div>
+      </div>
+    </Panel>
   );
 }
 
@@ -320,6 +367,7 @@ function StaffList() {
   const [edit, setEdit] = useState<Staff | null>(null);
   const [adding, setAdding] = useState(false);
   const [loginFor, setLoginFor] = useState<Staff | null>(null);
+  const [permsFor, setPermsFor] = useState<Staff | null>(null);
 
   async function remove(s: Staff) {
     if (!confirm(`${s.name} ko hatana hai?`)) return;
@@ -336,6 +384,8 @@ function StaffList() {
             <Avatar name={s.name} size={36} />
             <div className="flex-1 min-w-0"><div className="font-medium text-[13.5px]">{s.name}</div>
               <div className="text-[11.5px] text-[#6B6F68] capitalize">{s.role}{s.phone ? ` · ${s.phone}` : ""}{s.email ? ` · ${s.email}` : ""}</div></div>
+            <button onClick={e => { e.stopPropagation(); setPermsFor(s); }} title="Kya-kya access hai"
+              className="shrink-0 text-[11px] px-2 py-1 rounded-md border border-[#D8D2C4] bg-[#F3EFE4] text-[#7A5C0E] font-medium inline-flex items-center gap-1"><Shield className="w-3 h-3" />Access</button>
             <button onClick={e => { e.stopPropagation(); setLoginFor(s); }} title="Login (username/password) set karo"
               className="shrink-0 text-[11px] px-2 py-1 rounded-md border border-[#CBE3D8] bg-[#E4F2EC] text-[#0E7A52] font-medium">🔑 Login</button>
             <button onClick={e => { e.stopPropagation(); remove(s); }} className="text-[#9BA098] hover:text-[#A32D2D]"><Trash2 className="w-4 h-4" /></button>
@@ -344,7 +394,72 @@ function StaffList() {
       </Panel>
       {(adding || edit) && <StaffModal item={edit} onClose={() => { setAdding(false); setEdit(null); }} />}
       {loginFor && <StaffLoginModal item={loginFor} onClose={() => setLoginFor(null)} onSaved={async () => { setLoginFor(null); await reload(); toast("Login set ho gaya"); }} />}
+      {permsFor && <StaffPermsModal item={permsFor} onClose={() => setPermsFor(null)} onSaved={async () => { setPermsFor(null); await reload(); toast("Access update ho gaya"); }} />}
     </>
+  );
+}
+
+/* Role presets — backend _ROLE_DEFAULTS se match. Role chuno to grid auto bhar jaata;
+   phir koi bhi toggle alag se on/off kar sakte ho (per-staff override). */
+const ROLE_PRESETS: Record<string, Record<string, boolean>> = {
+  owner: Object.fromEntries(ALL_PERMS.map(p => [p, true])),
+  senior: Object.fromEntries(ALL_PERMS.map(p => [p, !["settings", "delete_records", "regress_approve", "audit_view"].includes(p)])),
+  staff: Object.fromEntries(ALL_PERMS.map(p => [p, ["clients_edit", "filings_edit", "tasks_edit", "registration_convert", "gstr1_studio", "chat_send", "docs_download", "assistant"].includes(p)])),
+  intern: Object.fromEntries(ALL_PERMS.map(p => [p, ["chat_send", "docs_download", "assistant"].includes(p)])),
+};
+
+function StaffPermsModal({ item, onClose, onSaved }: { item: Staff; onClose: () => void; onSaved: () => void }) {
+  const [role, setRole] = useState((item.role || "staff").toLowerCase());
+  const [perms, setPerms] = useState<Record<string, boolean>>(() => {
+    const base = { ...(ROLE_PRESETS[(item.role || "staff").toLowerCase()] || ROLE_PRESETS.staff) };
+    const ov = item.permissions || {};
+    for (const p of ALL_PERMS) if (p in ov) base[p] = !!ov[p];
+    return base;
+  });
+  const [saving, setSaving] = useState(false);
+
+  // Role badalte hi uska preset bhar do (phir user override kar sakta)
+  function pickRole(r: string) {
+    setRole(r);
+    setPerms({ ...(ROLE_PRESETS[r] || ROLE_PRESETS.staff) });
+  }
+  const toggle = (p: string) => setPerms(x => ({ ...x, [p]: !x[p] }));
+
+  async function save() {
+    setSaving(true);
+    try { await setStaffPerms(item.id, role, perms); onSaved(); }
+    catch (e) { alert((e as Error).message); setSaving(false); }
+  }
+
+  const isOwner = role === "owner";
+  return (
+    <Modal title={`${item.name} — access`} sub="Pehle role chuno (preset bhar jaata), phir jo chahiye on/off karlo. Owner ke paas hamesha sab rehta." onClose={onClose}>
+      <Field label="Role">
+        <SelectInput value={role} onChange={e => pickRole(e.target.value)}>
+          <option value="owner">Owner (sab kuch)</option>
+          <option value="senior">Senior staff</option>
+          <option value="staff">Staff</option>
+          <option value="intern">Intern</option>
+        </SelectInput>
+      </Field>
+      <div className="mt-2 max-h-[46vh] overflow-y-auto -mx-1 px-1">
+        {ALL_PERMS.map(p => {
+          const on = isOwner || perms[p];
+          return (
+            <label key={p} className={`flex items-center justify-between gap-3 py-2 px-2 rounded-lg border-b border-[#EEF1EF] last:border-0 ${isOwner ? "opacity-60" : "cursor-pointer hover:bg-[#FBFAF7]"}`}>
+              <span className="text-[12.5px] text-[#2C342F]">{PERM_LABELS[p] || p}</span>
+              <input type="checkbox" disabled={isOwner} checked={!!on} onChange={() => toggle(p)}
+                className="w-9 h-5 appearance-none rounded-full bg-[#D4DAD6] checked:bg-[#0E7A52] relative transition cursor-pointer
+                  before:content-[''] before:absolute before:top-0.5 before:left-0.5 before:w-4 before:h-4 before:rounded-full before:bg-white before:transition checked:before:translate-x-4" />
+            </label>
+          );
+        })}
+      </div>
+      <div className="flex gap-2 justify-end mt-4">
+        <Btn onClick={onClose}>Cancel</Btn>
+        <Btn variant="primary" onClick={save} disabled={saving}>{saving ? "Saving..." : "Save access"}</Btn>
+      </div>
+    </Modal>
   );
 }
 
@@ -390,7 +505,7 @@ function StaffModal({ item, onClose }: { item: Staff | null; onClose: () => void
       <Field label="Naam"><TextInput value={f.name} onChange={e => set("name", e.target.value)} /></Field>
       <Row2>
         <Field label="Phone"><TextInput value={f.phone} onChange={e => set("phone", e.target.value)} /></Field>
-        <Field label="Role"><SelectInput value={f.role} onChange={e => set("role", e.target.value)}><option value="staff">staff</option><option value="owner">owner</option></SelectInput></Field>
+        <Field label="Role"><SelectInput value={f.role} onChange={e => set("role", e.target.value)}><option value="staff">staff</option><option value="senior">senior</option><option value="intern">intern</option><option value="owner">owner</option></SelectInput></Field>
       </Row2>
       <Field label="Email"><TextInput value={f.email} onChange={e => set("email", e.target.value)} /></Field>
       <div className="flex gap-2 justify-end mt-4">

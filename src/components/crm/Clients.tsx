@@ -57,10 +57,10 @@ export default function Clients() {
         {/* Desktop table */}
         <div className="hidden md:block">
           <Scroller>
-            <thead><tr><Th>Client</Th><Th>Username</Th><Th>Current cycle</Th><Th>Rates (nil / sales)</Th><Th>Assigned</Th><Th>Balance due</Th><Th /></tr></thead>
+            <thead><tr><Th>Client</Th><Th>Number</Th><Th>Username</Th><Th>Current cycle</Th><Th>Rates (nil / sales)</Th><Th>Assigned</Th><Th>Balance due</Th><Th /></tr></thead>
             <tbody>
-              {loading && <EmptyRow colSpan={7}>Load ho raha hai...</EmptyRow>}
-              {!loading && !rows.length && <EmptyRow colSpan={7}>Koi client nahi mila.</EmptyRow>}
+              {loading && <EmptyRow colSpan={8}>Load ho raha hai...</EmptyRow>}
+              {!loading && !rows.length && <EmptyRow colSpan={8}>Koi client nahi mila.</EmptyRow>}
               {rows.map(c => {
                 const bal = balanceDue(c, filingMap, payments, tasks); const cyc = currentCycle(c);
                 return (
@@ -76,6 +76,7 @@ export default function Clients() {
                           <div className="font-mono text-[11.5px] text-[#9BA098]">{c.gstin || "—"}</div></div>
                       </div>
                     </Td>
+                    <Td className="font-mono text-[11.5px] text-[#6B6F68] whitespace-nowrap">{c.mobile || "—"}</Td>
                     <Td className="font-mono text-[11.5px] text-[#6B6F68]">{c.portal_username || "—"}</Td>
                     <Td><Pill status={cyc === "quarterly" ? "" : "Completed"}>{cyc === "quarterly" ? "Quarterly" : "Monthly"}</Pill></Td>
                     <Td className="font-mono text-[11.5px] text-[#9BA098] whitespace-nowrap">{money(rateFor(c, cyc, "nil"))} / {money(rateFor(c, cyc, "sales"))}</Td>

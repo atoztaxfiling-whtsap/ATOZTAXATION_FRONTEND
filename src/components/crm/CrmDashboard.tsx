@@ -46,10 +46,18 @@ export default function CrmDashboard({ onGoto }: { onGoto?: (tab: Tab) => void }
     .reduce((a, p) => a + (p.amount || 0), 0);
   const gstMonth = clientPays.filter(p => { const d = payDate(p); return d && d.getFullYear() === yyyy && d.getMonth() === mm; })
     .reduce((a, p) => a + (p.amount || 0), 0);
-  /* Total collection = GST/client payments + workflow (archive) — workflow
-     payments table me nahi hote, isliye double count nahi hota. */
-  const todayColl = gstToday + (wf.today || 0);
-  const monthColl = gstMonth + (wf.month || 0);
+  /* "Humne diya" (firm_paid: late fee/challan) — client jab wapas deta hai to wo
+     client-payment me aa jata. Wo humari fee-revenue nahi, isliye collected me se
+     utna minus kar do — sirf asli fees dikhe. */
+  const firmPaid = payments.filter(p => (p.kind || "client") === KIND_FIRM_PAID);
+  const firmToday = firmPaid.filter(p => { const d = payDate(p); return d && d.getFullYear() === yyyy && d.getMonth() === mm && d.getDate() === dd; })
+    .reduce((a, p) => a + (p.amount || 0), 0);
+  const firmMonth = firmPaid.filter(p => { const d = payDate(p); return d && d.getFullYear() === yyyy && d.getMonth() === mm; })
+    .reduce((a, p) => a + (p.amount || 0), 0);
+  /* Total collection = (GST/client payments − humne diya) + workflow (archive) —
+     workflow payments table me nahi hote, isliye double count nahi hota. */
+  const todayColl = Math.max(0, gstToday - firmToday) + (wf.today || 0);
+  const monthColl = Math.max(0, gstMonth - firmMonth) + (wf.month || 0);
 
   /* ---------- Workflow baaki (abhi khule billable tasks) ---------- */
   const wfOutstanding = tasks.reduce((a, t) => {

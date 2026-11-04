@@ -12,7 +12,19 @@ async function req(path: string, opt: RequestInit = {}): Promise<any> {
   const actor = localStorage.getItem("actor_token");   // kaun logged-in — audit ke liye
   if (actor) headers["X-Actor-Token"] = actor;
   const res = await fetch(`${API_BASE}/api/crm${path}`, { ...opt, headers });
-  if (res.status === 403) { localStorage.removeItem("console_token"); window.dispatchEvent(new Event("auth-failed")); throw new Error("UNAUTHORIZED"); }
+  // 403 = token galat/expire. Permission-deny (require) bhi 403 deta hai — isliye
+  // sirf tabhi logout karo jab backend ne "Unauthorized" bheja (token hi na ho).
+  if (res.status === 403) {
+    let body: any = {}; try { body = JSON.parse(await res.clone().text()); } catch { /* noop */ }
+    if ((body?.error || "").toLowerCase().includes("unauthorized")) {
+      localStorage.removeItem("console_token"); localStorage.removeItem("actor_token");
+      localStorage.removeItem("staff_name"); localStorage.removeItem("staff_role");
+      window.dispatchEvent(new Event("auth-failed"));
+      throw new Error("UNAUTHORIZED");
+    }
+    // permission-deny: asli message dikhao (logout mat karo)
+    throw new Error(body?.error || "Iske liye permission nahi hai");
+  }
   const txt = await res.text();
   let json: any = {};
   try { json = txt ? JSON.parse(txt) : {}; } catch { /* plain text */ }
@@ -29,7 +41,9 @@ export const askAssistant = (mobile: string, model: string, messages: { role: st
 
 /* Ek client ke SAARE docs ek ZIP me download (token header ke saath). */
 export async function downloadClientDocs(mobile: string): Promise<void> {
-  const res = await fetch(`${API_BASE}/api/crm/client-docs/${encodeURIComponent(mobile)}`, { headers: { "X-Console-Token": token() } });
+  const dh: Record<string, string> = { "X-Console-Token": token() };
+  const act = localStorage.getItem("actor_token"); if (act) dh["X-Actor-Token"] = act;
+  const res = await fetch(`${API_BASE}/api/crm/client-docs/${encodeURIComponent(mobile)}`, { headers: dh });
   if (!res.ok) {
     let msg = "Docs nahi mile"; try { msg = JSON.parse(await res.text()).error || msg; } catch { /* noop */ }
     throw new Error(msg);
@@ -68,6 +82,7 @@ export type SlabTier = [number | null, number];   // [max_hours | null(=after), 
 export interface BotSettings {
   instructions: string;
   incentive_slabs?: Record<string, SlabTier[]>;
+  sla_targets?: Record<string, number>;   // service -> target office-hours
 }
 export const fetchBotSettings = (): Promise<BotSettings> => req("/settings").then(r => r.data);
 export const saveBotSettings = (d: Partial<BotSettings>): Promise<BotSettings> => jsonPost("/settings", d, "PUT").then(r => r.data);
@@ -146,7 +161,7 @@ export async function staffLogin(username: string, password: string): Promise<{ 
   const txt = await res.text(); let j: any = {}; try { j = txt ? JSON.parse(txt) : {}; } catch { /* noop */ }
   if (!res.ok) throw new Error(j?.error || "Login fail");
   const d = j?.data || {};
-  localStorage.setItem("console_token", d.console_token || "");
+  // Staff ko SIRF actor_token milta — console_token (owner master key) nahi.
   localStorage.setItem("actor_token", d.actor_token || "");
   localStorage.setItem("staff_name", d.name || "");
   localStorage.setItem("staff_role", d.role || "");
@@ -155,6 +170,18 @@ export async function staffLogin(username: string, password: string): Promise<{ 
 /* Owner ek staff ka login (username+password) set kare */
 export const setStaffLogin = (id: string, username: string, password: string, login_enabled?: boolean): Promise<void> =>
   jsonPost(`/staff/${id}/set-login`, { username, password, login_enabled }).then(() => undefined);
+
+/* Abhi kaun logged-in + uske permissions (tabs/buttons chhupane ke liye) */
+export interface Me { name: string; role: string; owner: boolean; permissions: Record<string, boolean>; }
+export const fetchMe = (): Promise<Me> => req("/me").then(r => r.data);
+
+/* Permission catalog (saari perms + role defaults) — Settings ka toggle grid */
+export const fetchPermsCatalog = (): Promise<{ all: string[]; role_defaults: Record<string, Record<string, boolean>> }> =>
+  req("/perms/catalog").then(r => r.data);
+
+/* Owner ek staff ka role + per-staff permission toggles save kare */
+export const setStaffPerms = (id: string, role: string, permissions: Record<string, boolean>): Promise<Staff> =>
+  jsonPost(`/staff/${id}/perms`, { role, permissions }).then(r => r.data);
 export const deleteTask = (id: string) => req(`/tasks/${id}`, { method: "DELETE" }).then(r => r.data);
 export const restoreTask = (id: string) => req(`/tasks/${id}/restore`, { method: "POST" }).then(r => r.data);
 

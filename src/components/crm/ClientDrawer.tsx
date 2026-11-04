@@ -14,7 +14,9 @@ import { Drawer, Avatar, Pill, Btn, TextInput, SelectInput } from "./ui";
 import ClientForm from "./ClientForm";
 
 export default function ClientDrawer({ client, onClose }: { client: Client; onClose: () => void }) {
-  const { filingMap, payments, tasks, notes, reload, toast } = useCrm();
+  const { filingMap, payments, tasks, notes, reload, toast, can } = useCrm();
+  const canSeePw = can("see_passwords");
+  const canDelete = can("delete_records");
   const [editing, setEditing] = useState(false);
   const [showPw, setShowPw] = useState(false);
   const [showOther, setShowOther] = useState<Record<number, boolean>>({});
@@ -147,9 +149,9 @@ export default function ClientDrawer({ client, onClose }: { client: Client; onCl
           <div className="col-span-2 bg-[#F5F7F6] rounded-lg px-3 py-2.5 flex items-center justify-between">
             <div>
               <div className="text-[10.5px] text-[#6B6F68] uppercase tracking-wide mb-0.5">Password</div>
-              <div className="text-[13px] font-medium font-mono break-all">{showPw ? (c.portal_password || "—") : "••••••••"}</div>
+              <div className="text-[13px] font-medium font-mono break-all">{!canSeePw ? "🔒 Hidden" : (showPw ? (c.portal_password || "—") : "••••••••")}</div>
             </div>
-            <Btn size="sm" onClick={() => setShowPw(v => !v)}>{showPw ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}{showPw ? "Hide" : "Show"}</Btn>
+            {canSeePw && <Btn size="sm" onClick={() => setShowPw(v => !v)}>{showPw ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}{showPw ? "Hide" : "Show"}</Btn>}
           </div>
         </div>
 
@@ -370,8 +372,10 @@ export default function ClientDrawer({ client, onClose }: { client: Client; onCl
           )) : <div className="text-[12.5px] text-[#9BA098] py-1">Abhi koi note nahi.</div>}
         </div>
 
-        <Section title="Danger zone" />
-        <Btn size="sm" variant="danger" onClick={removeClient}>Delete client</Btn>
+        {canDelete && <>
+          <Section title="Danger zone" />
+          <Btn size="sm" variant="danger" onClick={removeClient}>Delete client</Btn>
+        </>}
         <div className="h-6" />
       </Drawer>
 

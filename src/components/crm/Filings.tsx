@@ -255,10 +255,10 @@ export default function Filings() {
           </div>
         </>}>
           <Scroller>
-            <thead><tr><Th>Client</Th><Th>Username</Th><Th>Period</Th><Th>Type</Th><Th>Amount</Th><Th>Status</Th><Th>Comment</Th><Th>Assigned</Th></tr></thead>
+            <thead><tr><Th>Client</Th><Th>Number</Th><Th>Username</Th><Th>Period</Th><Th>Type</Th><Th>Amount</Th><Th>Status</Th><Th>Comment</Th><Th>Assigned</Th></tr></thead>
             <tbody>
-              {loading && <EmptyRow colSpan={8}>Load ho raha hai...</EmptyRow>}
-              {!loading && !shown.length && <EmptyRow colSpan={8}>Is period ke liye koi client nahi.</EmptyRow>}
+              {loading && <EmptyRow colSpan={9}>Load ho raha hai...</EmptyRow>}
+              {!loading && !shown.length && <EmptyRow colSpan={9}>Is period ke liye koi client nahi.</EmptyRow>}
               {shown.map(({ c, cp }) => {
                 const e = filingEntry(filingMap, c.id, cp.key);
                 const amt = e.fee_due != null ? e.fee_due : periodFee(c, cp, e.type);
@@ -278,6 +278,7 @@ export default function Filings() {
                           className="shrink-0 text-[10.5px] px-2 py-0.5 rounded-md border border-[#CBE3D8] bg-[#E4F2EC] text-[#0E7A52] font-medium whitespace-nowrap">📄 GSTR-1</button>
                       </div>
                     </Td>
+                    <Td className="font-mono text-[11.5px] text-[#6B6F68] whitespace-nowrap">{c.mobile || "—"}</Td>
                     <Td className="font-mono text-[11.5px] text-[#6B6F68]">{c.portal_username || "—"}</Td>
                     <Td className="text-[12.5px] text-[#9BA098] whitespace-nowrap">{cp.label}</Td>
                     <Td>
@@ -327,15 +328,16 @@ export default function Filings() {
           <Btn size="sm" variant="primary" onClick={() => setBulk(true)}>Send to all</Btn>
         </>}>
           <Scroller>
-            <thead><tr><Th>Client</Th><Th>Username</Th><Th>Last 3 quarters</Th><Th>Assigned</Th><Th /></tr></thead>
+            <thead><tr><Th>Client</Th><Th>Number</Th><Th>Username</Th><Th>Last 3 quarters</Th><Th>Assigned</Th><Th /></tr></thead>
             <tbody>
-              {!defaulters.length && <EmptyRow colSpan={5}>Abhi koi defaulter nahi.</EmptyRow>}
+              {!defaulters.length && <EmptyRow colSpan={6}>Abhi koi defaulter nahi.</EmptyRow>}
               {defaulters.map(c => {
                 const qp = clientPeriods(c).filter(p => p.cycle === "quarterly").slice(-3);
                 const txt = qp.map(p => `${p.label}: ${filingEntry(filingMap, c.id, p.key).status}`).join(" · ");
                 return (
                   <tr key={c.id} className="hover:bg-[#FBFAF7]">
                     <Td><div className="flex items-center gap-2.5"><Avatar name={c.name} onClick={() => setOpen(c)} /><span className="font-medium cursor-pointer" onClick={() => setOpen(c)}>{c.name}</span></div></Td>
+                    <Td className="font-mono text-[11.5px] text-[#6B6F68] whitespace-nowrap">{c.mobile || "—"}</Td>
                     <Td className="font-mono text-[11.5px] text-[#6B6F68]">{c.portal_username || "—"}</Td>
                     <Td className="text-[12.5px] text-[#9BA098]">{txt}</Td>
                     <Td>

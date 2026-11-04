@@ -9,7 +9,8 @@ import BotNotes from "./BotNotes";
 import { Panel, PageHead, Btn, Scroller, Th, Td, EmptyRow, SelectInput, Modal, Field, Row2, TextInput, Pill, inlineSelect, inlineInput } from "./ui";
 
 export default function Workflow() {
-  const { tasks, clients, staff, reload, loading, toast, patchLocal, removeLocal } = useCrm();
+  const { tasks, clients, staff, reload, loading, toast, patchLocal, removeLocal, can } = useCrm();
+  const canDelete = can("delete_records");
   const [cat, setCat] = useState("");
   const [st, setSt] = useState("");
   const [asg, setAsg] = useState("");
@@ -135,7 +136,7 @@ export default function Workflow() {
                       onBlur={e => { if (e.target.value !== (t.comment || "")) patch(t, "comment", e.target.value); }} /></Td>
                     <Td><div className="flex items-center gap-2.5">
                       <button onClick={() => setEditing(t)} title="Edit details" className="text-[#9BA098] hover:text-[#1D2420]"><Pencil className="w-3.5 h-3.5" /></button>
-                      <button onClick={() => remove(t)} title="Delete" className="text-[#9BA098] hover:text-[#A32D2D]"><Trash2 className="w-3.5 h-3.5" /></button>
+                      {canDelete && <button onClick={() => remove(t)} title="Delete" className="text-[#9BA098] hover:text-[#A32D2D]"><Trash2 className="w-3.5 h-3.5" /></button>}
                     </div></Td>
                   </tr>
                 );
@@ -161,7 +162,7 @@ export default function Workflow() {
                     {TASK_STATUSES.map(s => <option key={s}>{s}</option>)}
                   </select>
                   <button onClick={() => setEditing(t)} className="text-[#9BA098] ml-auto"><Pencil className="w-4 h-4" /></button>
-                  <button onClick={() => remove(t)} className="text-[#9BA098]"><Trash2 className="w-4 h-4" /></button>
+                  {canDelete && <button onClick={() => remove(t)} className="text-[#9BA098]"><Trash2 className="w-4 h-4" /></button>}
                 </div>
                 <div className="mt-1.5"><DocsCell t={t} onSave={(req, rec) => patchDocs(t, req, rec)} /></div>
               </div>
@@ -246,7 +247,7 @@ function TaskModal({ onClose }: { onClose: () => void }) {
 }
 
 function EditTaskModal({ task, onClose, onDelete }: { task: Task; onClose: () => void; onDelete: () => void }) {
-  const { clients, staff, reload, patchLocal, toast } = useCrm();
+  const { clients, staff, reload, patchLocal, toast, can } = useCrm();
   const [f, setF] = useState({
     name: task.name || "", mobile: task.mobile || "", category: task.category || TASK_CATEGORIES[0],
     client_id: task.client_id || "", assigned_to: task.assigned_to || "",
@@ -306,7 +307,7 @@ function EditTaskModal({ task, onClose, onDelete }: { task: Task; onClose: () =>
       </Row2>
       <BotNotes mobile={f.mobile} />
       <div className="flex gap-2 justify-between items-center mt-4">
-        <Btn onClick={onDelete} className="!text-[#A32D2D]"><Trash2 className="w-3.5 h-3.5" />Delete</Btn>
+        {can("delete_records") ? <Btn onClick={onDelete} className="!text-[#A32D2D]"><Trash2 className="w-3.5 h-3.5" />Delete</Btn> : <span />}
         <div className="flex gap-2">
           <Btn onClick={onClose}>Cancel</Btn>
           <Btn variant="primary" onClick={save} disabled={saving}>{saving ? "Saving..." : "Save"}</Btn>

@@ -17,7 +17,11 @@ export const REG_STATUSES = [
   "Documents Pending", "Documents Received", "OTP Pending", "Query", "Waiting for Reply",
   "Need Clarification", "Department Approval", "Completed", "Closed Lost", "Not Responding",
 ];
-export const TASK_CATEGORIES = ["Income tax", "TDS", "GST registration", "Other"];
+/* Pehli 4 ke SLA targets bhi hai (naam bilkul match hona chahiye). */
+export const TASK_CATEGORIES = [
+  "Income Tax 1", "ITR 4", "Eway bill", "MSME",
+  "Income tax", "TDS", "GST registration", "ROC Filings", "Other",
+];
 export const TASK_STATUSES = [
   "Yet to Pick", "Need to Connect", "Documents Pending", "Documents Received", "OTP Pending",
   "Clarification Pending", "Query Raised", "In progress", "Department Pending", "Waiting for Reply",
@@ -76,6 +80,7 @@ export interface Filing {
   ai_updated?: boolean | null; ai_note?: string | null;
   autopilot_doc_url?: string | null; autopilot_doc_name?: string | null; autopilot_queued_at?: string | null;
   filed_at?: string | null;
+  docs_received_at?: string | null; completed_at?: string | null;
   status_changed_at?: string | null; updated_at?: string | null; created_at?: string | null;
 }
 export interface Payment { id: string; client_id: string; amount: number; paid_on: string; method?: string | null; note?: string | null; kind?: string | null; }
@@ -84,6 +89,7 @@ export interface Task {
   category?: string | null; status: string; assigned_to?: string | null;
   received_date?: string | null; fee_agreed?: number | null; amount_paid?: number | null; comment?: string | null;
   docs_required?: string[] | null; docs_received?: string[] | null;
+  docs_received_at?: string | null; completed_at?: string | null;
   status_changed_at?: string | null; updated_at?: string | null; created_at?: string | null;
 }
 export interface Registration {
@@ -91,9 +97,10 @@ export interface Registration {
   trn?: string | null; status: string; assigned_to?: string | null;
   converted_client_id?: string | null; comment?: string | null;
   fee_quoted?: number | null; fee_agreed?: number | null;
+  docs_received_at?: string | null; completed_at?: string | null;
   status_changed_at?: string | null; updated_at?: string | null; created_at?: string | null;
 }
-export interface Staff { id: string; name: string; role: string; email?: string | null; phone?: string | null; }
+export interface Staff { id: string; name: string; role: string; email?: string | null; phone?: string | null; username?: string | null; login_enabled?: boolean | null; permissions?: Record<string, boolean> | null; }
 export interface Service { id: string; name: string; default_fee?: number | null; min_fee?: number | null; note?: string | null; required_docs?: string[] | null; }
 export interface ClientNote { id: string; client_id: string; text: string; created_at: string; created_by?: string | null; }
 export interface Followup {
@@ -132,16 +139,103 @@ export function turnaround(startIso?: string | null, endIso?: string | null): st
   return remH ? `${days} din ${remH} gh me` : `${days} din me`;
 }
 
+/* ---------- Handling time (appraisal): office-hours between two stamps ----------
+   Office = Mon–Sat, 10:00–19:00 (Sunday chutti). Raat/chutti nahi ginte. */
+export const OFFICE = { startHour: 10, endHour: 19, workDays: [1, 2, 3, 4, 5, 6] }; // 0=Sun
+
+export function officeHours(startIso?: string | null, endIso?: string | null): number | null {
+  if (!startIso || !endIso) return null;
+  const s = new Date(startIso).getTime(), e = new Date(endIso).getTime();
+  if (!s || !e) return null;
+  if (e <= s) return 0;
+  let total = 0;                       // ms
+  let cursor = new Date(s);
+  for (let i = 0; i < 500 && cursor.getTime() < e; i++) {
+    if (OFFICE.workDays.includes(cursor.getDay())) {
+      const dayStart = new Date(cursor); dayStart.setHours(OFFICE.startHour, 0, 0, 0);
+      const dayEnd = new Date(cursor); dayEnd.setHours(OFFICE.endHour, 0, 0, 0);
+      const winS = Math.max(s, dayStart.getTime());
+      const winE = Math.min(e, dayEnd.getTime());
+      if (winE > winS) total += winE - winS;
+    }
+    const nxt = new Date(cursor); nxt.setHours(0, 0, 0, 0); nxt.setDate(nxt.getDate() + 1);
+    cursor = nxt;
+  }
+  return total / 3600000;              // hours
+}
+
+export function fmtHours(h: number): string {
+  if (h <= 0) return "0 hr";
+  if (h < 1) return `${Math.round(h * 60)} min`;
+  return `${h.toFixed(1)} hr`;
+}
+
+export function monthKey(iso: string): string {
+  const d = new Date(iso);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+}
+
+/* Har completed kaam ka ek row: kisne kiya, kaunsi service, kab, kitne office-ghante.
+   Service: filing->GST Returns, registration->GST Registration, task->category. */
+export interface PerfItem { staff: string; service: string; completedAt: string; hours: number; }
+export function perfItems(filings: Filing[], tasks: Task[], registrations: Registration[]): PerfItem[] {
+  const out: PerfItem[] = [];
+  const add = (staff: string | null | undefined, service: string, dr?: string | null, cp?: string | null) => {
+    if (!cp || !dr) return;               // bina docs_received_at ya completed_at ke count nahi
+    const h = officeHours(dr, cp);
+    if (h == null) return;
+    out.push({ staff: (staff || "").trim() || "—", service, completedAt: cp, hours: h });
+  };
+  for (const f of filings) if (f.completed_at) add(f.assigned_to, "GST Returns", f.docs_received_at, f.completed_at);
+  for (const r of registrations) if (r.completed_at) add(r.assigned_to, "GST Registration", r.docs_received_at, r.completed_at);
+  for (const t of tasks) if (t.completed_at) add(t.assigned_to, (t.category || "Other").trim() || "Other", t.docs_received_at, t.completed_at);
+  return out;
+}
+
 export interface AutopilotPending {
   id: string; mobile: string; media_url: string; doc_name?: string | null; created_at?: string | null;
 }
+export interface Me { name: string; role: string; owner: boolean; permissions: Record<string, boolean>; }
+
 export interface Bootstrap {
   clients: Client[]; filings: Filing[]; payments: Payment[];
   registrations: Registration[]; tasks: Task[]; staff: Staff[];
   services: Service[]; notes: ClientNote[];
   followups: Followup[]; escalations: Escalation[];
   autopilot_pending: AutopilotPending[];
+  me?: Me;
 }
+
+/* Saari permission keys — backend _ALL_PERMS se match */
+export const ALL_PERMS = [
+  "see_passwords", "delete_records", "payment_confirm", "payment_record",
+  "fee_edit", "settings", "regress_approve", "view_earnings", "ai_command",
+  "clients_edit", "filings_edit", "tasks_edit", "registration_convert",
+  "gstr1_studio", "chat_send", "docs_download", "assistant", "audit_view",
+] as const;
+export type Perm = typeof ALL_PERMS[number];
+
+/* Har permission ka seedha-saada label (Settings grid me dikhega) */
+export const PERM_LABELS: Record<string, string> = {
+  see_passwords: "Portal passwords dekhna",
+  delete_records: "Records delete karna",
+  payment_confirm: "Payment confirm/reject karna",
+  payment_record: "Payment entry karna",
+  fee_edit: "Fees badalna",
+  settings: "Settings / Backup / Staff",
+  regress_approve: "Status peeche le jaana (approval)",
+  view_earnings: "Incentive / earnings dekhna",
+  ai_command: "AI command chalana",
+  clients_edit: "Clients add/edit",
+  filings_edit: "Filings add/edit",
+  tasks_edit: "Workflow tasks add/edit",
+  registration_convert: "Registration ko client banana",
+  gstr1_studio: "GSTR-1 Studio",
+  chat_send: "Chat me message bhejna",
+  docs_download: "Documents download",
+  assistant: "AI Assistant (read-only)",
+  audit_view: "Audit log dekhna",
+};
 
 /* ---------- Period math (reg_month 1-12) ---------- */
 export function monthIndex(y: number, m1to12: number) { return y * 12 + (m1to12 - 1); }

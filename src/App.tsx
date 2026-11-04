@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import {
   LayoutDashboard, MessageCircle, Users, Phone, CreditCard, FileText,
   CheckSquare, UserPlus, Settings as SettingsIcon, BarChart3, Megaphone, MoreHorizontal, LogOut,
-  ClipboardList, Inbox, Bot,
+  ClipboardList, Inbox, Bot, Timer,
   Sparkles,
 } from "lucide-react";
 import Chat from "./components/Chat";
@@ -16,6 +16,7 @@ import Filings from "./components/crm/Filings";
 import Workflow from "./components/crm/Workflow";
 import PendingTasks from "./components/crm/PendingTasks";
 import Registrations from "./components/crm/Registrations";
+import Performance from "./components/crm/Performance";
 import Settings from "./components/crm/Settings";
 import ClientDrawer from "./components/crm/ClientDrawer";
 import GlobalSearch from "./components/crm/GlobalSearch";
@@ -31,12 +32,13 @@ import { isDefaulter, buildWorkItems, LATE_DAYS, type Client } from "./services/
 /* Token helpers ab yahin hain — pehle ye "./services/api" se aate the, par
    tumhare repo me wo file nahi hai, isliye Netlify pe build fail ho rahi thi.
    localStorage key wahi purani hai ("console_token") — login pe koi asar nahi. */
-const hasToken = (): boolean => !!localStorage.getItem("console_token");
+/* Owner console-token se aata, staff actor-token se — dono me se koi ek ho to logged-in. */
+const hasToken = (): boolean => !!(localStorage.getItem("console_token") || localStorage.getItem("actor_token"));
 const clearToken = (): void => { ["console_token", "actor_token", "staff_name", "staff_role"].forEach(k => localStorage.removeItem(k)); };
 
 type Tab =
   | "chat" | "dashboard" | "clients" | "pending" | "followups" | "review" | "payments" | "filings"
-  | "workflow" | "registrations" | "assistant" | "setup" | "returns" | "analytics" | "notifications" | "more";
+  | "workflow" | "registrations" | "assistant" | "performance" | "setup" | "returns" | "analytics" | "notifications" | "more";
 
 const ICONS: Record<string, JSX.Element> = {
   chat: <MessageCircle className="w-4 h-4" />,
@@ -50,6 +52,7 @@ const ICONS: Record<string, JSX.Element> = {
   workflow: <CheckSquare className="w-4 h-4" />,
   registrations: <UserPlus className="w-4 h-4" />,
   assistant: <Bot className="w-4 h-4" />,
+  performance: <Timer className="w-4 h-4" />,
   setup: <SettingsIcon className="w-4 h-4" />,
   returns: <Megaphone className="w-4 h-4" />,
   analytics: <BarChart3 className="w-4 h-4" />,
@@ -70,6 +73,7 @@ const WORKSPACE: Array<{ key: Tab; label: string }> = [
   { key: "assistant", label: "Assistant" },
 ];
 const EXTRAS: Array<{ key: Tab; label: string }> = [
+  { key: "performance", label: "Performance" },
   { key: "setup", label: "Staff & Services" },
   { key: "returns", label: "Returns campaigns" },
   { key: "analytics", label: "Analytics" },
@@ -91,9 +95,20 @@ export default function App() {
   return <CrmProvider><Shell onLogout={() => { clearToken(); setAuth(false); }} /></CrmProvider>;
 }
 
+/* Kaunsa tab kaunse permission pe dikhe. Jo yahan nahi, wo sabko dikhta. */
+const TAB_PERM: Partial<Record<Tab, string>> = {
+  setup: "settings",
+  assistant: "assistant",
+  analytics: "view_earnings",
+};
+
 function Shell({ onLogout }: { onLogout: () => void }) {
-  const { clients, filingMap, staff, filings, tasks, registrations } = useCrm();
+  const { clients, filingMap, staff, filings, tasks, registrations, can, me } = useCrm();
+  const visible = (t: Tab) => { const p = TAB_PERM[t]; return !p || can(p); };
   const [tab, setTab] = useState<Tab>("chat");
+
+  // Staff kisi aise tab pe pahunche jiska haq nahi -> wapas dashboard
+  useEffect(() => { if (!visible(tab)) setTab("chat"); /* eslint-disable-next-line */ }, [tab, me]);
   const [isMobile, setIsMobile] = useState(false);
   const [drawer, setDrawer] = useState<Client | null>(null);
   const [ai, setAi] = useState(false);
@@ -115,6 +130,7 @@ function Shell({ onLogout }: { onLogout: () => void }) {
   };
 
   function screen(t: Tab) {
+    if (!visible(t) && t !== "more") return <CrmDashboard onGoto={(x) => setTab(x as Tab)} />;
     switch (t) {
       case "chat": return <Chat />;
       case "dashboard": return <CrmDashboard onGoto={(x) => setTab(x as Tab)} />;
@@ -127,11 +143,12 @@ function Shell({ onLogout }: { onLogout: () => void }) {
       case "workflow": return <Workflow />;
       case "registrations": return <Registrations />;
       case "assistant": return <Assistant />;
+      case "performance": return <Performance />;
       case "setup": return <Settings />;
       case "returns": return <ReturnsCampaigns />;
       case "analytics": return <Analytics />;
       case "notifications": return <Dashboard />;
-      case "more": return <MoreMenu onPick={setTab} />;
+      case "more": return <MoreMenu onPick={setTab} visible={visible} />;
       default: return null;
     }
   }
@@ -152,10 +169,12 @@ function Shell({ onLogout }: { onLogout: () => void }) {
             <Sparkles className="w-4 h-4" />AI command
           </button>
           <NavLabel>Workspace</NavLabel>
-          {WORKSPACE.map(n => <NavItem key={n.key} tabKey={n.key} label={n.label} active={tab === n.key} badge={badges[n.key]} onClick={() => setTab(n.key)} />)}
-          <div className="h-px bg-white/10 my-3 mx-1.5" />
-          <NavLabel>Setup</NavLabel>
-          {EXTRAS.map(n => <NavItem key={n.key} tabKey={n.key} label={n.label} active={tab === n.key} onClick={() => setTab(n.key)} />)}
+          {WORKSPACE.filter(n => visible(n.key)).map(n => <NavItem key={n.key} tabKey={n.key} label={n.label} active={tab === n.key} badge={badges[n.key]} onClick={() => setTab(n.key)} />)}
+          {EXTRAS.some(n => visible(n.key)) && <>
+            <div className="h-px bg-white/10 my-3 mx-1.5" />
+            <NavLabel>Setup</NavLabel>
+            {EXTRAS.filter(n => visible(n.key)).map(n => <NavItem key={n.key} tabKey={n.key} label={n.label} active={tab === n.key} onClick={() => setTab(n.key)} />)}
+          </>}
           <div className="h-px bg-white/10 my-3 mx-1.5" />
           <NavLabel>Team</NavLabel>
           {staff.map(s => (
@@ -222,18 +241,20 @@ function NavItem({ tabKey, label, active, badge, onClick }: { tabKey: string; la
   );
 }
 
-function MoreMenu({ onPick }: { onPick: (t: Tab) => void }) {
+function MoreMenu({ onPick, visible }: { onPick: (t: Tab) => void; visible: (t: Tab) => boolean }) {
   const tiles: Array<{ key: Tab; label: string; sub: string }> = [
     { key: "followups", label: "Followups", sub: "Yaad rakhne wale kaam" },
     { key: "review", label: "Followup review", sub: "Pehle review, phir client ko" },
     { key: "payments", label: "Payments", sub: "Ledger + collection" },
     { key: "workflow", label: "Workflow", sub: "Non-GST kaam" },
     { key: "registrations", label: "Registrations", sub: "Naye GST cases" },
+    { key: "assistant", label: "Assistant", sub: "AI help (read-only)" },
+    { key: "performance", label: "Performance", sub: "Handling time" },
     { key: "setup", label: "Staff & Services", sub: "Team, fees" },
     { key: "returns", label: "Returns campaigns", sub: "Bulk messages" },
     { key: "analytics", label: "Analytics", sub: "Numbers" },
     { key: "notifications", label: "Notifications", sub: "Push setup" },
-  ];
+  ].filter(t => visible(t.key));
   return (
     <div className="h-full overflow-y-auto bg-[#F5F7F6] p-5">
       <h1 className="text-xl font-semibold mb-4">More</h1>

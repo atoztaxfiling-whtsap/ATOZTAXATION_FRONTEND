@@ -7,7 +7,7 @@
    ============================================================ */
 import { createContext, useContext, useEffect, useState, useCallback, type ReactNode } from "react";
 import { fetchBootstrap } from "./crmApi";
-import { buildFilingMap, type Bootstrap, type Filing } from "./crmLogic";
+import { buildFilingMap, type Bootstrap, type Filing, type Me, type Perm } from "./crmLogic";
 
 interface CrmCtx extends Bootstrap {
   filingMap: Record<string, Filing>;
@@ -18,9 +18,14 @@ interface CrmCtx extends Bootstrap {
   /* instant UI ke liye — server jawab ka intezaar kiye bina local list turant badal do */
   patchLocal: (table: keyof Bootstrap, id: string, partial: Record<string, unknown>) => void;
   removeLocal: (table: keyof Bootstrap, id: string) => void;
+  /* abhi kaun logged-in + kya kar sakta */
+  me: Me;
+  can: (perm: Perm | string) => boolean;
 }
 
 const EMPTY: Bootstrap = { clients: [], filings: [], payments: [], registrations: [], tasks: [], staff: [], services: [], notes: [], followups: [], escalations: [], autopilot_pending: [] };
+// jab tak bootstrap nahi aaya — kuch mat dikhao (sabse surakshit default)
+const NOBODY: Me = { name: "", role: "staff", owner: false, permissions: {} };
 const Ctx = createContext<CrmCtx | null>(null);
 
 export function useCrm() {
@@ -61,7 +66,13 @@ export function CrmProvider({ children }: { children: ReactNode }) {
 
   const toast = useCallback((msg: string, undo?: () => Promise<void>) => setToastMsg({ msg, undo }), []);
 
-  const value: CrmCtx = { ...data, filingMap: buildFilingMap(data.filings), loading, error, reload, toast, patchLocal, removeLocal };
+  const me: Me = data.me || NOBODY;
+  const can = useCallback((perm: Perm | string) => {
+    if (me.owner) return true;
+    return !!me.permissions?.[perm];
+  }, [me]);
+
+  const value: CrmCtx = { ...data, me, can, filingMap: buildFilingMap(data.filings), loading, error, reload, toast, patchLocal, removeLocal };
 
   return (
     <Ctx.Provider value={value}>

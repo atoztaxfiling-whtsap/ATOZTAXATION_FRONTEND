@@ -1,7 +1,7 @@
 /* Payments — collected / pending / balance wale clients */
 import { useState } from "react";
 import { useCrm } from "../../services/crmStore";
-import { balanceDue, totalPaid, currentCycle, money, isTaskBillable, isFilingBillable, type Client } from "../../services/crmLogic";
+import { balanceDue, totalPaid, currentCycle, money, isTaskBillable, isFilingBillable, KIND_FIRM_PAID, type Client } from "../../services/crmLogic";
 import { Avatar, Pill, Panel, PageHead, Metric, Btn, Scroller, Th, Td, EmptyRow } from "./ui";
 import { confirmPaymentClaim, rejectPaymentClaim } from "../../services/crmApi";
 import ClientDrawer from "./ClientDrawer";
@@ -10,7 +10,8 @@ import ClientDrawer from "./ClientDrawer";
 const CALL_AFTER_DAYS = 14;
 
 export default function Payments() {
-  const { clients, filingMap, filings, payments, tasks, loading, followups, reload, toast } = useCrm();
+  const { clients, filingMap, filings, payments, tasks, loading, followups, reload, toast, can } = useCrm();
+  const canConfirm = can("payment_confirm");
   const [open, setOpen] = useState<Client | null>(null);
   const [tab, setTab] = useState<"pending" | "call" | "confirm">("pending");
 
@@ -33,7 +34,10 @@ export default function Payments() {
     catch (e) { alert((e as Error).message); }
   }
 
-  const collected = clients.reduce((a, c) => a + totalPaid(c, payments, tasks), 0);
+  /* collected = client payments − "humne diya" (firm_paid). Late-fee reimbursement
+     ko revenue me nahi ginte — sirf asli fees. */
+  const firmPaidTotal = payments.filter(p => (p.kind || "client") === KIND_FIRM_PAID).reduce((a, p) => a + (p.amount || 0), 0);
+  const collected = Math.max(0, clients.reduce((a, c) => a + totalPaid(c, payments, tasks), 0) - firmPaidTotal);
   const clientPending = clients.reduce((a, c) => a + balanceDue(c, filingMap, payments, tasks), 0);
   const withBal = clients.filter(c => balanceDue(c, filingMap, payments, tasks) > 0).length;
 
@@ -130,8 +134,10 @@ export default function Payments() {
                 <div className="text-[11.5px] text-[#8A5606] truncate">{f.note || "Client ne bola payment kar diya"}</div>
                 <div className="text-[11px] text-[#5E6B66]">Balance: {money(balanceDue(c, filingMap, payments, tasks))}</div>
               </div>
-              <button onClick={() => doConfirm(c)} className="shrink-0 px-2.5 py-1.5 text-[12px] font-medium rounded-md bg-[#0E7A52] text-white whitespace-nowrap">✓ Confirm</button>
-              <button onClick={() => doReject(c)} title="Claim hata do" className="shrink-0 px-2 py-1.5 text-[12px] font-medium rounded-md border border-[#E4E8E6] bg-white text-[#962C1E]">✗</button>
+              {canConfirm ? <>
+                <button onClick={() => doConfirm(c)} className="shrink-0 px-2.5 py-1.5 text-[12px] font-medium rounded-md bg-[#0E7A52] text-white whitespace-nowrap">✓ Confirm</button>
+                <button onClick={() => doReject(c)} title="Claim hata do" className="shrink-0 px-2 py-1.5 text-[12px] font-medium rounded-md border border-[#E4E8E6] bg-white text-[#962C1E]">✗</button>
+              </> : <span className="shrink-0 text-[11px] text-[#9BA098]">Owner confirm karega</span>}
             </div>
           ))}
         </Panel>

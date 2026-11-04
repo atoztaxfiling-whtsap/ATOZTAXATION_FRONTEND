@@ -19,7 +19,8 @@ function whenText(iso?: string | null) {
 }
 
 export default function Followups() {
-  const { clients, followups, escalations, filingMap, payments, tasks, reload, loading, toast } = useCrm();
+  const { clients, followups, escalations, filingMap, payments, tasks, reload, loading, toast, can } = useCrm();
+  const canConfirm = can("payment_confirm");
   const [open, setOpen] = useState<Client | null>(null);
   const [adding, setAdding] = useState(false);
   const [claimFor, setClaimFor] = useState<Client | null>(null);
@@ -102,8 +103,10 @@ export default function Followups() {
                     </div>
                   </div>
                   <div className="flex gap-1.5">
-                    <Btn size="sm" variant="primary" onClick={() => setClaimFor(c!)}>Paisa aa gaya</Btn>
-                    <Btn size="sm" onClick={async () => { await rejectPaymentClaim(c!.mobile); toast("Theek hai, followup chalta rahega"); await reload(); }}>Nahi aaya</Btn>
+                    {canConfirm ? <>
+                      <Btn size="sm" variant="primary" onClick={() => setClaimFor(c!)}>Paisa aa gaya</Btn>
+                      <Btn size="sm" onClick={async () => { await rejectPaymentClaim(c!.mobile); toast("Theek hai, followup chalta rahega"); await reload(); }}>Nahi aaya</Btn>
+                    </> : <span className="text-[11px] text-[#9BA098] self-center">Owner confirm karega</span>}
                   </div>
                 </div>
               );
