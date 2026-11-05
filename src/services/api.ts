@@ -6,10 +6,20 @@ export function clearToken() { localStorage.removeItem("console_token"); }
 export function hasToken(): boolean { return !!getToken(); }
 
 async function api(path: string, opt: RequestInit = {}): Promise<any> {
-  const headers: Record<string, string> = { "X-Console-Token": getToken(), ...(opt.headers as Record<string, string> || {}) };
+  const actor = localStorage.getItem("actor_token") || "";
+  const headers: Record<string, string> = {
+    "X-Console-Token": getToken(),
+    ...(actor ? { "X-Actor-Token": actor } : {}),
+    ...(opt.headers as Record<string, string> || {}),
+  };
   if (opt.body instanceof FormData) delete headers["Content-Type"];
   const res = await fetch(`${API_BASE}${path}`, { ...opt, headers });
-  if (res.status === 403) { clearToken(); throw new Error("UNAUTHORIZED"); }
+  if (res.status === 403) {
+    // Staff (actor token) ko ek endpoint ke 403 pe poora logout mat karo —
+    // warna login ke turant baad chat screen 403 deke app band ho jaata tha.
+    if (actor) throw new Error("FORBIDDEN");
+    clearToken(); throw new Error("UNAUTHORIZED");
+  }
   if (!res.ok) {
     const t = await res.text().catch(() => "");
     let msg = t || `Server error: ${res.status}`;
