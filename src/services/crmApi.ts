@@ -117,6 +117,13 @@ export interface IncentiveRow {
 export interface IncentiveData { totals: IncentiveTotal[]; recent: IncentiveRow[]; error?: string; }
 export const fetchIncentive = (): Promise<IncentiveData> => req("/incentive").then(r => r.data);
 
+/* Performance screen: bonus / cut / net (slab system) — owner ko sab, staff ko sirf apna */
+export interface MoneyBucket { bonus: number; cut: number; net: number; count: number; late: number; }
+export interface MoneyService { service: string; cur: MoneyBucket; prev: MoneyBucket; }
+export interface MoneyStaff { staff: string; cur: MoneyBucket; prev: MoneyBucket; services: MoneyService[]; }
+export interface PerfMoney { months: { cur?: string; prev?: string }; staff: MoneyStaff[]; error?: string; }
+export const fetchPerfMoney = (): Promise<PerfMoney> => req("/perf-money").then(r => r.data);
+
 /* ---------- Clients ---------- */
 export const createClient = (d: Partial<Client>): Promise<Client> => jsonPost("/clients", d).then(r => r.data);
 export const updateClient = (id: string, d: Partial<Client>): Promise<Client> => jsonPost(`/clients/${id}`, d, "PUT").then(r => r.data);
