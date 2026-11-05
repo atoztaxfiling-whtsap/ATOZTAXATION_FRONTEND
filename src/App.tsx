@@ -104,7 +104,12 @@ const TAB_PERM: Partial<Record<Tab, string>> = {
 
 function Shell({ onLogout }: { onLogout: () => void }) {
   const { clients, filingMap, staff, filings, tasks, registrations, can, me } = useCrm();
-  const visible = (t: Tab) => { const p = TAB_PERM[t]; return !p || can(p); };
+  // Partner (CA): sirf Chat dikhega — baaki sab tabs/Team/AI/search chhupe.
+  const isPartner = (me?.role === "partner") && !me?.owner;
+  const visible = (t: Tab) => {
+    if (isPartner) return t === "chat";
+    const p = TAB_PERM[t]; return !p || can(p);
+  };
   const [tab, setTab] = useState<Tab>("chat");
 
   // Staff kisi aise tab pe pahunche jiska haq nahi -> wapas dashboard
@@ -161,13 +166,13 @@ function Shell({ onLogout }: { onLogout: () => void }) {
             <div className="w-7 h-7 rounded-md bg-[#0E7A52] text-white font-bold text-[13px] font-mono flex items-center justify-center">AZ</div>
             <div><div className="text-white font-semibold text-[15px] leading-tight">ATOZ Taxation</div><div className="text-[#AEB8C4] text-[11px]">GST practice CRM</div></div>
           </div>
-          <div className="px-1 pb-2">
+          {!isPartner && <div className="px-1 pb-2">
             <GlobalSearch dark onPickClient={c => setDrawer(c)} onGoto={t => setTab(t as Tab)} />
-          </div>
-          <button onClick={() => setAi(true)}
+          </div>}
+          {!isPartner && <button onClick={() => setAi(true)}
             className="mx-1 mb-3 flex items-center gap-2 px-2.5 py-2 rounded-lg text-[13.5px] font-medium bg-[#0E7A52]/15 text-[#8FE3BE] hover:bg-[#0E7A52]/25 border border-[#0E7A52]/30">
             <Sparkles className="w-4 h-4" />AI command
-          </button>
+          </button>}
           <NavLabel>Workspace</NavLabel>
           {WORKSPACE.filter(n => visible(n.key)).map(n => <NavItem key={n.key} tabKey={n.key} label={n.label} active={tab === n.key} badge={badges[n.key]} onClick={() => setTab(n.key)} />)}
           {EXTRAS.some(n => visible(n.key)) && <>
@@ -175,13 +180,15 @@ function Shell({ onLogout }: { onLogout: () => void }) {
             <NavLabel>Setup</NavLabel>
             {EXTRAS.filter(n => visible(n.key)).map(n => <NavItem key={n.key} tabKey={n.key} label={n.label} active={tab === n.key} onClick={() => setTab(n.key)} />)}
           </>}
-          <div className="h-px bg-white/10 my-3 mx-1.5" />
-          <NavLabel>Team</NavLabel>
-          {staff.map(s => (
-            <div key={s.id} className="flex items-center gap-2.5 px-2.5 py-1.5 text-[13px] text-[#AEB8C4]">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#0E7A52]" />{s.name}
-            </div>
-          ))}
+          {!isPartner && <>
+            <div className="h-px bg-white/10 my-3 mx-1.5" />
+            <NavLabel>Team</NavLabel>
+            {staff.map(s => (
+              <div key={s.id} className="flex items-center gap-2.5 px-2.5 py-1.5 text-[13px] text-[#AEB8C4]">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#0E7A52]" />{s.name}
+              </div>
+            ))}
+          </>}
           <button onClick={onLogout} className="mt-auto flex items-center gap-2 px-2.5 py-2 rounded-lg text-[13px] text-[#AEB8C4] hover:bg-[#1B2E27] hover:text-white">
             <LogOut className="w-4 h-4" />Logout
           </button>
@@ -198,7 +205,7 @@ function Shell({ onLogout }: { onLogout: () => void }) {
 
         {isMobile && (
           <nav className="flex border-t border-[#E4E8E6] bg-white flex-shrink-0 pb-[env(safe-area-inset-bottom,4px)]">
-            {MOBILE_NAV.map(n => {
+            {(isPartner ? MOBILE_NAV.filter(n => n.key === "chat") : MOBILE_NAV).map(n => {
               const active = tab === n.key || (n.key === "more" && !MOBILE_NAV.some(x => x.key === tab));
               return (
                 <button key={n.key} onClick={() => setTab(n.key)}
@@ -212,7 +219,7 @@ function Shell({ onLogout }: { onLogout: () => void }) {
         )}
       </main>
 
-      {!(isMobile && tab === "chat") && (
+      {!isPartner && !(isMobile && tab === "chat") && (
         <button onClick={() => setAi(true)} aria-label="AI command box"
           className="fixed right-4 bottom-[76px] md:bottom-6 md:right-6 rounded-full bg-[#0E7A52] text-white shadow-lg flex items-center justify-center z-40 active:scale-95 transition"
           style={{ width: 52, height: 52 }}>

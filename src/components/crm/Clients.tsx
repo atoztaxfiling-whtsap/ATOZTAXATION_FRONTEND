@@ -8,7 +8,14 @@ import ClientDrawer from "./ClientDrawer";
 import ClientForm from "./ClientForm";
 
 export default function Clients() {
-  const { clients, staff, filingMap, payments, tasks, loading } = useCrm();
+  const { clients, staff, filingMap, payments, tasks, loading, assignments } = useCrm();
+  // mobile (last-10) -> partner naam, taaki admin ko dikhe kaun client kis partner ko
+  const partnerBy = useMemo(() => {
+    const m: Record<string, string> = {};
+    (assignments || []).forEach(a => { const k = String(a.mobile || "").replace(/\D/g, "").slice(-10); if (k) m[k] = a.partner_name; });
+    return m;
+  }, [assignments]);
+  const partnerOf = (c: Client) => partnerBy[String(c.mobile || "").replace(/\D/g, "").slice(-10)] || "";
   const [q, setQ] = useState("");
   const [fa, setFa] = useState("");
   const [fc, setFc] = useState("");
@@ -72,6 +79,8 @@ export default function Clients() {
                             {c.name}
                             {c.source === "whatsapp" && !c.fee_quarterly_sales && !c.fee_monthly_sales &&
                               <span className="px-1.5 py-0.5 rounded-full bg-[#FAEEDA] text-[#412402] text-[9.5px] font-bold">NAYA</span>}
+                            {partnerOf(c) &&
+                              <span className="px-1.5 py-0.5 rounded-full bg-[#E6E1F5] text-[#3B2A6B] text-[9.5px] font-bold whitespace-nowrap">Partner: {partnerOf(c)}</span>}
                           </div>
                           <div className="font-mono text-[11.5px] text-[#9BA098]">{c.gstin || "—"}</div></div>
                       </div>
@@ -100,7 +109,8 @@ export default function Clients() {
               <div key={c.id} onClick={() => setOpen(c)} className="flex items-center gap-3 px-4 py-3 border-b border-[#E4E8E6] last:border-0 active:bg-[#FBFAF7]">
                 <Avatar name={c.name} size={38} />
                 <div className="flex-1 min-w-0">
-                  <div className="font-medium text-[13.5px] truncate">{c.name}</div>
+                  <div className="font-medium text-[13.5px] truncate flex items-center gap-1.5">{c.name}
+                    {partnerOf(c) && <span className="px-1.5 py-0.5 rounded-full bg-[#E6E1F5] text-[#3B2A6B] text-[9px] font-bold whitespace-nowrap">P: {partnerOf(c)}</span>}</div>
                   <div className="text-[11.5px] text-[#6B6F68] truncate">{c.mobile} · {c.assigned_to || "—"} · {cyc === "quarterly" ? "Qtr" : "Mon"}</div>
                 </div>
                 <div className={`font-mono text-[12px] font-semibold flex-shrink-0 ${bal > 0 ? "text-[#A32D2D]" : "text-[#0E7A52]"}`}>{bal > 0 ? money(bal) : "Clear"}</div>

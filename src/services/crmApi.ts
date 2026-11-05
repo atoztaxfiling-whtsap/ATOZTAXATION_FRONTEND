@@ -73,8 +73,15 @@ export async function fetchBootstrap(): Promise<Bootstrap> {
     followups: d.followups || [], escalations: d.escalations || [],
     autopilot_pending: d.autopilot_pending || [],
     me: d.me,   // kaun logged-in + permissions (owner detection) — ye zaroori hai
+    assignments: d.assignments || [],   // admin: kaun client kis partner ko
   };
 }
+
+/* ---------- Partner assignments (admin: kis partner ko kaun se clients) ---------- */
+export const fetchPartnerClients = (sid: string): Promise<{ mobile: string; assigned_at?: string }[]> =>
+  req(`/partners/${sid}/clients`).then(r => r.data || []);
+export const setPartnerClients = (sid: string, mobiles: string[]): Promise<{ ok: boolean; count: number }> =>
+  jsonPost(`/partners/${sid}/clients`, { mobiles }, "PUT");
 
 export async function crmHealth() { return req("/health"); }
 

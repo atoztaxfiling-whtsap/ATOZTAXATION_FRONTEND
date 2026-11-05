@@ -5,12 +5,12 @@ import { Plus, Trash2, Download, RefreshCw, Shield } from "lucide-react";
 import { useCrm } from "../../services/crmStore";
 import {
   createStaff, updateStaff, deleteStaff, restoreStaff, setStaffLogin,
-  setStaffPerms,
+  setStaffPerms, fetchPartnerClients, setPartnerClients,
   createService, updateService, deleteService, restoreService,
   runBackup, backupBase, type BackupInfo,
   runSheetSync, importFromSheets, type SyncStats,
 } from "../../services/crmApi";
-import { money, ALL_PERMS, PERM_LABELS, type Staff, type Service } from "../../services/crmLogic";
+import { money, ALL_PERMS, PERM_LABELS, type Staff, type Service, type Client } from "../../services/crmLogic";
 import { DocsEditor } from "./Workflow";
 import { docsFor } from "./DocsBox";
 import { Avatar, Panel, PageHead, Btn, Modal, Field, Row2, TextInput, SelectInput } from "./ui";
@@ -406,9 +406,14 @@ const ROLE_PRESETS: Record<string, Record<string, boolean>> = {
   senior: Object.fromEntries(ALL_PERMS.map(p => [p, !["settings", "delete_records", "regress_approve", "audit_view"].includes(p)])),
   staff: Object.fromEntries(ALL_PERMS.map(p => [p, ["clients_edit", "filings_edit", "tasks_edit", "registration_convert", "gstr1_studio", "chat_send", "docs_download", "assistant"].includes(p)])),
   intern: Object.fromEntries(ALL_PERMS.map(p => [p, ["chat_send", "docs_download", "assistant"].includes(p)])),
+  // Partner (CA): sirf assigned clients ki chat + unke documents. Reply+doc bhej sakta.
+  partner: Object.fromEntries(ALL_PERMS.map(p => [p, ["chat_send", "docs_download"].includes(p)])),
 };
 
+const _norm10 = (m: string) => String(m || "").replace(/\D/g, "").slice(-10);
+
 function StaffPermsModal({ item, onClose, onSaved }: { item: Staff; onClose: () => void; onSaved: () => void }) {
+  const { clients } = useCrm();
   const [role, setRole] = useState((item.role || "staff").toLowerCase());
   const [perms, setPerms] = useState<Record<string, boolean>>(() => {
     const base = { ...(ROLE_PRESETS[(item.role || "staff").toLowerCase()] || ROLE_PRESETS.staff) };
@@ -418,20 +423,49 @@ function StaffPermsModal({ item, onClose, onSaved }: { item: Staff; onClose: () 
   });
   const [saving, setSaving] = useState(false);
 
+  // Partner ke liye — kaun kaun se clients assigned hain
+  const [assigned, setAssigned] = useState<string[]>([]);
+  const [assignLoaded, setAssignLoaded] = useState(false);
+  const [search, setSearch] = useState("");
+
+  const isOwner = role === "owner";
+  const isPartner = role === "partner";
+
+  // Partner role pe switch / modal khule to current assignments laao (ek baar)
+  useEffect(() => {
+    if (role === "partner" && !assignLoaded) {
+      fetchPartnerClients(item.id)
+        .then(rows => { setAssigned(rows.map(r => _norm10(r.mobile))); setAssignLoaded(true); })
+        .catch(() => setAssignLoaded(true));
+    }
+  }, [role, assignLoaded, item.id]);
+
   // Role badalte hi uska preset bhar do (phir user override kar sakta)
   function pickRole(r: string) {
     setRole(r);
     setPerms({ ...(ROLE_PRESETS[r] || ROLE_PRESETS.staff) });
   }
   const toggle = (p: string) => setPerms(x => ({ ...x, [p]: !x[p] }));
+  const toggleClient = (m: string) => {
+    const n = _norm10(m);
+    setAssigned(a => a.includes(n) ? a.filter(x => x !== n) : [...a, n]);
+  };
 
   async function save() {
     setSaving(true);
-    try { await setStaffPerms(item.id, role, perms); onSaved(); }
+    try {
+      await setStaffPerms(item.id, role, perms);
+      if (role === "partner") await setPartnerClients(item.id, assigned);
+      onSaved();
+    }
     catch (e) { alert((e as Error).message); setSaving(false); }
   }
 
-  const isOwner = role === "owner";
+  const q = search.trim().toLowerCase();
+  const qd = q.replace(/\D/g, "");
+  const list = (clients as Client[]).filter(c =>
+    !q || (c.name || "").toLowerCase().includes(q) || (qd && _norm10(c.mobile).includes(qd)));
+
   return (
     <Modal title={`${item.name} — access`} sub="Pehle role chuno (preset bhar jaata), phir jo chahiye on/off karlo. Owner ke paas hamesha sab rehta." onClose={onClose}>
       <Field label="Role">
@@ -440,21 +474,51 @@ function StaffPermsModal({ item, onClose, onSaved }: { item: Staff; onClose: () 
           <option value="senior">Senior staff</option>
           <option value="staff">Staff</option>
           <option value="intern">Intern</option>
+          <option value="partner">Partner (CA) — sirf assigned clients</option>
         </SelectInput>
       </Field>
-      <div className="mt-2 max-h-[46vh] overflow-y-auto -mx-1 px-1">
-        {ALL_PERMS.map(p => {
-          const on = isOwner || perms[p];
-          return (
-            <label key={p} className={`flex items-center justify-between gap-3 py-2 px-2 rounded-lg border-b border-[#EEF1EF] last:border-0 ${isOwner ? "opacity-60" : "cursor-pointer hover:bg-[#FBFAF7]"}`}>
-              <span className="text-[12.5px] text-[#2C342F]">{PERM_LABELS[p] || p}</span>
-              <input type="checkbox" disabled={isOwner} checked={!!on} onChange={() => toggle(p)}
-                className="w-9 h-5 appearance-none rounded-full bg-[#D4DAD6] checked:bg-[#0E7A52] relative transition cursor-pointer
-                  before:content-[''] before:absolute before:top-0.5 before:left-0.5 before:w-4 before:h-4 before:rounded-full before:bg-white before:transition checked:before:translate-x-4" />
-            </label>
-          );
-        })}
-      </div>
+
+      {isPartner ? (
+        <div className="mt-3">
+          <div className="text-[12.5px] font-medium text-[#2C342F]">Kaun se clients is partner ko dikhein?</div>
+          <div className="text-[11.5px] text-[#6B6F68] mb-2">
+            Sirf tick kiye clients ki chat + unke bheje documents hi partner ko dikhenge — assign karne ke baad wali chat. ({assigned.length} chune)
+          </div>
+          <TextInput value={search} onChange={e => setSearch(e.target.value)} placeholder="Client dhundo (naam ya number)" />
+          <div className="mt-2 max-h-[40vh] overflow-y-auto border border-[#E4E8E6] rounded-lg">
+            {!assignLoaded && <div className="px-3 py-3 text-[12px] text-[#9BA098]">Load ho raha…</div>}
+            {assignLoaded && !list.length && <div className="px-3 py-3 text-[12px] text-[#9BA098]">Koi client nahi mila.</div>}
+            {assignLoaded && list.map(c => {
+              const n = _norm10(c.mobile); const on = assigned.includes(n);
+              return (
+                <label key={c.id} className="flex items-center justify-between gap-3 py-2 px-3 border-b border-[#EEF1EF] last:border-0 cursor-pointer hover:bg-[#FBFAF7]">
+                  <span className="min-w-0 truncate">
+                    <span className="text-[12.5px] text-[#2C342F] font-medium">{c.name || "(no name)"}</span>
+                    <span className="text-[11.5px] text-[#9BA098]"> · {n}</span>
+                  </span>
+                  <input type="checkbox" checked={on} onChange={() => toggleClient(c.mobile)}
+                    className="shrink-0 w-9 h-5 appearance-none rounded-full bg-[#D4DAD6] checked:bg-[#0E7A52] relative transition cursor-pointer
+                      before:content-[''] before:absolute before:top-0.5 before:left-0.5 before:w-4 before:h-4 before:rounded-full before:bg-white before:transition checked:before:translate-x-4" />
+                </label>
+              );
+            })}
+          </div>
+        </div>
+      ) : (
+        <div className="mt-2 max-h-[46vh] overflow-y-auto -mx-1 px-1">
+          {ALL_PERMS.map(p => {
+            const on = isOwner || perms[p];
+            return (
+              <label key={p} className={`flex items-center justify-between gap-3 py-2 px-2 rounded-lg border-b border-[#EEF1EF] last:border-0 ${isOwner ? "opacity-60" : "cursor-pointer hover:bg-[#FBFAF7]"}`}>
+                <span className="text-[12.5px] text-[#2C342F]">{PERM_LABELS[p] || p}</span>
+                <input type="checkbox" disabled={isOwner} checked={!!on} onChange={() => toggle(p)}
+                  className="w-9 h-5 appearance-none rounded-full bg-[#D4DAD6] checked:bg-[#0E7A52] relative transition cursor-pointer
+                    before:content-[''] before:absolute before:top-0.5 before:left-0.5 before:w-4 before:h-4 before:rounded-full before:bg-white before:transition checked:before:translate-x-4" />
+              </label>
+            );
+          })}
+        </div>
+      )}
       <div className="flex gap-2 justify-end mt-4">
         <Btn onClick={onClose}>Cancel</Btn>
         <Btn variant="primary" onClick={save} disabled={saving}>{saving ? "Saving..." : "Save access"}</Btn>
@@ -505,7 +569,7 @@ function StaffModal({ item, onClose }: { item: Staff | null; onClose: () => void
       <Field label="Naam"><TextInput value={f.name} onChange={e => set("name", e.target.value)} /></Field>
       <Row2>
         <Field label="Phone"><TextInput value={f.phone} onChange={e => set("phone", e.target.value)} /></Field>
-        <Field label="Role"><SelectInput value={f.role} onChange={e => set("role", e.target.value)}><option value="staff">staff</option><option value="senior">senior</option><option value="intern">intern</option><option value="owner">owner</option></SelectInput></Field>
+        <Field label="Role"><SelectInput value={f.role} onChange={e => set("role", e.target.value)}><option value="staff">staff</option><option value="senior">senior</option><option value="intern">intern</option><option value="partner">partner</option><option value="owner">owner</option></SelectInput></Field>
       </Row2>
       <Field label="Email"><TextInput value={f.email} onChange={e => set("email", e.target.value)} /></Field>
       <div className="flex gap-2 justify-end mt-4">

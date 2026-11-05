@@ -197,6 +197,9 @@ export interface AutopilotPending {
 }
 export interface Me { name: string; role: string; owner: boolean; permissions: Record<string, boolean>; }
 
+/* Kaun client (mobile) kis partner ko assigned hai — admin ko badge dikhane ke liye */
+export interface PartnerAssignment { mobile: string; partner_id: string; partner_name: string; assigned_at?: string; }
+
 export interface Bootstrap {
   clients: Client[]; filings: Filing[]; payments: Payment[];
   registrations: Registration[]; tasks: Task[]; staff: Staff[];
@@ -204,6 +207,7 @@ export interface Bootstrap {
   followups: Followup[]; escalations: Escalation[];
   autopilot_pending: AutopilotPending[];
   me?: Me;
+  assignments?: PartnerAssignment[];
 }
 
 /* Saari permission keys — backend _ALL_PERMS se match */
